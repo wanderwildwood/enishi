@@ -31,4 +31,10 @@ class DayTest {
         assertEquals(Typed.Wrong, Day.typed("", "4", "31"))
         assertEquals(Typed.Wrong, Day.typed("", "", "3"))
     }
+
+    @Test fun storesAreNamedAsAPersonWould() {
+        assertEquals("Contacts (DAVx5)", storeName("Contacts (someone@example.org) #65", "at.bitfire.davdroid.address_book"))
+        assertEquals("Work", storeName("Work #3", "com.example.sync"))
+        assertEquals("Phone", storeName("Phone", "Local Phone Account"))
+    }
 }

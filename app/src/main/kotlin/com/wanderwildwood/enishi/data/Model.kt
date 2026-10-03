@@ -123,3 +123,13 @@ data class Group(
     val account: Account,
     val size: Int,
 )
+
+/**
+ * A store as a person would name it. DAVx5 names its address books
+ * "Contacts (someone@example.org) #65"; that reads as "Contacts (DAVx5)". Any other account's
+ * own name loses the bookkeeping number on its end.
+ */
+fun storeName(name: String, type: String): String {
+    val plain = name.replace(Regex("\\s+#\\d+$"), "")
+    return if (type.startsWith("at.bitfire.davdroid")) "${plain.substringBefore(" (").ifBlank { plain }} (DAVx5)" else plain
+}

@@ -9,6 +9,7 @@ import android.text.format.DateFormat
 import com.wanderwildwood.enishi.R
 import com.wanderwildwood.enishi.data.Account
 import com.wanderwildwood.enishi.data.Day
+import com.wanderwildwood.enishi.data.storeName
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -36,7 +37,7 @@ object Labels {
         context.getString(Event.getTypeResource(type)).let { if (type == Event.TYPE_CUSTOM && !label.isNullOrBlank()) label else it }
 
     fun account(context: Context, account: Account): String =
-        if (account.isPhone) context.getString(R.string.account_phone) else account.name.orEmpty()
+        if (account.isPhone) context.getString(R.string.account_phone) else storeName(account.name.orEmpty(), account.type.orEmpty())
 
     /** "14 May 1990", or "14 May" when the year is not known — in the phone's own order. */
     fun day(stored: String): String {
