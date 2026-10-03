@@ -51,13 +51,15 @@ import com.wanderwildwood.enishi.ui.BookModel
 import com.wanderwildwood.enishi.ui.CardsScreen
 import com.wanderwildwood.enishi.ui.DetailScreen
 import com.wanderwildwood.enishi.ui.EditScreen
+import com.wanderwildwood.enishi.ui.FavouritesScreen
+import com.wanderwildwood.enishi.ui.GroupsScreen
+import com.wanderwildwood.enishi.ui.MoreScreen
 import com.wanderwildwood.enishi.ui.GroupScreen
 import com.wanderwildwood.enishi.ui.HomeScreen
 import com.wanderwildwood.enishi.ui.NewGroupDialog
 import com.wanderwildwood.enishi.ui.PickScreen
 import com.wanderwildwood.enishi.ui.SearchScreen
 import com.wanderwildwood.enishi.ui.SettingsScreen
-import com.wanderwildwood.enishi.ui.Tab
 import com.wanderwildwood.enishi.ui.has
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -71,6 +73,9 @@ sealed interface Route {
     data object Home : Route
     data object Search : Route
     data class Detail(val id: Long) : Route
+    data class More(val id: Long) : Route
+    data object Favourites : Route
+    data object Groups : Route
     data class Edit(val card: Card?, val seed: Draft, val account: Account) : Route
     data object Settings : Route
     data class Group(val id: Long) : Route
@@ -112,7 +117,6 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
     }
 
     val stack = remember { mutableStateListOf<Route>(if (asked == Asked.Browse) Route.Home else Route.Opening(asked)) }
-    var tab by remember { mutableStateOf(Tab.ALL) }
     val listState = rememberLazyListState()
     var about by remember { mutableStateOf(false) }
     var newGroup by remember { mutableStateOf(false) }
@@ -169,22 +173,31 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
             }
         }
         Route.Home -> HomeScreen(
-            model = model, tab = tab, onTab = { tab = it }, listState = listState,
+            model = model, listState = listState,
             onOpen = { push(Route.Detail(it.id)) },
             onNew = { newContact() },
             onSearch = { push(Route.Search) },
             onSettings = { push(Route.Settings) },
             onAbout = { about = true },
-            onGroup = { push(Route.Group(it)) },
-            onNewGroup = { newGroup = true },
+            onFavourites = { push(Route.Favourites) },
+            onGroups = { push(Route.Groups) },
             onImport = { pickFile.launch(importTypes) },
         )
+        Route.Favourites -> FavouritesScreen(model, ::back) { push(Route.Detail(it.id)) }
+        Route.Groups -> GroupsScreen(model, ::back, onGroup = { push(Route.Group(it)) }, onNewGroup = { newGroup = true })
         Route.Search -> SearchScreen(model, stringResource(R.string.search_title), ::back) { replace(Route.Detail(it.id)) }
         is Route.Detail -> DetailScreen(
             model, top.id,
             onBack = ::back,
             onEdit = { card -> scope.launch { push(Route.Edit(card, Draft(), model.newContactAccount())) } },
-            onGone = ::back,
+            onMore = { push(Route.More(top.id)) },
+        )
+        is Route.More -> MoreScreen(
+            model, top.id,
+            onBack = ::back,
+            onEdit = { card -> scope.launch { push(Route.Edit(card, Draft(), model.newContactAccount())) } },
+            // Deleted: off the More page and the person both, back to where they were found.
+            onGone = { back(); back() },
         )
         is Route.Edit -> EditScreen(
             model, top.card, top.seed, top.account,

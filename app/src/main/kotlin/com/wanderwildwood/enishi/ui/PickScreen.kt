@@ -83,10 +83,10 @@ fun PickScreen(
     } else Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
-            TopAppBarMMD(
-                title = { TextMMD(text = stringResource(titleOf(kind, newRow != null))) },
-                navigationIcon = { BarButton(Icons.Close, stringResource(R.string.cd_close), onCancel) },
-                actions = { BarButton(Icons.Search, stringResource(R.string.cd_search), onSearch) },
+            Bar(
+                title = { BarTitle(stringResource(titleOf(kind, newRow != null))) },
+                navigationIcon = { BarButton(Icons.CloseLight, stringResource(R.string.cd_close), onCancel) },
+                actions = { BarButton(Icons.SearchLight, stringResource(R.string.cd_search), onSearch) },
             )
         },
         bottomBar = { notice?.let { NoticeStrip(it) { notice = null } } },
@@ -97,7 +97,7 @@ fun PickScreen(
             Quiet(stringResource(R.string.pick_none), body)
             return@Scaffold
         }
-        Lettered(
+        PeopleList(
             people = people,
             modifier = body,
             above = newRow?.let { label -> { PlainRow(label, bold = true, onPress = onNew) } },

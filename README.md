@@ -8,14 +8,16 @@ device.
 another, not a list of names.
 
 Not a fork. Written from scratch in Kotlin and Jetpack Compose, using Mudita's own
-[MMD](https://github.com/mudita/MMD) design system so it looks like the apps the phone already
-ships with. What it does is modelled on [Fossify Contacts](https://github.com/FossifyOrg/Contacts),
-which sets the bar for a contacts app that is free software.
+[MMD](https://github.com/mudita/MMD) design system, and drawn to sit beside the Kompakt's own
+contacts app: the same bold title, plain list with the surname in bold, dotted rules, and
+Call, Message and More under a person's name. What it does is modelled on
+[Fossify Contacts](https://github.com/FossifyOrg/Contacts), which sets the bar for a contacts
+app that is free software.
 
 | | |
 |---|---|
-| ![Everyone, under the letter they are filed by](screenshots/1-list.png) | ![A person: a press calls, Text writes](screenshots/2-person.png) |
-| ![Editing: each kind of number is a word that steps on](screenshots/3-edit.png) | ![A file of cards: anyone already here is left alone](screenshots/4-cards.png) |
+| ![Everyone, the surname in bold, as the phone's own app lists them](screenshots/1-list.png) | ![A person: Call, Message, and More for everything else](screenshots/2-person.png) |
+| ![Editing: each number on one line, its kind a short menu in front](screenshots/3-edit.png) | ![A file of cards: anyone already here is left alone](screenshots/4-cards.png) |
 
 ## Why it exists
 
@@ -26,11 +28,10 @@ at a time.
 
 ## What it does
 
-- **Everyone, under the letter Android files them by**, in the phone's own language and order.
-  Press a letter to see every letter at once and jump.
-- **Favourites and groups**, a press apart. A group can be texted or emailed all at once.
-- **A press on a number calls it; the word beside it texts it.** A press on an address opens it
-  in a map, on an email address writes to it.
+- **Everyone in one plain list**, in the phone's own language and order, the surname in bold.
+- **Favourites and groups**, two rows above everyone. A group can be texted or emailed all at once.
+- **Call and Message under a person's name**, and More for everything else they have: a press on
+  any number calls it, on an address opens it in a map, on an email address writes to it.
 - **Search** by any part of a name, a run of digits from any number, or part of an email
   address or a company. Accents and capitals do not count.
 - **Edits only what changed.** A photo, a ringtone or a messenger handle written by another app
@@ -54,7 +55,7 @@ app has no internet permission at all.
 
 ## Where this is up to
 
-Version 0.1.0. What it writes is worked out by plain code that is unit tested on its own: which
+Version 0.1.1. What it writes is worked out by plain code that is unit tested on its own: which
 rows a save adds, changes and deletes; how vCards from 2.1 to 4.0 read, including old phones'
 quoted-printable in other character sets; dates without a year; search; who in a file is
 already here.

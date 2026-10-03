@@ -75,9 +75,9 @@ fun GroupScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
-            TopAppBarMMD(
-                title = { TextMMD(text = group.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                navigationIcon = { BarButton(Icons.Back, stringResource(R.string.cd_back), onBack) },
+            Bar(
+                title = { BarTitle(group.title) },
+                navigationIcon = { BarButton(Icons.BackLight, stringResource(R.string.cd_back), onBack) },
             )
         },
         bottomBar = { notice?.let { NoticeStrip(it) { notice = null } } },
@@ -195,9 +195,9 @@ fun AddPeopleScreen(model: BookModel, groupId: Long, onDone: (String?) -> Unit) 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
-            TopAppBarMMD(
-                title = { TextMMD(text = group?.title.orEmpty(), maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                navigationIcon = { BarButton(Icons.Close, stringResource(R.string.cd_close)) { onDone(null) } },
+            Bar(
+                title = { BarTitle(group?.title.orEmpty()) },
+                navigationIcon = { BarButton(Icons.CloseLight, stringResource(R.string.cd_close)) { onDone(null) } },
             )
         },
         bottomBar = {

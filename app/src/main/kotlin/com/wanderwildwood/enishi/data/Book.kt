@@ -62,7 +62,19 @@ class Book(context: Context) {
                 )
             }
         }
-        return out
+        // Surnames, from each person's name row, for the bold half of a row.
+        val family = mutableMapOf<Long, String>()
+        resolver.query(
+            Data.CONTENT_URI,
+            arrayOf(Data.CONTACT_ID, StructuredName.FAMILY_NAME),
+            "${Data.MIMETYPE}=?", arrayOf(StructuredName.CONTENT_ITEM_TYPE), null,
+        )?.use { c ->
+            while (c.moveToNext()) {
+                val f = c.getString(1)?.trim().orEmpty()
+                if (f.isNotEmpty()) family.putIfAbsent(c.getLong(0), f)
+            }
+        }
+        return out.map { it.copy(family = family[it.id].orEmpty()) }
     }
 
     /** Every number, address, company and nickname, by person, for search to look in. */

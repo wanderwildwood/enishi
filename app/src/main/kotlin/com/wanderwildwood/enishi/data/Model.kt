@@ -11,6 +11,8 @@ data class Person(
     /** The letter the phone's own contacts store files them under, in the reader's language. */
     val section: String,
     val starred: Boolean,
+    /** The surname, which the list sets in bold as the phone's own contacts app does. */
+    val family: String = "",
 )
 
 /** What search looks in beyond the name: every number, address and company a person has. */

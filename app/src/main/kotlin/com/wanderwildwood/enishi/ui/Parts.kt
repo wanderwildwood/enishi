@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
@@ -22,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -40,14 +42,16 @@ import kotlinx.coroutines.delay
 @Composable
 internal fun BarButton(icon: ImageVector, description: String, onClick: () -> Unit) {
     Box(
-        modifier = Modifier.size(48.dp).clickable(onClick = onClick),
+        modifier = Modifier.size(56.dp).clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
             imageVector = icon,
             contentDescription = description,
             tint = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.size(22.dp),
+            // The phone's own contacts app draws its bar icons 35px across. A Material symbol
+            // fills two thirds of its box, so the box is half as big again: 40dp draws 35px.
+            modifier = Modifier.size(40.dp),
         )
     }
 }
@@ -123,7 +127,7 @@ internal fun PlainRow(
         Column(Modifier.weight(1f)) {
             TextMMD(
                 text = title,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyLarge,
                 fontWeight = if (bold) FontWeight.Bold else null,
                 maxLines = titleLines,
                 overflow = TextOverflow.Ellipsis,
@@ -134,7 +138,7 @@ internal fun PlainRow(
         }
         trailing?.invoke()
     }
-    HorizontalDividerMMD(thickness = 0.5.dp)
+    DottedRule()
 }
 
 @Composable
@@ -210,4 +214,121 @@ internal fun BareField(
             imeAction = if (singleLine) ImeAction.Next else ImeAction.Default,
         ),
     )
+}
+
+// ---------------------------------------------------------------- the phone's own look
+//
+// Contacts is drawn to sit beside the Kompakt's own contacts app: the same bold title, the
+// same plain list with the surname in bold, the same dotted rule between rows. Measured off
+// that app on the phone, not guessed: a rule of 3px dashes and 2px gaps, inset to the text,
+// rows 85px apart, names at 20sp.
+
+/** The dotted rule between rows, inset to where the text starts and ends. */
+@Composable
+internal fun DottedRule(modifier: Modifier = Modifier) {
+    val ink = MaterialTheme.colorScheme.onSurface
+    androidx.compose.foundation.Canvas(
+        modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .height(1.dp),
+    ) {
+        drawLine(
+            color = ink,
+            start = androidx.compose.ui.geometry.Offset(0f, size.height / 2),
+            end = androidx.compose.ui.geometry.Offset(size.width, size.height / 2),
+            strokeWidth = 1.dp.toPx().coerceAtMost(1.5f),
+            pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(
+                floatArrayOf(2.3.dp.toPx(), 1.5.dp.toPx()),
+            ),
+        )
+    }
+}
+
+/** A top bar's title, in bold as the phone's own apps set it. */
+@Composable
+internal fun BarTitle(text: String) {
+    // Black, not Bold: the phone's own titles measure a 5px stem at this size, Bold a 4px one.
+    TextMMD(text = text, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
+}
+
+/** A name with the surname in bold: "Ada **Whitlock**", or "**Whitlock**, Ada" turned round. */
+internal fun boldSurname(name: String, family: String): androidx.compose.ui.text.AnnotatedString =
+    androidx.compose.ui.text.buildAnnotatedString {
+        val at = if (family.isNotBlank()) name.lastIndexOf(family) else -1
+        if (at < 0) {
+            append(name)
+            return@buildAnnotatedString
+        }
+        append(name.substring(0, at))
+        withStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Bold)) { append(family) }
+        append(name.substring(at + family.length))
+    }
+
+/** One row of the list, as the phone's own contacts app draws it. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+internal fun NameRow(
+    name: androidx.compose.ui.text.AnnotatedString,
+    note: String? = null,
+    leading: (@Composable () -> Unit)? = null,
+    onLongPress: (() -> Unit)? = null,
+    onPress: () -> Unit,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 65.dp)
+            .combinedClickable(onClick = onPress, onLongClick = onLongPress)
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+    ) {
+        leading?.let {
+            it()
+            androidx.compose.foundation.layout.Spacer(Modifier.size(14.dp))
+        }
+        Column(Modifier.weight(1f)) {
+            TextMMD(text = name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (!note.isNullOrEmpty()) {
+                TextMMD(text = note, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        }
+    }
+    DottedRule()
+}
+
+/** A field as the phone's own app lists one: a bold label, the value under it. */
+@Composable
+internal fun LabelValue(label: String, value: String, lines: Int = 6, onPress: (() -> Unit)? = null) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .let { if (onPress != null) it.clickable(onClick = onPress) else it }
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+    ) {
+        TextMMD(text = label, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+        TextMMD(text = value, style = MaterialTheme.typography.bodyLarge, maxLines = lines, overflow = TextOverflow.Ellipsis)
+    }
+    DottedRule()
+}
+
+/**
+ * The top bar, with the heavy rule under it that the phone's own contacts app draws: 4px there,
+ * where the library's bar draws one.
+ */
+@Composable
+internal fun Bar(
+    title: @Composable () -> Unit,
+    navigationIcon: @Composable () -> Unit = {},
+    actions: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit = {},
+) {
+    Column {
+        com.mudita.mmd.components.top_app_bar.TopAppBarMMD(
+            title = title,
+            navigationIcon = navigationIcon,
+            actions = actions,
+            showDivider = false,
+        )
+        HorizontalDividerMMD(thickness = 3.dp, color = MaterialTheme.colorScheme.onSurface)
+    }
 }

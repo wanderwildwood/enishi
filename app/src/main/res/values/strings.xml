@@ -27,6 +27,10 @@
         <item quantity="other">%d people</item>
     </plurals>
     <string name="group_new">New group</string>
+    <plurals name="groups_count">
+        <item quantity="one">%d group</item>
+        <item quantity="other">%d groups</item>
+    </plurals>
     <!-- The phone itself, as a place contacts are kept, beside any accounts -->
     <string name="account_phone">Phone</string>
 
@@ -45,12 +49,19 @@
 
     <string name="search_title">Search</string>
     <string name="search_hint">A name, a number or an address</string>
+    <string name="search_hint_short">Search</string>
+    <string name="cd_clear">Clear</string>
     <string name="search_none">Nobody matches.</string>
 
     <!-- ============================================================ -->
     <!-- A person -->
 
     <string name="edit">Edit</string>
+    <string name="details_title">Details</string>
+    <string name="call">Call</string>
+    <string name="message">Message</string>
+    <string name="more">More</string>
+    <string name="kept_in_label">Kept in</string>
     <!-- The word beside a number; it opens Messaging to write to it -->
     <string name="text">Text</string>
     <!-- Under an email address: "Email · Work" -->
@@ -98,6 +109,10 @@
     <string name="edit_add_date">Add a date</string>
     <string name="edit_add_website">Add a website</string>
     <string name="edit_save_to">Save to</string>
+    <string name="hint_phone">Phone number</string>
+    <string name="hint_email">Email address</string>
+    <string name="hint_address">Address</string>
+    <string name="hint_website">Website</string>
     <string name="date_day">Day</string>
     <string name="date_month">Month</string>
     <string name="date_year">Year</string>

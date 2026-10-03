@@ -4,7 +4,9 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,11 +14,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -24,15 +33,22 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.mudita.mmd.components.buttons.ButtonMMD
 import com.mudita.mmd.components.checkbox.CheckboxMMD
-import com.mudita.mmd.components.divider.HorizontalDividerMMD
 import com.mudita.mmd.components.lazy.LazyColumnMMD
+import com.mudita.mmd.components.menus.DropdownMenuItemMMD
+import com.mudita.mmd.components.menus.DropdownMenuMMD
 import com.mudita.mmd.components.switcher.SwitchMMD
 import com.mudita.mmd.components.text.TextMMD
 import com.mudita.mmd.components.top_app_bar.TopAppBarMMD
@@ -50,8 +66,11 @@ import kotlinx.coroutines.launch
 private data class EventBox(val dataId: Long?, val type: Int, val label: String?, val year: String, val month: String, val day: String)
 
 /**
- * A new person, or a change to one. Save sits in the top bar, where it can still be seen with
- * the keyboard up. Leaving with something changed asks first, in the bar's own words.
+ * A new person, or a change to one, laid out as the phone's own contacts app lays its editor
+ * out: numbers first, each on one line with its kind as a small menu and an empty line always
+ * waiting for the next; then a bold label over each field, dotted rules between. Save sits in
+ * the top bar where the keyboard cannot cover it, and stays grey until there is something to
+ * save. Leaving with something changed asks first, in the bar's own words.
  */
 @Composable
 fun EditScreen(
@@ -80,18 +99,18 @@ fun EditScreen(
     var account by remember { mutableStateOf(initialAccount) }
     var moreNames by remember { mutableStateOf(listOf(start.prefix, start.middle, start.suffix, start.nickname).any { it.isNotBlank() }) }
     var problem by remember { mutableStateOf<String?>(null) }
-    // The row the reader just added, which takes the cursor.
-    var added by remember { mutableStateOf<String?>(null) }
     var saving by remember { mutableStateOf(false) }
+    // The date the reader just added, which takes the cursor.
+    var addedDate by remember { mutableStateOf<Int?>(null) }
     // A refused Save says why at the top of the form, so the form goes there to say it.
-    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
-    androidx.compose.runtime.LaunchedEffect(problem) { if (problem != null) listState.scrollToItem(0) }
+    val listState = rememberLazyListState()
+    LaunchedEffect(problem) { if (problem != null) listState.scrollToItem(0) }
 
     // An existing contact grows in the account it is mostly kept in; groups follow that account.
     val target: Account = card?.let { c -> c.parts.firstOrNull { it.account == model.saveTo }?.account ?: c.parts.firstOrNull()?.account } ?: account
     val groups = model.groups.filter { it.account == target }
 
-    androidx.compose.runtime.LaunchedEffect(draft, events) { problem = null }
+    LaunchedEffect(draft, events) { problem = null }
 
     val dirty = card == null && !draft.isEmpty || draft != start || events != startBoxes
     val (leaving, pressLeave) = rememberArmed(dirty) { onCancel() }
@@ -129,114 +148,110 @@ fun EditScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
-            TopAppBarMMD(
+            Bar(
                 title = {
-                    TextMMD(
-                        text = stringResource(
-                            when {
-                                leaving -> R.string.edit_leave_armed
-                                card == null -> R.string.edit_new_title
-                                else -> R.string.edit_title
-                            },
-                        ),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        style = if (leaving) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.titleLarge,
-                    )
+                    if (leaving) {
+                        TextMMD(text = stringResource(R.string.edit_leave_armed), style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    } else {
+                        BarTitle(stringResource(if (card == null) R.string.edit_new_title else R.string.edit_title))
+                    }
                 },
-                navigationIcon = { BarButton(Icons.Close, stringResource(R.string.cd_close), close) },
-                actions = { BarWord(stringResource(R.string.save), ready = !saving, onClick = ::save) },
+                navigationIcon = { BarButton(Icons.CloseLight, stringResource(R.string.cd_close), close) },
+                actions = { SaveButton(ready = dirty && !saving, onClick = ::save) },
             )
         },
     ) { padding ->
-        LazyColumnMMD(Modifier.fillMaxSize().padding(padding).imePadding().background(MaterialTheme.colorScheme.surface), state = listState) {
+        LazyColumnMMD(
+            Modifier.fillMaxSize().padding(padding).imePadding().background(MaterialTheme.colorScheme.surface),
+            state = listState,
+        ) {
             problem?.let {
                 item {
                     TextMMD(
                         text = it,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                     )
-                    HorizontalDividerMMD()
+                    DottedRule()
                 }
             }
+
+            kindLines(
+                key = "phone", fields = draft.phones, types = Labels.PHONE_TYPES, keyboard = KeyboardType.Phone,
+                label = { t, l -> Labels.phone(context, t, l) }, hint = context.getString(R.string.hint_phone),
+            ) { draft = draft.copy(phones = it) }
 
             // A name that came in whole, with no parts — from another app, or a vCard with only
             // a full name — is shown as it is; Android splits it into parts on saving.
             if (draft.wholeName.isNotBlank() && listOf(draft.given, draft.family, draft.middle, draft.prefix, draft.suffix).all { it.isBlank() }) {
-                item { LabelledField(stringResource(R.string.field_name), draft.wholeName, { draft = draft.copy(wholeName = it) }) }
+                item { LabelledLine(stringResource(R.string.field_name), draft.wholeName, { draft = draft.copy(wholeName = it) }) }
             } else {
-                if (moreNames) item { LabelledField(stringResource(R.string.field_prefix), draft.prefix, { draft = draft.copy(prefix = it) }) }
-                item { LabelledField(stringResource(R.string.field_given), draft.given, { draft = draft.copy(given = it) }) }
-                if (moreNames) item { LabelledField(stringResource(R.string.field_middle), draft.middle, { draft = draft.copy(middle = it) }) }
-                item { LabelledField(stringResource(R.string.field_family), draft.family, { draft = draft.copy(family = it) }) }
-                if (moreNames) item { LabelledField(stringResource(R.string.field_suffix), draft.suffix, { draft = draft.copy(suffix = it) }) }
+                item { LabelledLine(stringResource(R.string.field_given), draft.given, { draft = draft.copy(given = it) }) }
+                item { LabelledLine(stringResource(R.string.field_family), draft.family, { draft = draft.copy(family = it) }) }
+                if (moreNames) {
+                    item { LabelledLine(stringResource(R.string.field_prefix), draft.prefix, { draft = draft.copy(prefix = it) }) }
+                    item { LabelledLine(stringResource(R.string.field_middle), draft.middle, { draft = draft.copy(middle = it) }) }
+                    item { LabelledLine(stringResource(R.string.field_suffix), draft.suffix, { draft = draft.copy(suffix = it) }) }
+                }
             }
             if (moreNames) {
-                item { LabelledField(stringResource(R.string.field_nickname), draft.nickname, { draft = draft.copy(nickname = it) }) }
+                item { LabelledLine(stringResource(R.string.field_nickname), draft.nickname, { draft = draft.copy(nickname = it) }) }
             } else {
                 item { AddRow(stringResource(R.string.edit_more_names)) { moreNames = true } }
             }
 
-            fieldList(
-                title = R.string.field_phone, add = R.string.edit_add_phone,
-                fields = draft.phones, types = Labels.PHONE_TYPES, keyboard = KeyboardType.Phone,
-                label = { t, l -> Labels.phone(context, t, l) },
-                newType = Labels.PHONE_TYPES.first(),
-                added = added, onAdded = { added = it },
-            ) { draft = draft.copy(phones = it) }
-            fieldList(
-                title = R.string.field_email, add = R.string.edit_add_email,
-                fields = draft.emails, types = Labels.EMAIL_TYPES, keyboard = KeyboardType.Email,
-                label = { t, l -> Labels.email(context, t, l) },
-                newType = Labels.EMAIL_TYPES.first(),
-                added = added, onAdded = { added = it },
+            kindLines(
+                key = "email", fields = draft.emails, types = Labels.EMAIL_TYPES, keyboard = KeyboardType.Email,
+                label = { t, l -> Labels.email(context, t, l) }, hint = context.getString(R.string.hint_email),
             ) { draft = draft.copy(emails = it) }
-            fieldList(
-                title = R.string.field_address, add = R.string.edit_add_address,
-                fields = draft.addresses, types = Labels.ADDRESS_TYPES, keyboard = KeyboardType.Text, multiLine = true,
-                label = { t, l -> Labels.address(context, t, l) },
-                newType = Labels.ADDRESS_TYPES.first(),
-                added = added, onAdded = { added = it },
+            kindLines(
+                key = "address", fields = draft.addresses, types = Labels.ADDRESS_TYPES, keyboard = KeyboardType.Text,
+                label = { t, l -> Labels.address(context, t, l) }, hint = context.getString(R.string.hint_address), multiLine = true,
             ) { draft = draft.copy(addresses = it) }
 
             events.forEachIndexed { i, e ->
                 item(key = "event$i") {
-                    EventEditor(
+                    EventLine(
                         box = e,
                         typeLabel = Labels.event(context, e.type, e.label),
-                        onType = { events = events.toMutableList().also { l -> l[i] = e.copy(type = Labels.next(Labels.EVENT_TYPES, e.type), label = null) } },
+                        types = Labels.EVENT_TYPES.map { it to Labels.event(context, it, null) },
+                        onType = { t -> events = events.toMutableList().also { l -> l[i] = e.copy(type = t, label = null) } },
                         onChange = { nb -> events = events.toMutableList().also { l -> l[i] = nb } },
-                        onRemove = { events = events.toMutableList().also { l -> l.removeAt(i) } },
-                        focusNow = added == "event$i",
+                        focusNow = addedDate == i,
                     )
                 }
             }
             item {
-                AddRow(stringResource(if (events.none { it.type == android.provider.ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY }) R.string.edit_add_birthday else R.string.edit_add_date)) {
-                    val birthday = android.provider.ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY
-                    val type = if (events.none { it.type == birthday }) birthday else android.provider.ContactsContract.CommonDataKinds.Event.TYPE_ANNIVERSARY
-                    added = "event${events.size}"
+                val birthday = android.provider.ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY
+                val noBirthday = events.none { it.type == birthday }
+                AddRow(stringResource(if (noBirthday) R.string.edit_add_birthday else R.string.edit_add_date)) {
+                    addedDate = events.size
+                    val type = if (noBirthday) birthday else android.provider.ContactsContract.CommonDataKinds.Event.TYPE_ANNIVERSARY
                     events = events + EventBox(null, type, null, "", "", "")
                 }
             }
 
-            item { LabelledField(stringResource(R.string.field_company), draft.company, { draft = draft.copy(company = it) }) }
-            item { LabelledField(stringResource(R.string.field_job), draft.jobTitle, { draft = draft.copy(jobTitle = it) }) }
+            item { LabelledLine(stringResource(R.string.field_company), draft.company, { draft = draft.copy(company = it) }) }
+            item { LabelledLine(stringResource(R.string.field_job), draft.jobTitle, { draft = draft.copy(jobTitle = it) }) }
 
-            fieldList(
-                title = R.string.field_website, add = R.string.edit_add_website,
-                fields = draft.websites, types = emptyList(), keyboard = KeyboardType.Uri,
-                label = { _, _ -> "" },
+            kindLines(
+                key = "web", fields = draft.websites, types = emptyList(), keyboard = KeyboardType.Uri,
+                label = { _, _ -> context.getString(R.string.kind_website) }, hint = context.getString(R.string.hint_website),
                 newType = android.provider.ContactsContract.CommonDataKinds.Website.TYPE_HOMEPAGE,
-                added = added, onAdded = { added = it },
             ) { draft = draft.copy(websites = it) }
 
-            item { LabelledField(stringResource(R.string.field_note), draft.note, { draft = draft.copy(note = it) }, singleLine = false, words = false) }
+            item { LabelledLine(stringResource(R.string.field_note), draft.note, { draft = draft.copy(note = it) }, singleLine = false, words = false) }
 
             if (groups.isNotEmpty()) {
-                item { Heading(stringResource(R.string.kind_groups)) }
+                item {
+                    TextMMD(
+                        text = stringResource(R.string.kind_groups),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp),
+                    )
+                }
                 groups.forEach { g ->
                     item(key = "g${g.id}") {
                         val inIt = g.id in draft.groups
@@ -251,38 +266,34 @@ fun EditScreen(
                         ) {
                             CheckboxMMD(checked = inIt, onCheckedChange = null)
                             Spacer(Modifier.width(14.dp))
-                            TextMMD(text = g.title, style = MaterialTheme.typography.bodyMedium)
+                            TextMMD(text = g.title, style = MaterialTheme.typography.bodyLarge)
                         }
                     }
                 }
+                item { DottedRule() }
             }
 
             item {
-                HorizontalDividerMMD(Modifier.padding(top = 10.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { draft = draft.copy(starred = !draft.starred) }
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        .padding(horizontal = 16.dp, vertical = 16.dp),
                 ) {
-                    TextMMD(text = stringResource(R.string.field_favourite), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                    TextMMD(text = stringResource(R.string.field_favourite), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
                     SwitchMMD(checked = draft.starred, onCheckedChange = null)
                 }
-                HorizontalDividerMMD(thickness = 0.5.dp)
+                DottedRule()
             }
 
             // Only a new contact chooses; an existing one stays where it is.
             if (card == null && model.accounts.size > 1) {
                 item {
-                    PlainRow(
-                        title = stringResource(R.string.edit_save_to),
-                        note = Labels.account(context, account),
-                        onPress = {
-                            val all = model.accounts
-                            account = all[(all.indexOf(account) + 1) % all.size]
-                        },
-                    )
+                    LabelValue(stringResource(R.string.edit_save_to), Labels.account(context, account)) {
+                        val all = model.accounts
+                        account = all[(all.indexOf(account) + 1) % all.size]
+                    }
                 }
             }
             item { Spacer(Modifier.height(24.dp)) }
@@ -290,94 +301,194 @@ fun EditScreen(
     }
 }
 
-/** Numbers, addresses: each with its kind as a word that steps on when pressed. */
-private fun LazyListScope.fieldList(
-    title: Int,
-    add: Int,
+/** Save, in the bar: filled when there is something to save, grey when there is not. */
+@Composable
+private fun SaveButton(ready: Boolean, onClick: () -> Unit) {
+    ButtonMMD(
+        onClick = onClick,
+        enabled = ready,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.onSurface,
+            contentColor = MaterialTheme.colorScheme.surface,
+            disabledContainerColor = Color(0xFFE8E8E8),
+            disabledContentColor = Color(0xFF9A9A9A),
+        ),
+        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 6.dp),
+        modifier = Modifier.padding(end = 10.dp).height(44.dp),
+    ) {
+        TextMMD(text = stringResource(R.string.save), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+    }
+}
+
+/**
+ * Numbers, addresses: one line each, its kind as a small menu in front, and an empty line at
+ * the end always ready for the next, so there is no "add" to press. Emptying a line takes it
+ * away on Save.
+ */
+private fun LazyListScope.kindLines(
+    key: String,
     fields: List<Field>,
     types: List<Int>,
     keyboard: KeyboardType,
     label: (Int, String?) -> String,
-    newType: Int,
+    hint: String,
     multiLine: Boolean = false,
-    added: String?,
-    onAdded: (String) -> Unit,
+    newType: Int = types.firstOrNull() ?: 0,
     onChange: (List<Field>) -> Unit,
 ) {
-    fields.forEachIndexed { i, f ->
-        item(key = "$title-$i") {
-            Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 6.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    TextMMD(text = stringResource(title), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                    if (types.isNotEmpty()) {
-                        TextMMD(
-                            text = "  ·  " + label(f.type, f.label),
-                            style = MaterialTheme.typography.labelSmall,
-                            modifier = Modifier
-                                .clickable { onChange(fields.toMutableList().also { it[i] = f.copy(type = Labels.next(types, f.type), label = null) }) }
-                                .padding(vertical = 8.dp, horizontal = 2.dp),
-                        )
-                    }
-                    Spacer(Modifier.weight(1f))
-                    BarButton(Icons.Close, stringResource(R.string.cd_remove)) {
-                        onChange(fields.toMutableList().also { it.removeAt(i) })
-                    }
-                }
-                BareField(
+    // The empty line waiting at the end is not one of the fields until something is typed in it.
+    val shown = fields + Field("", newType)
+    shown.forEachIndexed { i, f ->
+        val isNew = i == fields.size
+        item(key = "$key-$i") {
+            Row(
+                verticalAlignment = if (multiLine) Alignment.Top else Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 20.dp),
+            ) {
+                KindMenu(
+                    current = label(f.type, f.label),
+                    choices = types.map { it to label(it, null) },
+                    onPick = { t ->
+                        val changed = f.copy(type = t, label = null)
+                        onChange(if (isNew) fields + changed else fields.toMutableList().also { it[i] = changed })
+                    },
+                )
+                Spacer(Modifier.width(12.dp))
+                PlainField(
                     value = f.value,
-                    onChange = { v -> onChange(fields.toMutableList().also { it[i] = f.copy(value = v) }) },
-                    modifier = Modifier.fillMaxWidth().padding(end = 12.dp),
+                    onChange = { v ->
+                        onChange(if (isNew) fields + f.copy(value = v) else fields.toMutableList().also { it[i] = f.copy(value = v) })
+                    },
+                    hint = if (isNew) hint else null,
                     keyboard = keyboard,
-                    words = multiLine,
                     singleLine = !multiLine,
-                    focusNow = added == "$title-$i",
+                    words = multiLine,
+                    modifier = Modifier.weight(1f),
                 )
             }
-        }
-    }
-    item(key = "$title-add") {
-        AddRow(stringResource(add)) {
-            onAdded("$title-${fields.size}")
-            onChange(fields + Field("", newType))
+            DottedRule()
         }
     }
 }
 
+/** "Mobile ⌄": the kind of a number, a press away from a short menu of the others. */
 @Composable
-private fun EventEditor(box: EventBox, typeLabel: String, onType: () -> Unit, onChange: (EventBox) -> Unit, onRemove: () -> Unit, focusNow: Boolean) {
+private fun KindMenu(current: String, choices: List<Pair<Int, String>>, onPick: (Int) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.clickable(enabled = choices.isNotEmpty()) { open = true }.padding(vertical = 2.dp),
+        ) {
+            TextMMD(text = current, style = MaterialTheme.typography.bodyLarge)
+            if (choices.isNotEmpty()) {
+                Icon(Icons.Down, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
+            }
+        }
+        DropdownMenuMMD(expanded = open, onDismissRequest = { open = false }) {
+            choices.forEach { (type, word) ->
+                DropdownMenuItemMMD(text = { TextMMD(text = word, style = MaterialTheme.typography.bodyLarge) }, onClick = {
+                    open = false
+                    onPick(type)
+                })
+            }
+        }
+    }
+}
+
+/** A bold label over a box, as the phone's own editor shows a name. */
+@Composable
+private fun LabelledLine(
+    label: String,
+    value: String,
+    onChange: (String) -> Unit,
+    singleLine: Boolean = true,
+    words: Boolean = true,
+) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp)) {
+        TextMMD(text = label, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+        PlainField(value, onChange, keyboard = KeyboardType.Text, singleLine = singleLine, words = words, modifier = Modifier.fillMaxWidth())
+    }
+    DottedRule()
+}
+
+/** Text typed straight onto the page, no box round it: the dotted rule below is the line. */
+@Composable
+private fun PlainField(
+    value: String,
+    onChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    hint: String? = null,
+    keyboard: KeyboardType,
+    singleLine: Boolean = true,
+    words: Boolean = true,
+    focusNow: Boolean = false,
+) {
+    val focus = remember { FocusRequester() }
+    LaunchedEffect(focusNow) { if (focusNow) runCatching { focus.requestFocus() } }
+    val style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface)
+    BasicTextField(
+        value = value,
+        onValueChange = onChange,
+        singleLine = singleLine,
+        minLines = 1,
+        textStyle = style,
+        cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
+        keyboardOptions = KeyboardOptions(
+            keyboardType = keyboard,
+            capitalization = if (words && keyboard == KeyboardType.Text) KeyboardCapitalization.Words else KeyboardCapitalization.None,
+            autoCorrectEnabled = false,
+        ),
+        modifier = modifier.focusRequester(focus).padding(vertical = 4.dp),
+        decorationBox = { inner ->
+            Box {
+                if (value.isEmpty() && hint != null) {
+                    TextMMD(text = hint, style = MaterialTheme.typography.bodyLarge, color = Color(0xFF8A8A8A))
+                }
+                inner()
+            }
+        },
+    )
+}
+
+@Composable
+private fun EventLine(
+    box: EventBox,
+    typeLabel: String,
+    types: List<Pair<Int, String>>,
+    onType: (Int) -> Unit,
+    onChange: (EventBox) -> Unit,
+    focusNow: Boolean,
+) {
     val context = LocalContext.current
     // Day, month and year in the order the phone writes a date.
     val order = remember { android.text.format.DateFormat.getDateFormatOrder(context).toList() }
-    Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 6.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            TextMMD(
-                text = typeLabel,
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.clickable(onClick = onType).padding(vertical = 8.dp),
-            )
-            Spacer(Modifier.weight(1f))
-            BarButton(Icons.Close, stringResource(R.string.cd_remove), onRemove)
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(end = 12.dp)) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 20.dp),
+    ) {
+        KindMenu(current = typeLabel, choices = types, onPick = onType)
+        Spacer(Modifier.width(12.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.weight(1f)) {
             order.forEachIndexed { n, part ->
                 val first = focusNow && n == 0
                 when (part) {
-                    'd' -> BareField(box.day, { onChange(box.copy(day = it.filter(Char::isDigit).take(2))) }, Modifier.weight(1f), KeyboardType.Number, hint = stringResource(R.string.date_day), focusNow = first)
-                    'M' -> BareField(box.month, { onChange(box.copy(month = it.filter(Char::isDigit).take(2))) }, Modifier.weight(1f), KeyboardType.Number, hint = stringResource(R.string.date_month), focusNow = first)
-                    'y' -> BareField(box.year, { onChange(box.copy(year = it.filter(Char::isDigit).take(4))) }, Modifier.weight(1.4f), KeyboardType.Number, hint = stringResource(R.string.date_year), focusNow = first)
+                    'd' -> PlainField(box.day, { onChange(box.copy(day = it.filter(Char::isDigit).take(2))) }, Modifier.weight(1f), stringResource(R.string.date_day), KeyboardType.Number, focusNow = first)
+                    'M' -> PlainField(box.month, { onChange(box.copy(month = it.filter(Char::isDigit).take(2))) }, Modifier.weight(1f), stringResource(R.string.date_month), KeyboardType.Number, focusNow = first)
+                    'y' -> PlainField(box.year, { onChange(box.copy(year = it.filter(Char::isDigit).take(4))) }, Modifier.weight(1.3f), stringResource(R.string.date_year), KeyboardType.Number, focusNow = first)
                 }
             }
         }
     }
+    DottedRule()
 }
 
 @Composable
 private fun AddRow(text: String, onPress: () -> Unit) {
     TextMMD(
         text = text,
-        style = MaterialTheme.typography.bodySmall,
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onPress).padding(horizontal = 16.dp, vertical = 12.dp),
+        style = MaterialTheme.typography.bodyLarge,
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onPress).padding(horizontal = 16.dp, vertical = 16.dp),
     )
-    HorizontalDividerMMD(thickness = 0.5.dp)
+    DottedRule()
 }

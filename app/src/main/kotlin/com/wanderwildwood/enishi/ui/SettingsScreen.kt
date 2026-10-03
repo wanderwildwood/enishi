@@ -38,9 +38,9 @@ fun SettingsScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
-            TopAppBarMMD(
-                title = { TextMMD(text = stringResource(R.string.settings_title)) },
-                navigationIcon = { BarButton(Icons.Back, stringResource(R.string.cd_back), onBack) },
+            Bar(
+                title = { BarTitle(stringResource(R.string.settings_title)) },
+                navigationIcon = { BarButton(Icons.BackLight, stringResource(R.string.cd_back), onBack) },
             )
         },
         bottomBar = { notice?.let { NoticeStrip(it, onNoticeSeen) } },
