@@ -15,7 +15,7 @@ which sets the bar for a contacts app that is free software.
 | | |
 |---|---|
 | ![Everyone, under the letter they are filed by](screenshots/1-list.png) | ![A person: a press calls, Text writes](screenshots/2-person.png) |
-| ![Editing, with the keyboard up](screenshots/3-edit.png) | ![A file of contact cards, read in](screenshots/4-cards.png) |
+| ![Editing: each kind of number is a word that steps on](screenshots/3-edit.png) | ![A file of cards: anyone already here is left alone](screenshots/4-cards.png) |
 
 ## Why it exists
 

@@ -81,10 +81,15 @@ fun EditScreen(
     var moreNames by remember { mutableStateOf(listOf(start.prefix, start.middle, start.suffix, start.nickname).any { it.isNotBlank() }) }
     var problem by remember { mutableStateOf<String?>(null) }
     var saving by remember { mutableStateOf(false) }
+    // A refused Save says why at the top of the form, so the form goes there to say it.
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    androidx.compose.runtime.LaunchedEffect(problem) { if (problem != null) listState.scrollToItem(0) }
 
     // An existing contact grows in the account it is mostly kept in; groups follow that account.
     val target: Account = card?.let { c -> c.parts.firstOrNull { it.account == model.saveTo }?.account ?: c.parts.firstOrNull()?.account } ?: account
     val groups = model.groups.filter { it.account == target }
+
+    androidx.compose.runtime.LaunchedEffect(draft, events) { problem = null }
 
     val dirty = card == null && !draft.isEmpty || draft != start || events != startBoxes
     val (leaving, pressLeave) = rememberArmed(dirty) { onCancel() }
@@ -142,7 +147,7 @@ fun EditScreen(
             )
         },
     ) { padding ->
-        LazyColumnMMD(Modifier.fillMaxSize().padding(padding).imePadding().background(MaterialTheme.colorScheme.surface)) {
+        LazyColumnMMD(Modifier.fillMaxSize().padding(padding).imePadding().background(MaterialTheme.colorScheme.surface), state = listState) {
             problem?.let {
                 item {
                     TextMMD(

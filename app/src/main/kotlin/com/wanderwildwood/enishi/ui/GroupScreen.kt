@@ -117,8 +117,10 @@ fun GroupScreen(
                 )
             }
             item {
-                Spacer(Modifier.height(10.dp))
-                HorizontalDividerMMD()
+                if (people.isNotEmpty()) {
+                    Spacer(Modifier.height(10.dp))
+                    HorizontalDividerMMD()
+                }
                 PlainRow(stringResource(R.string.group_add_people), onPress = onAddPeople)
             }
             item { PlainRow(stringResource(R.string.group_rename), onPress = { renaming = true }) }
