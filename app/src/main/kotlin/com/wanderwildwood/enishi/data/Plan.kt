@@ -33,19 +33,19 @@ fun plan(before: Draft, after: Draft): List<Op> {
     val ops = mutableListOf<Op>()
 
     one(
-        ops, before.nameDataId, StructuredName.CONTENT_ITEM_TYPE,
+        ops, before.nameDataId, before.nameCopies, StructuredName.CONTENT_ITEM_TYPE,
         old = nameValues(before), new = nameValues(after),
     )
     one(
-        ops, before.nicknameDataId, Nickname.CONTENT_ITEM_TYPE,
+        ops, before.nicknameDataId, before.nicknameCopies, Nickname.CONTENT_ITEM_TYPE,
         old = single(Nickname.NAME, before.nickname), new = single(Nickname.NAME, after.nickname),
     )
     one(
-        ops, before.organisationDataId, Organization.CONTENT_ITEM_TYPE,
+        ops, before.organisationDataId, before.organisationCopies, Organization.CONTENT_ITEM_TYPE,
         old = organisationValues(before), new = organisationValues(after),
     )
     one(
-        ops, before.noteDataId, Note.CONTENT_ITEM_TYPE,
+        ops, before.noteDataId, before.noteCopies, Note.CONTENT_ITEM_TYPE,
         old = single(Note.NOTE, before.note), new = single(Note.NOTE, after.note),
     )
 
@@ -55,8 +55,9 @@ fun plan(before: Draft, after: Draft): List<Op> {
     many(ops, Event.CONTENT_ITEM_TYPE, Event.START_DATE, before.events, after.events)
     many(ops, Website.CONTENT_ITEM_TYPE, Website.URL, before.websites, after.websites)
 
-    for ((group, row) in before.groups) {
-        if (group !in after.groups && row != null) ops += Op.Delete(row)
+    // Out of a group means out of it in every copy, or the person is still in it.
+    for ((group, rows) in before.groups) {
+        if (group !in after.groups) rows.forEach { ops += Op.Delete(it) }
     }
     for (group in after.groups.keys) {
         if (group !in before.groups) {
@@ -69,12 +70,13 @@ fun plan(before: Draft, after: Draft): List<Op> {
 /** Everything a brand-new contact needs written, which is a plan from nothing. */
 fun planNew(draft: Draft): List<Op> = plan(Draft(), draft.copy(
     nameDataId = null, nicknameDataId = null, organisationDataId = null, noteDataId = null,
-    phones = draft.phones.map { it.copy(dataId = null) },
-    emails = draft.emails.map { it.copy(dataId = null) },
-    addresses = draft.addresses.map { it.copy(dataId = null) },
-    events = draft.events.map { it.copy(dataId = null) },
-    websites = draft.websites.map { it.copy(dataId = null) },
-    groups = draft.groups.mapValues { null },
+    nameCopies = emptyList(), nicknameCopies = emptyList(), organisationCopies = emptyList(), noteCopies = emptyList(),
+    phones = draft.phones.map { it.copy(dataId = null, copies = emptyList()) },
+    emails = draft.emails.map { it.copy(dataId = null, copies = emptyList()) },
+    addresses = draft.addresses.map { it.copy(dataId = null, copies = emptyList()) },
+    events = draft.events.map { it.copy(dataId = null, copies = emptyList()) },
+    websites = draft.websites.map { it.copy(dataId = null, copies = emptyList()) },
+    groups = draft.groups.mapValues { emptyList() },
 ))
 
 private fun nameValues(d: Draft): Map<String, Any?>? {
@@ -109,35 +111,52 @@ private fun organisationValues(d: Draft): Map<String, Any?>? {
 private fun single(column: String, value: String): Map<String, Any?>? =
     value.trim().let { if (it.isEmpty()) null else mapOf(column to it) }
 
-/** A kind a person has at most one of: written, rewritten, or taken away. */
-private fun one(ops: MutableList<Op>, row: Long?, mime: String, old: Map<String, Any?>?, new: Map<String, Any?>?) {
+/**
+ * A kind a person has at most one of: written, rewritten, or taken away — in every copy that
+ * holds the same value. A row that shows nothing here (a company row with only a department,
+ * a name with only its phonetic spelling) reads as empty both before and after, and is left
+ * alone rather than deleted for looking empty.
+ */
+private fun one(ops: MutableList<Op>, row: Long?, copies: List<Long>, mime: String, old: Map<String, Any?>?, new: Map<String, Any?>?) {
     when {
-        new == null -> if (row != null) ops += Op.Delete(row)
+        new == null -> if (row != null && old != null) (listOf(row) + copies).forEach { ops += Op.Delete(it) }
         row == null -> ops += Op.Insert(mime, new)
-        new != old -> ops += Op.Update(row, new)
+        new != old -> (listOf(row) + copies).forEach { ops += Op.Update(it, new) }
     }
 }
 
-/** A kind a person can have several of, matched up by the row each value came from. */
+/**
+ * A kind a person can have several of, matched up by the row each value came from. An update
+ * writes only what changed: a new kind on an address is the kind alone, because handing the
+ * store an address's text again makes it split that text into a street and throw away the
+ * town, postcode and country it had kept beside it.
+ */
 private fun many(ops: MutableList<Op>, mime: String, column: String, before: List<Field>, after: List<Field>) {
     val kept = after.mapNotNull { it.dataId }.toSet()
     for (field in before) {
         val row = field.dataId ?: continue
-        if (row !in kept) ops += Op.Delete(row)
+        if (row !in kept) (listOf(row) + field.copies).forEach { ops += Op.Delete(it) }
     }
     val was = before.associateBy { it.dataId }
     for (field in after) {
         val value = field.value.trim()
         val row = field.dataId
-        val values = mapOf(
-            column to value,
-            "data2" to field.type, // TYPE, the same column for every kind
-            "data3" to field.label?.takeIf { it.isNotBlank() }, // LABEL, likewise
-        )
-        when {
-            row == null -> if (value.isNotEmpty()) ops += Op.Insert(mime, values)
-            value.isEmpty() -> ops += Op.Delete(row)
-            was[row] != field.copy(value = value) -> ops += Op.Update(row, values)
+        val label = field.label?.takeIf { it.isNotBlank() }
+        if (row == null) {
+            if (value.isNotEmpty()) ops += Op.Insert(mime, mapOf(column to value, "data2" to field.type, "data3" to label))
+            continue
         }
+        if (value.isEmpty()) {
+            (listOf(row) + field.copies).forEach { ops += Op.Delete(it) }
+            continue
+        }
+        val old = was[row] ?: continue
+        val values = mutableMapOf<String, Any?>()
+        if (value != old.value.trim()) values[column] = value
+        if (field.type != old.type || label != old.label?.takeIf { it.isNotBlank() }) {
+            values["data2"] = field.type // TYPE, the same column for every kind
+            values["data3"] = label // LABEL, likewise
+        }
+        if (values.isNotEmpty()) (listOf(row) + field.copies).forEach { ops += Op.Update(it, values) }
     }
 }

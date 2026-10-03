@@ -93,6 +93,11 @@ class VCardTest {
         assertEquals(Field("jonah@example.org", Email.TYPE_WORK), c.emails.single())
     }
 
+    @Test fun aCardWithNoEndDoesNotSwallowTheNext() {
+        val cards = read("BEGIN:VCARD\nFN:First\nTEL:5550001\nBEGIN:VCARD\nFN:Second\nEND:VCARD\n")
+        assertEquals(listOf("First", "Second"), cards.map { it.spokenName })
+    }
+
     @Test fun aByteOrderMarkIsIgnored() {
         val bytes = byteArrayOf(0xEF.toByte(), 0xBB.toByte(), 0xBF.toByte()) + "BEGIN:VCARD\nFN:Mum\nEND:VCARD\n".toByteArray()
         assertEquals("Mum", VCard.read(bytes).single().spokenName)

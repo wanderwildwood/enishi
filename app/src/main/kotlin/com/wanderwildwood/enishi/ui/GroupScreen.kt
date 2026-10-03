@@ -189,8 +189,14 @@ fun AddPeopleScreen(model: BookModel, groupId: Long, onDone: (String?) -> Unit) 
     val group = model.groups.firstOrNull { it.id == groupId }
     var members by remember { mutableStateOf<Set<Long>?>(null) }
     var chosen by remember { mutableStateOf<Set<Long>>(emptySet()) }
-    LaunchedEffect(groupId) { members = model.io { it.members(groupId) }.getOrDefault(emptySet()) }
-    val people = model.people.filter { members != null && it.id !in members!! }
+    var eligible by remember { mutableStateOf<Set<Long>?>(null) }
+    LaunchedEffect(groupId) {
+        members = model.io { it.members(groupId) }.getOrDefault(emptySet())
+        eligible = group?.let { g -> model.io { it.keptIn(g.account) }.getOrNull() }
+    }
+    val people = model.people.filter { p ->
+        members != null && p.id !in members!! && (eligible == null || p.id in eligible!!)
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,

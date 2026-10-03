@@ -92,9 +92,15 @@ fun CardsScreen(
                 val cards = r.cards
                 // Waits for the book, so "already here" is never said of an empty one.
                 if (!model.loaded) return@Scaffold
-                val here = remember(cards, model.people, model.findable) {
-                    cards.map { alreadyHere(it, model.people, model.findable) }
+                // Who is already here, worked out away from the screen: a whole address book
+                // against a whole address book is thousands of comparisons.
+                var matched by remember(cards) { mutableStateOf<List<Person?>?>(null) }
+                LaunchedEffect(cards, model.people, model.findable) {
+                    val people = model.people
+                    val findable = model.findable
+                    matched = withContext(Dispatchers.Default) { cards.map { alreadyHere(it, people, findable) } }
                 }
+                val here = matched ?: return@Scaffold
                 if (cards.size == 1) {
                     OneCard(cards[0], here[0], body, onAdd = { onAddOne(cards[0]) }, onOpen = onOpen)
                     return@Scaffold

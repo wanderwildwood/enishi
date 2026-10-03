@@ -27,7 +27,7 @@
             android:exported="true"
             android:launchMode="singleTask"
             android:windowSoftInputMode="adjustResize"
-            android:configChanges="orientation|screenSize|keyboard|keyboardHidden">
+            android:configChanges="orientation|screenSize|screenLayout|keyboard|keyboardHidden|uiMode|fontScale|density|locale|layoutDirection">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -53,7 +53,7 @@
             android:taskAffinity=""
             android:excludeFromRecents="true"
             android:windowSoftInputMode="adjustResize"
-            android:configChanges="orientation|screenSize|keyboard|keyboardHidden">
+            android:configChanges="orientation|screenSize|screenLayout|keyboard|keyboardHidden|uiMode|fontScale|density|locale|layoutDirection">
 
             <!-- Show a person: Messaging's contact link, a lookup, a raw contact. -->
             <intent-filter>

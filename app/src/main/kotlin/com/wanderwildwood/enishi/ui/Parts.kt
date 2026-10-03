@@ -297,13 +297,22 @@ internal fun NameRow(
     DottedRule()
 }
 
+/** Where a long press on a value sends it, on a page that lets values be copied. */
+internal val LocalCopy = androidx.compose.runtime.staticCompositionLocalOf<((String) -> Unit)?> { null }
+
 /** A field as the phone's own app lists one: a bold label, the value under it. */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun LabelValue(label: String, value: String, lines: Int = 6, onPress: (() -> Unit)? = null) {
+    val copy = LocalCopy.current
     Column(
         Modifier
             .fillMaxWidth()
-            .let { if (onPress != null) it.clickable(onClick = onPress) else it }
+            .let {
+                if (onPress != null || copy != null) {
+                    it.combinedClickable(onClick = onPress ?: {}, onLongClick = copy?.let { c -> { c(value) } })
+                } else it
+            }
             .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
         TextMMD(text = label, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)

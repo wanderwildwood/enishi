@@ -107,21 +107,29 @@ class Book(context: Context) {
         }
     }
 
-    /** One person, every part of them this app shows, with the row each came from. */
+    /**
+     * One person, every part of them this app shows, with the row each came from and every
+     * copy of it. A person Android has joined from several stores (the phone and an account,
+     * usually) is read as one: the same number held twice is one number here, carrying both
+     * rows, so an edit reaches both. The name is the one Android displays — its own choice of
+     * copy, not the oldest.
+     */
     fun card(contactId: Long, lastNameFirst: Boolean): Card? {
         val name = if (lastNameFirst) Contacts.DISPLAY_NAME_ALTERNATIVE else Contacts.DISPLAY_NAME_PRIMARY
         var lookup = ""
         var display = ""
         var starred = false
+        var nameRaw = -1L
         resolver.query(
             ContentUris.withAppendedId(Contacts.CONTENT_URI, contactId),
-            arrayOf(Contacts.LOOKUP_KEY, name, Contacts.STARRED),
+            arrayOf(Contacts.LOOKUP_KEY, name, Contacts.STARRED, Contacts.NAME_RAW_CONTACT_ID),
             null, null, null,
         )?.use { c ->
             if (!c.moveToFirst()) return null
             lookup = c.getString(0).orEmpty()
             display = c.getString(1).orEmpty()
             starred = c.getInt(2) != 0
+            nameRaw = if (c.isNull(3)) -1L else c.getLong(3)
         } ?: return null
 
         val parts = mutableListOf<Part>()
@@ -135,48 +143,78 @@ class Book(context: Context) {
             while (c.moveToNext()) parts += Part(c.getLong(0), Account(c.getString(1), c.getString(2)))
         }
 
-        var d = Draft(starred = starred)
+        // Only copies this app may write are edited; a messenger's copy (WhatsApp, Signal) is
+        // that app's own and its sync would undo the change. A person kept only there is shown
+        // as it is and cannot be edited.
+        val syncing = syncingTypes()
+        val writable = parts.filter { kept(it.account, syncing).writable }.map { it.rawId }.toSet()
+        val readOnly = writable.isEmpty()
+
+        class Row(val id: Long, val mime: String, val d: List<String>, val type: Int, val label: String?)
+        val rows = mutableListOf<Row>()
         resolver.query(
             Data.CONTENT_URI,
-            arrayOf(
-                Data._ID, Data.MIMETYPE, Data.DATA1, Data.DATA2, Data.DATA3,
-                Data.DATA4, Data.DATA5, Data.DATA6, Data.IS_SUPER_PRIMARY,
-            ),
+            arrayOf(Data._ID, Data.MIMETYPE, Data.DATA1, Data.DATA2, Data.DATA3, Data.DATA4, Data.DATA5, Data.DATA6, Data.RAW_CONTACT_ID),
             "${Data.CONTACT_ID}=?",
             arrayOf(contactId.toString()),
-            // The primary name first, so a joined contact edits the name it is shown by.
-            "${Data.IS_SUPER_PRIMARY} DESC, ${Data.IS_PRIMARY} DESC, ${Data._ID} ASC",
+            // The displayed name's copy first, so its values lead and the rest are its copies.
+            "CASE WHEN ${Data.RAW_CONTACT_ID}=$nameRaw THEN 0 ELSE 1 END, ${Data.IS_SUPER_PRIMARY} DESC, ${Data.IS_PRIMARY} DESC, ${Data._ID} ASC",
         )?.use { c ->
             while (c.moveToNext()) {
-                val id = c.getLong(0)
-                val s = { i: Int -> c.getString(i).orEmpty() }
-                fun field(): Field = Field(s(2), c.getInt(3), c.getString(4), id)
-                when (c.getString(1)) {
-                    StructuredName.CONTENT_ITEM_TYPE -> if (d.nameDataId == null) {
-                        // DATA1 display, DATA2 given, DATA3 family, DATA4 prefix, DATA5 middle, DATA6 suffix
-                        d = d.copy(
-                            nameDataId = id, wholeName = s(2), given = s(3), family = s(4),
-                            prefix = s(5), middle = s(6), suffix = s(7),
-                        )
-                    }
-                    Nickname.CONTENT_ITEM_TYPE -> if (d.nicknameDataId == null) d = d.copy(nickname = s(2), nicknameDataId = id)
-                    Organization.CONTENT_ITEM_TYPE -> if (d.organisationDataId == null) {
-                        // DATA1 company, DATA4 title
-                        d = d.copy(company = s(2), jobTitle = s(5), organisationDataId = id)
-                    }
-                    Note.CONTENT_ITEM_TYPE -> if (d.noteDataId == null && s(2).isNotBlank()) d = d.copy(note = s(2), noteDataId = id)
-                    Phone.CONTENT_ITEM_TYPE -> d = d.copy(phones = d.phones + field())
-                    Email.CONTENT_ITEM_TYPE -> d = d.copy(emails = d.emails + field())
-                    StructuredPostal.CONTENT_ITEM_TYPE -> d = d.copy(addresses = d.addresses + field())
-                    Event.CONTENT_ITEM_TYPE -> d = d.copy(events = d.events + field())
-                    Website.CONTENT_ITEM_TYPE -> d = d.copy(websites = d.websites + field())
-                    GroupMembership.CONTENT_ITEM_TYPE -> d = d.copy(groups = d.groups + (c.getLong(2) to id))
-                }
+                if (!readOnly && c.getLong(8) !in writable) continue
+                rows += Row(
+                    c.getLong(0), c.getString(1).orEmpty(),
+                    (2..7).map { c.getString(it).orEmpty() },
+                    c.getInt(3), c.getString(4),
+                )
             }
         }
+
+        fun of(mime: String) = rows.filter { it.mime == mime }
+        /** The first row, and every later row holding the same thing by [key]. */
+        fun firstAndCopies(mime: String, key: (Row) -> List<String>): Pair<Row, List<Long>>? {
+            val all = of(mime).filter { key(it).any { v -> v.isNotBlank() } }
+            val first = all.firstOrNull() ?: return null
+            return first to all.drop(1).filter { key(it) == key(first) }.map { it.id }
+        }
+        /** One field per distinct value, carrying every row that holds it. */
+        fun fields(mime: String, norm: (String) -> String): List<Field> =
+            of(mime).filter { it.d[0].isNotBlank() }
+                .groupBy { norm(it.d[0]) }.values
+                .map { same -> same.first().let { f -> Field(f.d[0], f.type, f.label, f.id, same.drop(1).map { it.id }) } }
+
+        var d = Draft(starred = starred)
+        // DATA1 display, DATA2 given, DATA3 family, DATA4 prefix, DATA5 middle, DATA6 suffix
+        firstAndCopies(StructuredName.CONTENT_ITEM_TYPE) { it.d }?.let { (r, copies) ->
+            d = d.copy(
+                nameDataId = r.id, nameCopies = copies, wholeName = r.d[0], given = r.d[1], family = r.d[2],
+                prefix = r.d[3], middle = r.d[4], suffix = r.d[5],
+            )
+        }
+        firstAndCopies(Nickname.CONTENT_ITEM_TYPE) { listOf(it.d[0].trim()) }?.let { (r, copies) ->
+            d = d.copy(nickname = r.d[0], nicknameDataId = r.id, nicknameCopies = copies)
+        }
+        // DATA1 company, DATA4 title
+        firstAndCopies(Organization.CONTENT_ITEM_TYPE) { listOf(it.d[0].trim(), it.d[3].trim()) }?.let { (r, copies) ->
+            d = d.copy(company = r.d[0], jobTitle = r.d[3], organisationDataId = r.id, organisationCopies = copies)
+        }
+        firstAndCopies(Note.CONTENT_ITEM_TYPE) { listOf(it.d[0].trim()) }?.let { (r, copies) ->
+            d = d.copy(note = r.d[0], noteDataId = r.id, noteCopies = copies)
+        }
+        d = d.copy(
+            phones = fields(Phone.CONTENT_ITEM_TYPE) { v -> v.filter(Char::isDigit).takeLast(10).ifEmpty { v.trim() } },
+            emails = fields(Email.CONTENT_ITEM_TYPE) { it.trim().lowercase() },
+            addresses = fields(StructuredPostal.CONTENT_ITEM_TYPE) { it.trim().lowercase().replace(Regex("\\s+"), " ") },
+            events = fields(Event.CONTENT_ITEM_TYPE) { it.trim() },
+            websites = fields(Website.CONTENT_ITEM_TYPE) { it.trim().lowercase().removeSuffix("/") },
+            groups = of(GroupMembership.CONTENT_ITEM_TYPE)
+                .filter { it.d[0].isNotBlank() }
+                .groupBy { it.d[0].toLong() }
+                .mapValues { (_, rs) -> rs.map { it.id } },
+        )
         // Parts present: the editor shows those, and the whole name is the store's to rebuild.
         if (listOf(d.prefix, d.given, d.middle, d.family, d.suffix).any { it.isNotBlank() }) d = d.copy(wholeName = "")
-        return Card(contactId, lookup, display, d, parts)
+        return Card(contactId, lookup, display, d, parts, readOnly)
     }
 
     /** The contact a link from another app points at: a lookup, a raw contact, or a row. */
@@ -211,34 +249,36 @@ class Book(context: Context) {
         )?.use { if (it.moveToFirst()) it.getLong(0) else null }
     }.getOrNull()
 
-    fun lookupUri(contactId: Long, lookup: String): Uri = Contacts.getLookupUri(contactId, lookup)
+    /** The address another app is handed for a person; the plain one if they have no lookup key. */
+    fun lookupUri(contactId: Long, lookup: String): Uri =
+        lookup.takeIf { it.isNotEmpty() }?.let { Contacts.getLookupUri(contactId, it) }
+            ?: ContentUris.withAppendedId(Contacts.CONTENT_URI, contactId)
 
     // ---------------------------------------------------------------- accounts
 
+    /** Account types whose contacts sync up to somewhere — the ones a new contact may go to. */
+    private fun syncingTypes(): Set<String> = runCatching {
+        ContentResolver.getSyncAdapterTypes()
+            .filter { it.authority == ContactsContract.AUTHORITY && it.supportsUploading() }
+            .map { it.accountType }.toSet()
+    }.getOrDefault(emptySet())
+
     /**
-     * Where contacts can be kept: the phone itself, and every account that already holds some
-     * or has registered to sync them. On a phone with no accounts at all, only the phone.
+     * Whether this app may write into a store, and whether it syncs. The phone itself, and a
+     * phone's own local account (Mudita's "Phone"), take writes and keep them; an account that
+     * syncs contacts up takes them and sends them on. Anything else — a messenger's account,
+     * WhatsApp's, Signal's — is that app's own list, and its sync would remove whatever was
+     * written there.
      */
-    fun accounts(): List<Account> {
-        val found = linkedSetOf(Account.PHONE)
-        resolver.query(
-            RawContacts.CONTENT_URI,
-            arrayOf(RawContacts.ACCOUNT_NAME, RawContacts.ACCOUNT_TYPE),
-            "${RawContacts.DELETED}=0", null, null,
-        )?.use { c -> while (c.moveToNext()) found += Account(c.getString(0), c.getString(1)) }
-        runCatching {
-            val syncing = ContentResolver.getSyncAdapterTypes()
-                .filter { it.authority == ContactsContract.AUTHORITY && it.supportsUploading() }
-                .map { it.accountType }.toSet()
-            AccountManager.get(app).accounts
-                .filter { it.type in syncing }
-                .forEach { found += Account(it.name, it.type) }
-        }
-        return found.toList()
+    fun kept(account: Account, syncing: Set<String> = syncingTypes()): Kept {
+        val type = account.type.orEmpty()
+        val sync = type in syncing
+        val local = account.isPhone || listOf("local", "phone", "device", "sim").any { type.lowercase().contains(it) }
+        return Kept(writable = sync || local, syncing = sync)
     }
 
-    /** The account holding the most contacts, which is where a new one most likely belongs. */
-    fun busiestAccount(): Account {
+    /** How many people each store holds. */
+    private fun counts(): Map<Account, Int> {
         val counts = mutableMapOf<Account, Int>()
         resolver.query(
             RawContacts.CONTENT_URI,
@@ -250,7 +290,48 @@ class Book(context: Context) {
                 counts[a] = (counts[a] ?: 0) + 1
             }
         }
-        return counts.maxByOrNull { it.value }?.key ?: Account.PHONE
+        return counts
+    }
+
+    /**
+     * Where contacts can be kept: the phone itself, and every account this app may write to
+     * that already holds some or has registered to sync them. Never a messenger's list.
+     */
+    fun accounts(): List<Account> {
+        val syncing = syncingTypes()
+        val found = linkedSetOf(Account.PHONE)
+        counts().keys.forEach { found += it }
+        runCatching {
+            AccountManager.get(app).accounts
+                .filter { it.type in syncing }
+                .forEach { found += Account(it.name, it.type) }
+        }
+        return found.filter { kept(it, syncing).writable }
+    }
+
+    /**
+     * Where a new contact most likely belongs: the syncing account holding the most people,
+     * so it reaches the reader's other devices as the rest do; failing that, wherever this
+     * phone keeps most of them; failing that, the phone.
+     */
+    fun busiestAccount(): Account {
+        val syncing = syncingTypes()
+        val counts = counts().filterKeys { kept(it, syncing).writable }
+        return counts.filterKeys { kept(it, syncing).syncing }.maxByOrNull { it.value }?.key
+            ?: counts.maxByOrNull { it.value }?.key
+            ?: Account.PHONE
+    }
+
+    /**
+     * Which of a person's copies gets anything new: the one in [prefer] if they have one there,
+     * else a copy that syncs, else one this app may write to. Never a messenger's copy.
+     */
+    fun target(card: Card, prefer: Account?): Part? {
+        val syncing = syncingTypes()
+        val writable = card.parts.filter { kept(it.account, syncing).writable }
+        return writable.firstOrNull { it.account == prefer }
+            ?: writable.firstOrNull { kept(it.account, syncing).syncing }
+            ?: writable.firstOrNull()
     }
 
     // ---------------------------------------------------------------- writing
@@ -286,7 +367,7 @@ class Book(context: Context) {
      * place it was mostly kept, and never quietly spreads into a third.
      */
     fun save(card: Card, after: Draft, prefer: Account?) {
-        val target = card.parts.firstOrNull { it.account == prefer } ?: card.parts.firstOrNull() ?: return
+        val target = target(card, prefer) ?: error("no copy of this person can be written to")
         val ops = arrayListOf<ContentProviderOperation>()
         for (op in plan(card.draft, after)) {
             ops += when (op) {
@@ -406,6 +487,16 @@ class Book(context: Context) {
         }
         if (ops.isNotEmpty()) resolver.applyBatch(ContactsContract.AUTHORITY, ops)
         return refused
+    }
+
+    /** Everyone with a copy kept in [account] — the only people a group there can take. */
+    fun keptIn(account: Account): Set<Long> {
+        val ids = mutableSetOf<Long>()
+        resolver.query(
+            RawContacts.CONTENT_URI, arrayOf(RawContacts.CONTACT_ID),
+            "${RawContacts.DELETED}=0 AND " + accountWhere(account), accountArgs(account), null,
+        )?.use { c -> while (c.moveToNext()) ids += c.getLong(0) }
+        return ids
     }
 
     fun removeFromGroup(groupId: Long, contactId: Long) {

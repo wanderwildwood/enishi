@@ -14,6 +14,7 @@ data class Found(val person: Person, val by: String?)
  */
 fun search(query: String, people: List<Person>, findable: Map<Long, Findable>): List<Found> {
     val words = fold(query).split(' ').filter { it.isNotEmpty() }
+    val joined = fold(query).trim()
     if (words.isEmpty()) return emptyList()
     val digits = query.filter { it.isDigit() }
     // Three digits before a number is worth searching by: one or two match half the book.
@@ -36,17 +37,18 @@ fun search(query: String, people: List<Person>, findable: Map<Long, Findable>): 
                 continue
             }
         }
-        val joined = fold(query).trim()
         val other = (extra.emails + extra.organisations).firstOrNull { fold(it).contains(joined) }
         if (other != null && joined.length >= 2) byOther += Found(person, other)
     }
     return byName + byOther
 }
 
+private val MARKS = Regex("\\p{Mn}+")
+
 /** Lower case, accents off, so the reader need not type either. */
 internal fun fold(text: String): String =
     Normalizer.normalize(text, Normalizer.Form.NFD)
-        .replace(Regex("\\p{Mn}+"), "")
+        .replace(MARKS, "")
         .lowercase()
 
 /**

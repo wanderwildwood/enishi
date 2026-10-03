@@ -12,6 +12,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -118,7 +119,7 @@ fun DetailScreen(
                 actions = {
                     card?.let { c ->
                         val starred = starredNow ?: c.draft.starred
-                        BarButton(Icons.EditLight, stringResource(R.string.edit)) { onEdit(c) }
+                        if (!c.readOnly) BarButton(Icons.EditLight, stringResource(R.string.edit)) { onEdit(c) }
                         BarButton(
                             if (starred) Icons.StarLight else Icons.StarBorderLight,
                             stringResource(if (starred) R.string.cd_unstar else R.string.cd_star),
@@ -272,6 +273,11 @@ fun MoreScreen(
     fun open(intent: Intent) {
         if (!start(context, intent)) notice = context.getString(R.string.nothing_opens)
     }
+    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
+    fun copy(value: String) {
+        clipboard.setText(AnnotatedString(value))
+        notice = context.getString(R.string.copied)
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
@@ -279,7 +285,7 @@ fun MoreScreen(
             Bar(
                 title = { BarTitle(stringResource(R.string.more)) },
                 navigationIcon = { BarButton(Icons.BackLight, stringResource(R.string.cd_back), onBack) },
-                actions = { card?.let { c -> BarButton(Icons.EditLight, stringResource(R.string.edit)) { onEdit(c) } } },
+                actions = { card?.takeIf { !it.readOnly }?.let { c -> BarButton(Icons.EditLight, stringResource(R.string.edit)) { onEdit(c) } } },
             )
         },
         bottomBar = { notice?.let { NoticeStrip(it) { notice = null } } },
@@ -291,15 +297,15 @@ fun MoreScreen(
             return@Scaffold
         }
         val d = c.draft
-        LazyColumnMMD(body) {
+        androidx.compose.runtime.CompositionLocalProvider(LocalCopy provides ::copy) { LazyColumnMMD(body) {
             distinctNumbers(d.phones).forEach { p ->
                 item {
-                    KindRow(Labels.phone(context, p.type, p.label), p.value) { dial(p.value) }
+                    KindRow(Labels.phone(context, p.type, p.label), p.value, ::copy) { dial(p.value) }
                 }
             }
             d.emails.forEach { e ->
                 item {
-                    KindRow(Labels.email(context, e.type, e.label), e.value) {
+                    KindRow(Labels.email(context, e.type, e.label), e.value, ::copy) {
                         open(Intent(Intent.ACTION_SENDTO, Uri.fromParts("mailto", e.value, null)))
                     }
                 }
@@ -352,8 +358,9 @@ fun MoreScreen(
             item {
                 val (armed, press) = rememberArmed(c.id) {
                     scope.launch {
-                        model.io { it.delete(c.id, c.lookup) }
-                        onGone()
+                        // Gone only if it went: a store that refused says so here.
+                        if (model.io { it.delete(c.id, c.lookup) }.isSuccess) onGone()
+                        else notice = context.getString(R.string.delete_failed)
                     }
                 }
                 PlainRow(
@@ -362,16 +369,23 @@ fun MoreScreen(
                     onPress = press,
                 )
             }
-        }
+        } }
     }
 }
 
-/** "Mobile  ·  +1 555 010 1001", one line, as the phone's own More page lists a number. */
+/**
+ * "Mobile  ·  +1 555 010 1001", one line, as the phone's own More page lists a number. A press
+ * uses it; a long press copies it.
+ */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-private fun KindRow(kind: String, value: String, onPress: () -> Unit) {
+private fun KindRow(kind: String, value: String, onCopy: (String) -> Unit, onPress: () -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onPress).padding(horizontal = 16.dp, vertical = 22.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(onClick = onPress, onLongClick = { onCopy(value) })
+            .padding(horizontal = 16.dp, vertical = 22.dp),
     ) {
         TextMMD(text = kind, style = MaterialTheme.typography.bodyLarge)
         TextMMD(text = "  ·  ", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)

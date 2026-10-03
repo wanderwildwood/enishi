@@ -45,6 +45,12 @@ data class Field(
     val type: Int,
     val label: String? = null,
     val dataId: Long? = null,
+    /**
+     * The same value kept again in the person's other copies. Most people on a phone that syncs
+     * are stored twice — once on the phone, once in the account — and Android shows them as
+     * one; a change to the value is made to every copy, or the person ends up showing both.
+     */
+    val copies: List<Long> = emptyList(),
 )
 
 /**
@@ -61,8 +67,10 @@ data class Draft(
     /** A name with no parts, as a vCard with only FN gives one. Android splits it itself. */
     val wholeName: String = "",
     val nameDataId: Long? = null,
+    val nameCopies: List<Long> = emptyList(),
     val nickname: String = "",
     val nicknameDataId: Long? = null,
+    val nicknameCopies: List<Long> = emptyList(),
     val phones: List<Field> = emptyList(),
     val emails: List<Field> = emptyList(),
     val addresses: List<Field> = emptyList(),
@@ -71,10 +79,12 @@ data class Draft(
     val company: String = "",
     val jobTitle: String = "",
     val organisationDataId: Long? = null,
+    val organisationCopies: List<Long> = emptyList(),
     val note: String = "",
     val noteDataId: Long? = null,
-    /** Group id to the membership row that puts them there (null for one added here). */
-    val groups: Map<Long, Long?> = emptyMap(),
+    val noteCopies: List<Long> = emptyList(),
+    /** Group id to the membership rows that put them there, one per copy (none for one added here). */
+    val groups: Map<Long, List<Long>> = emptyMap(),
     val starred: Boolean = false,
 ) {
     /** A name, in the order it is spoken, for a vCard with parts and no FN. */
@@ -98,9 +108,14 @@ data class Card(
     val draft: Draft,
     /** The raw contacts this one is joined from, each in its own account. */
     val parts: List<Part>,
+    /** Every copy belongs to an app this one may not write for — a messenger's list. */
+    val readOnly: Boolean = false,
 )
 
 data class Part(val rawId: Long, val account: Account)
+
+/** Whether a store of contacts is one this app may write to, and whether it syncs. */
+data class Kept(val writable: Boolean, val syncing: Boolean)
 
 data class Group(
     val id: Long,

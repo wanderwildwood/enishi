@@ -76,7 +76,9 @@
     <string name="kept_in">Kept in: %1$s</string>
     <string name="delete_contact">Delete</string>
     <string name="delete_contact_armed">Delete — tap again</string>
+    <string name="delete_failed">The phone\'s contacts would not delete this person. Nothing was changed.</string>
     <string name="contact_gone">This person is no longer in the contacts.</string>
+    <string name="copied">Copied.</string>
     <string name="nothing_opens">Nothing on the phone opens that.</string>
 
     <!-- ============================================================ -->

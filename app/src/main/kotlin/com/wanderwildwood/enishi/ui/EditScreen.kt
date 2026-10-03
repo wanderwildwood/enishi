@@ -106,13 +106,24 @@ fun EditScreen(
     val listState = rememberLazyListState()
     LaunchedEffect(problem) { if (problem != null) listState.scrollToItem(0) }
 
-    // An existing contact grows in the account it is mostly kept in; groups follow that account.
-    val target: Account = card?.let { c -> c.parts.firstOrNull { it.account == model.saveTo }?.account ?: c.parts.firstOrNull()?.account } ?: account
+    // Anything new goes into the copy that syncs (or the chosen one); groups follow that copy,
+    // since a group belongs to one account and only a copy kept there can join it.
+    val cardTarget = remember(card) { card?.let { model.book.target(it, model.saveTo)?.account } }
+    val target: Account = cardTarget ?: account
     val groups = model.groups.filter { it.account == target }
+    // A group ticked under one "Save to" is not carried into another account's.
+    LaunchedEffect(target) {
+        val here = groups.map { it.id }.toSet()
+        if (draft.groups.keys.any { it !in here && it !in start.groups }) {
+            draft = draft.copy(groups = draft.groups.filterKeys { it in here || it in start.groups })
+        }
+    }
 
     LaunchedEffect(draft, events) { problem = null }
 
-    val dirty = card == null && !draft.isEmpty || draft != start || events != startBoxes
+    // Measured against what is stored, not against the form as it opened: "add this address to
+    // someone" opens with the address already in, and that is something to save.
+    val dirty = if (card == null) !draft.isEmpty else draft.copy(events = emptyList()) != card.draft.copy(events = emptyList()) || events != startBoxes
     val (leaving, pressLeave) = rememberArmed(dirty) { onCancel() }
     val close = { if (dirty) pressLeave() else onCancel() }
     BackHandler(onBack = close)
@@ -260,7 +271,7 @@ fun EditScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    draft = draft.copy(groups = if (inIt) draft.groups - g.id else draft.groups + (g.id to start.groups[g.id]))
+                                    draft = draft.copy(groups = if (inIt) draft.groups - g.id else draft.groups + (g.id to start.groups[g.id].orEmpty()))
                                 }
                                 .padding(horizontal = 16.dp, vertical = 10.dp),
                         ) {

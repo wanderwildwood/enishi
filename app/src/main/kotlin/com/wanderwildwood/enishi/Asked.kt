@@ -85,11 +85,13 @@ sealed interface Asked {
             val addresses = mutableListOf<Field>()
             fun phone(key: String, typeKey: String) {
                 val v = x.getCharSequence(key)?.toString()?.trim().orEmpty()
-                if (v.isNotEmpty()) phones += Field(v, typeOf(x.get(typeKey), Phone.TYPE_MOBILE))
+                @Suppress("DEPRECATION") val t = x.get(typeKey)
+                if (v.isNotEmpty()) phones += Field(v, typeOf(t, Phone.TYPE_MOBILE), labelOf(t))
             }
             fun email(key: String, typeKey: String) {
                 val v = x.getCharSequence(key)?.toString()?.trim().orEmpty()
-                if (v.isNotEmpty()) emails += Field(v, typeOf(x.get(typeKey), Email.TYPE_OTHER))
+                @Suppress("DEPRECATION") val t = x.get(typeKey)
+                if (v.isNotEmpty()) emails += Field(v, typeOf(t, Email.TYPE_OTHER), labelOf(t))
             }
             phone(Insert.PHONE, Insert.PHONE_TYPE)
             phone(Insert.SECONDARY_PHONE, Insert.SECONDARY_PHONE_TYPE)
@@ -98,7 +100,8 @@ sealed interface Asked {
             email(Insert.SECONDARY_EMAIL, Insert.SECONDARY_EMAIL_TYPE)
             email(Insert.TERTIARY_EMAIL, Insert.TERTIARY_EMAIL_TYPE)
             x.getCharSequence(Insert.POSTAL)?.toString()?.trim()?.takeIf { it.isNotEmpty() }?.let {
-                addresses += Field(it, typeOf(x.get(Insert.POSTAL_TYPE), StructuredPostal.TYPE_HOME))
+                @Suppress("DEPRECATION") val t = x.get(Insert.POSTAL_TYPE)
+                addresses += Field(it, typeOf(t, StructuredPostal.TYPE_HOME), labelOf(t))
             }
             // The newer way: whole rows, as ContentValues.
             @Suppress("DEPRECATION")
@@ -124,11 +127,14 @@ sealed interface Asked {
             )
         }
 
-        /** A type extra is an int, or the word for one ("work"), or a custom label. */
+        /** A type extra is an int, or text — which Android's own apps send as a custom label. */
         private fun typeOf(value: Any?, otherwise: Int): Int = when (value) {
             is Int -> value
+            is CharSequence -> if (value.isNotBlank()) ContactsContract.CommonDataKinds.BaseTypes.TYPE_CUSTOM else otherwise
             else -> otherwise
         }
+
+        private fun labelOf(value: Any?): String? = (value as? CharSequence)?.toString()?.trim()?.takeIf { it.isNotEmpty() }
     }
 }
 

@@ -28,10 +28,17 @@ object VCard {
         val cards = mutableListOf<Draft>()
         var card: Builder? = null
         var depth = 0
+        var afterAgent = false
         for (line in unfold(text)) {
             val prop = parse(line) ?: continue
             when (prop.name) {
                 "BEGIN" -> if (prop.raw.trim().equals("VCARD", true)) {
+                    if (depth >= 1 && !afterAgent) {
+                        // A card that never said END: it ends where the next one begins, rather
+                        // than swallowing that one as if it were nested inside it.
+                        card?.build()?.takeUnless { it.isEmpty }?.let { cards += it }
+                        depth = 0
+                    }
                     depth++
                     // A card inside a card (2.1's AGENT) is not a second person in the file.
                     if (depth == 1) card = Builder()
@@ -43,6 +50,7 @@ object VCard {
                 }
                 else -> if (depth == 1) card?.take(prop)
             }
+            afterAgent = prop.name == "AGENT"
         }
         return cards
     }
