@@ -22,6 +22,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -189,11 +191,15 @@ internal fun BareField(
     words: Boolean = true,
     singleLine: Boolean = true,
     hint: String? = null,
+    /** A box just added by the reader takes the cursor, so the next thing typed lands in it. */
+    focusNow: Boolean = false,
 ) {
+    val focus = remember { FocusRequester() }
+    LaunchedEffect(focusNow) { if (focusNow) runCatching { focus.requestFocus() } }
     TextFieldMMD(
         value = value,
         onValueChange = onChange,
-        modifier = modifier,
+        modifier = modifier.focusRequester(focus),
         singleLine = singleLine,
         minLines = if (singleLine) 1 else 2,
         placeholder = hint?.let { { TextMMD(text = it, style = MaterialTheme.typography.labelSmall) } },

@@ -80,6 +80,8 @@ fun EditScreen(
     var account by remember { mutableStateOf(initialAccount) }
     var moreNames by remember { mutableStateOf(listOf(start.prefix, start.middle, start.suffix, start.nickname).any { it.isNotBlank() }) }
     var problem by remember { mutableStateOf<String?>(null) }
+    // The row the reader just added, which takes the cursor.
+    var added by remember { mutableStateOf<String?>(null) }
     var saving by remember { mutableStateOf(false) }
     // A refused Save says why at the top of the form, so the form goes there to say it.
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
@@ -182,18 +184,21 @@ fun EditScreen(
                 fields = draft.phones, types = Labels.PHONE_TYPES, keyboard = KeyboardType.Phone,
                 label = { t, l -> Labels.phone(context, t, l) },
                 newType = Labels.PHONE_TYPES.first(),
+                added = added, onAdded = { added = it },
             ) { draft = draft.copy(phones = it) }
             fieldList(
                 title = R.string.field_email, add = R.string.edit_add_email,
                 fields = draft.emails, types = Labels.EMAIL_TYPES, keyboard = KeyboardType.Email,
                 label = { t, l -> Labels.email(context, t, l) },
                 newType = Labels.EMAIL_TYPES.first(),
+                added = added, onAdded = { added = it },
             ) { draft = draft.copy(emails = it) }
             fieldList(
                 title = R.string.field_address, add = R.string.edit_add_address,
                 fields = draft.addresses, types = Labels.ADDRESS_TYPES, keyboard = KeyboardType.Text, multiLine = true,
                 label = { t, l -> Labels.address(context, t, l) },
                 newType = Labels.ADDRESS_TYPES.first(),
+                added = added, onAdded = { added = it },
             ) { draft = draft.copy(addresses = it) }
 
             events.forEachIndexed { i, e ->
@@ -204,6 +209,7 @@ fun EditScreen(
                         onType = { events = events.toMutableList().also { l -> l[i] = e.copy(type = Labels.next(Labels.EVENT_TYPES, e.type), label = null) } },
                         onChange = { nb -> events = events.toMutableList().also { l -> l[i] = nb } },
                         onRemove = { events = events.toMutableList().also { l -> l.removeAt(i) } },
+                        focusNow = added == "event$i",
                     )
                 }
             }
@@ -211,6 +217,7 @@ fun EditScreen(
                 AddRow(stringResource(if (events.none { it.type == android.provider.ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY }) R.string.edit_add_birthday else R.string.edit_add_date)) {
                     val birthday = android.provider.ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY
                     val type = if (events.none { it.type == birthday }) birthday else android.provider.ContactsContract.CommonDataKinds.Event.TYPE_ANNIVERSARY
+                    added = "event${events.size}"
                     events = events + EventBox(null, type, null, "", "", "")
                 }
             }
@@ -223,6 +230,7 @@ fun EditScreen(
                 fields = draft.websites, types = emptyList(), keyboard = KeyboardType.Uri,
                 label = { _, _ -> "" },
                 newType = android.provider.ContactsContract.CommonDataKinds.Website.TYPE_HOMEPAGE,
+                added = added, onAdded = { added = it },
             ) { draft = draft.copy(websites = it) }
 
             item { LabelledField(stringResource(R.string.field_note), draft.note, { draft = draft.copy(note = it) }, singleLine = false, words = false) }
@@ -292,6 +300,8 @@ private fun LazyListScope.fieldList(
     label: (Int, String?) -> String,
     newType: Int,
     multiLine: Boolean = false,
+    added: String?,
+    onAdded: (String) -> Unit,
     onChange: (List<Field>) -> Unit,
 ) {
     fields.forEachIndexed { i, f ->
@@ -320,17 +330,21 @@ private fun LazyListScope.fieldList(
                     keyboard = keyboard,
                     words = multiLine,
                     singleLine = !multiLine,
+                    focusNow = added == "$title-$i",
                 )
             }
         }
     }
     item(key = "$title-add") {
-        AddRow(stringResource(add)) { onChange(fields + Field("", newType)) }
+        AddRow(stringResource(add)) {
+            onAdded("$title-${fields.size}")
+            onChange(fields + Field("", newType))
+        }
     }
 }
 
 @Composable
-private fun EventEditor(box: EventBox, typeLabel: String, onType: () -> Unit, onChange: (EventBox) -> Unit, onRemove: () -> Unit) {
+private fun EventEditor(box: EventBox, typeLabel: String, onType: () -> Unit, onChange: (EventBox) -> Unit, onRemove: () -> Unit, focusNow: Boolean) {
     val context = LocalContext.current
     // Day, month and year in the order the phone writes a date.
     val order = remember { android.text.format.DateFormat.getDateFormatOrder(context).toList() }
@@ -346,11 +360,12 @@ private fun EventEditor(box: EventBox, typeLabel: String, onType: () -> Unit, on
             BarButton(Icons.Close, stringResource(R.string.cd_remove), onRemove)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(end = 12.dp)) {
-            order.forEach { part ->
+            order.forEachIndexed { n, part ->
+                val first = focusNow && n == 0
                 when (part) {
-                    'd' -> BareField(box.day, { onChange(box.copy(day = it.filter(Char::isDigit).take(2))) }, Modifier.weight(1f), KeyboardType.Number, hint = stringResource(R.string.date_day))
-                    'M' -> BareField(box.month, { onChange(box.copy(month = it.filter(Char::isDigit).take(2))) }, Modifier.weight(1f), KeyboardType.Number, hint = stringResource(R.string.date_month))
-                    'y' -> BareField(box.year, { onChange(box.copy(year = it.filter(Char::isDigit).take(4))) }, Modifier.weight(1.4f), KeyboardType.Number, hint = stringResource(R.string.date_year))
+                    'd' -> BareField(box.day, { onChange(box.copy(day = it.filter(Char::isDigit).take(2))) }, Modifier.weight(1f), KeyboardType.Number, hint = stringResource(R.string.date_day), focusNow = first)
+                    'M' -> BareField(box.month, { onChange(box.copy(month = it.filter(Char::isDigit).take(2))) }, Modifier.weight(1f), KeyboardType.Number, hint = stringResource(R.string.date_month), focusNow = first)
+                    'y' -> BareField(box.year, { onChange(box.copy(year = it.filter(Char::isDigit).take(4))) }, Modifier.weight(1.4f), KeyboardType.Number, hint = stringResource(R.string.date_year), focusNow = first)
                 }
             }
         }
