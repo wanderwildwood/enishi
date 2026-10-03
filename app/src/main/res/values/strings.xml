@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Contacts</string>
+
+    <!-- ============================================================ -->
+    <!-- Asking for access, on first launch -->
+
+    <string name="access_title">Contacts needs to see the phone’s contacts.</string>
+    <string name="access_body">They stay where they are, in Android’s own address book, which Messaging, the dialer and every other app already read. This app keeps no copy of its own and cannot reach the internet.</string>
+    <string name="access_allow">Allow</string>
+    <string name="access_settings">Open the setting</string>
+
+    <!-- ============================================================ -->
+    <!-- The list -->
+
+    <string name="tab_all">All</string>
+    <string name="tab_favourites">Favourites</string>
+    <string name="tab_groups">Groups</string>
+    <string name="all_empty">No contacts yet.</string>
+    <string name="all_empty_new">Add someone</string>
+    <string name="all_empty_import">Read them from a file</string>
+    <string name="favourites_empty">No favourites yet. Open someone and press the star.</string>
+    <!-- A person the store has no name for -->
+    <string name="no_name">No name</string>
+    <plurals name="group_size">
+        <item quantity="one">%d person</item>
+        <item quantity="other">%d people</item>
+    </plurals>
+    <string name="group_new">New group</string>
+    <!-- The phone itself, as a place contacts are kept, beside any accounts -->
+    <string name="account_phone">Phone</string>
+
+    <string name="cd_search">Search</string>
+    <string name="cd_new_contact">Add someone</string>
+    <string name="cd_settings">Settings</string>
+    <string name="cd_about">About</string>
+    <string name="cd_back">Back</string>
+    <string name="cd_close">Close</string>
+    <string name="cd_remove">Remove</string>
+    <string name="cd_star">Add to favourites</string>
+    <string name="cd_unstar">Take out of favourites</string>
+
+    <!-- ============================================================ -->
+    <!-- Search -->
+
+    <string name="search_title">Search</string>
+    <string name="search_hint">A name, a number or an address</string>
+    <string name="search_none">Nobody matches.</string>
+
+    <!-- ============================================================ -->
+    <!-- A person -->
+
+    <string name="edit">Edit</string>
+    <!-- The word beside a number; it opens Messaging to write to it -->
+    <string name="text">Text</string>
+    <!-- Under an email address: "Email · Work" -->
+    <string name="kind_email">Email · %1$s</string>
+    <string name="kind_address">Address · %1$s</string>
+    <string name="kind_website">Website</string>
+    <string name="kind_note">Note</string>
+    <string name="kind_groups">Groups</string>
+    <string name="share">Share as a contact card</string>
+    <string name="share_failed">The card could not be made.</string>
+    <!-- "Kept in: Phone" or "Kept in: Phone, work@example.com" -->
+    <string name="kept_in">Kept in: %1$s</string>
+    <string name="delete_contact">Delete</string>
+    <string name="delete_contact_armed">Delete — tap again</string>
+    <string name="contact_gone">This person is no longer in the contacts.</string>
+    <string name="nothing_opens">Nothing on the phone opens that.</string>
+
+    <!-- ============================================================ -->
+    <!-- Editing -->
+
+    <string name="edit_title">Edit</string>
+    <string name="edit_new_title">New contact</string>
+    <string name="edit_leave_armed">Leave unsaved — tap again</string>
+    <string name="save">Save</string>
+    <string name="field_name">Name</string>
+    <string name="field_prefix">Title</string>
+    <string name="field_given">First name</string>
+    <string name="field_middle">Middle name</string>
+    <string name="field_family">Last name</string>
+    <string name="field_suffix">Suffix</string>
+    <string name="field_nickname">Nickname</string>
+    <string name="field_phone">Phone</string>
+    <string name="field_email">Email</string>
+    <string name="field_address">Address</string>
+    <string name="field_company">Company</string>
+    <string name="field_job">Job title</string>
+    <string name="field_website">Website</string>
+    <string name="field_note">Note</string>
+    <string name="field_favourite">Favourite</string>
+    <string name="edit_more_names">More name fields</string>
+    <string name="edit_add_phone">Add a number</string>
+    <string name="edit_add_email">Add an email address</string>
+    <string name="edit_add_address">Add an address</string>
+    <string name="edit_add_birthday">Add a birthday</string>
+    <string name="edit_add_date">Add a date</string>
+    <string name="edit_add_website">Add a website</string>
+    <string name="edit_save_to">Save to</string>
+    <string name="date_day">Day</string>
+    <string name="date_month">Month</string>
+    <string name="date_year">Year</string>
+    <string name="edit_bad_date">A date is not one the calendar has. The year can be left out.</string>
+    <string name="edit_empty">There is nothing to save yet.</string>
+    <string name="edit_failed">The phone’s contacts would not take this. Nothing was changed.</string>
+
+    <!-- ============================================================ -->
+    <!-- Groups -->
+
+    <string name="group_text_all">Text everyone</string>
+    <string name="group_email_all">Email everyone</string>
+    <string name="group_no_numbers">Nobody in this group has a number.</string>
+    <string name="group_no_emails">Nobody in this group has an email address.</string>
+    <string name="group_remove_armed">Take out of the group — tap again</string>
+    <string name="group_add_people">Add people</string>
+    <string name="group_rename">Rename</string>
+    <string name="group_delete">Delete the group</string>
+    <string name="group_delete_armed">Delete the group — tap again; the people stay</string>
+    <plurals name="group_add_n">
+        <item quantity="one">Add %d person</item>
+        <item quantity="other">Add %d people</item>
+    </plurals>
+    <!-- A group belongs to one account, and only people kept there can join it -->
+    <plurals name="group_refused">
+        <item quantity="one">%1$d person is not kept in %2$s, so could not join.</item>
+        <item quantity="other">%1$d people are not kept in %2$s, so could not join.</item>
+    </plurals>
+
+    <!-- ============================================================ -->
+    <!-- Another app asking for someone -->
+
+    <string name="pick_contact">Choose someone</string>
+    <string name="pick_number">Choose a number</string>
+    <string name="pick_email">Choose an email address</string>
+    <string name="pick_address">Choose an address</string>
+    <string name="pick_add_to">Add to whom?</string>
+    <string name="pick_new_contact">Someone new</string>
+    <string name="pick_none">Nobody here has one.</string>
+    <string name="pick_has_none">%1$s has none.</string>
+
+    <!-- ============================================================ -->
+    <!-- Contact cards: a .vcf file -->
+
+    <string name="cards_title">Contact cards</string>
+    <string name="cards_unopenable">This file could not be opened. The app that offered it may not have shared it.</string>
+    <string name="cards_unreadable">This file holds no contact card that can be read.</string>
+    <plurals name="cards_count">
+        <item quantity="one">%d card in this file.</item>
+        <item quantity="other">%d cards in this file.</item>
+    </plurals>
+    <plurals name="cards_already">
+        <item quantity="one">%d of them is already here.</item>
+        <item quantity="other">%d of them are already here.</item>
+    </plurals>
+    <plurals name="cards_add_all">
+        <item quantity="one">Add %d person</item>
+        <item quantity="other">Add %d people</item>
+    </plurals>
+    <string name="cards_adding">Adding %1$d of %2$d</string>
+    <plurals name="cards_added">
+        <item quantity="one">Added %d person.</item>
+        <item quantity="other">Added %d people.</item>
+    </plurals>
+    <string name="cards_some_failed">%1$d could not be added.</string>
+    <string name="cards_here">Already here</string>
+    <string name="cards_added_now">Added</string>
+    <string name="cards_one_here">Already in the contacts, as %1$s.</string>
+    <string name="cards_open">Open</string>
+    <string name="cards_add_one">Add to contacts</string>
+
+    <!-- ============================================================ -->
+    <!-- Settings -->
+
+    <string name="settings_title">Settings</string>
+    <string name="settings_sort">Sort by</string>
+    <string name="settings_first_name">First name</string>
+    <string name="settings_last_name">Last name</string>
+    <string name="settings_show">Show names</string>
+    <string name="settings_first_first">First name first</string>
+    <string name="settings_last_first">Last name first</string>
+    <string name="settings_save_to">New contacts go to</string>
+    <string name="settings_files">Files</string>
+    <string name="settings_import">Read contacts from a file</string>
+    <string name="settings_export">Save everyone to a file</string>
+    <plurals name="settings_export_note">
+        <item quantity="one">%d contact, as one .vcf any phone can read</item>
+        <item quantity="other">%d contacts, as one .vcf any phone can read</item>
+    </plurals>
+    <plurals name="export_done">
+        <item quantity="one">Saved %d contact.</item>
+        <item quantity="other">Saved %d contacts.</item>
+    </plurals>
+    <string name="export_failed">The file could not be written.</string>
+
+    <!-- ============================================================ -->
+    <!-- About -->
+
+    <string name="about_title">Contacts %1$s</string>
+    <string name="about_body">Everyone here lives in Android’s own address book, not in this app, so nothing is lost if it goes. It has no way onto the internet.</string>
+    <string name="about_licence">GNU General Public License v3</string>
+    <string name="about_bundled">Icons from Material Symbols (Apache-2.0).</string>
+    <string name="about_feed_the_llamas">feed the llamas</string>
+    <string name="about_no_browser">Nothing here opens web pages — %1$s</string>
+    <string name="about_close">Close</string>
+</resources>
