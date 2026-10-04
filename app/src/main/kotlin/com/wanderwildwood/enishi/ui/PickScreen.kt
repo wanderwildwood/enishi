@@ -85,8 +85,8 @@ fun PickScreen(
         topBar = {
             Bar(
                 title = { BarTitle(stringResource(titleOf(kind, newRow != null))) },
-                navigationIcon = { BarButton(Icons.CloseLight, stringResource(R.string.cd_close), onCancel) },
-                actions = { BarButton(Icons.SearchLight, stringResource(R.string.cd_search), onSearch) },
+                navigationIcon = { BarButton(Icons.Close, stringResource(R.string.cd_close), onCancel) },
+                actions = { BarButton(Icons.Search, stringResource(R.string.cd_search), onSearch) },
             )
         },
         bottomBar = { notice?.let { NoticeStrip(it) { notice = null } } },

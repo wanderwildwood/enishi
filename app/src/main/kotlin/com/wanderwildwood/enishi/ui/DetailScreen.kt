@@ -115,13 +115,13 @@ fun DetailScreen(
         topBar = {
             Bar(
                 title = { BarTitle(stringResource(R.string.details_title)) },
-                navigationIcon = { BarButton(Icons.BackLight, stringResource(R.string.cd_back), onBack) },
+                navigationIcon = { BarButton(Icons.Back, stringResource(R.string.cd_back), onBack) },
                 actions = {
                     card?.let { c ->
                         val starred = starredNow ?: c.draft.starred
-                        if (!c.readOnly) BarButton(Icons.EditLight, stringResource(R.string.edit)) { onEdit(c) }
+                        if (!c.readOnly) BarButton(Icons.Edit, stringResource(R.string.edit)) { onEdit(c) }
                         BarButton(
-                            if (starred) Icons.StarLight else Icons.StarBorderLight,
+                            if (starred) Icons.Star else Icons.StarBorder,
                             stringResource(if (starred) R.string.cd_unstar else R.string.cd_star),
                         ) {
                             starredNow = !starred
@@ -168,18 +168,18 @@ fun DetailScreen(
             Spacer(Modifier.height(100.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                 if (phones.isNotEmpty()) {
-                    ActionTile(Icons.CallLight, stringResource(R.string.call)) {
+                    ActionTile(Icons.Call, stringResource(R.string.call)) {
                         if (phones.size == 1) dial(phones[0].value) else choosing = true to phones
                     }
-                    ActionTile(Icons.Messaging, stringResource(R.string.message)) {
+                    ActionTile(Icons.Sms, stringResource(R.string.message)) {
                         if (phones.size == 1) text(phones[0].value) else choosing = false to phones
                     }
                 } else if (d.emails.isNotEmpty()) {
-                    ActionTile(Icons.Email, stringResource(R.string.field_email)) {
+                    ActionTile(Icons.Mail, stringResource(R.string.field_email)) {
                         open(Intent(Intent.ACTION_SENDTO, Uri.fromParts("mailto", d.emails.first().value, null)))
                     }
                 }
-                ActionTile(Icons.MoreLight, stringResource(R.string.more), outlined = false, onPress = onMore)
+                ActionTile(Icons.GridView, stringResource(R.string.more), outlined = false, onPress = onMore)
             }
         }
     }
@@ -284,8 +284,8 @@ fun MoreScreen(
         topBar = {
             Bar(
                 title = { BarTitle(stringResource(R.string.more)) },
-                navigationIcon = { BarButton(Icons.BackLight, stringResource(R.string.cd_back), onBack) },
-                actions = { card?.takeIf { !it.readOnly }?.let { c -> BarButton(Icons.EditLight, stringResource(R.string.edit)) { onEdit(c) } } },
+                navigationIcon = { BarButton(Icons.Back, stringResource(R.string.cd_back), onBack) },
+                actions = { card?.takeIf { !it.readOnly }?.let { c -> BarButton(Icons.Edit, stringResource(R.string.edit)) { onEdit(c) } } },
             )
         },
         bottomBar = { notice?.let { NoticeStrip(it) { notice = null } } },

@@ -167,7 +167,7 @@ fun EditScreen(
                         BarTitle(stringResource(if (card == null) R.string.edit_new_title else R.string.edit_title))
                     }
                 },
-                navigationIcon = { BarButton(Icons.CloseLight, stringResource(R.string.cd_close), close) },
+                navigationIcon = { BarButton(Icons.Close, stringResource(R.string.cd_close), close) },
                 actions = { SaveButton(ready = dirty && !saving, onClick = ::save) },
             )
         },
@@ -393,7 +393,7 @@ private fun KindMenu(current: String, choices: List<Pair<Int, String>>, onPick: 
         ) {
             TextMMD(text = current, style = MaterialTheme.typography.bodyLarge)
             if (choices.isNotEmpty()) {
-                Icon(Icons.Down, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
+                Icon(Icons.ChevronDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
             }
         }
         DropdownMenuMMD(expanded = open, onDismissRequest = { open = false }) {

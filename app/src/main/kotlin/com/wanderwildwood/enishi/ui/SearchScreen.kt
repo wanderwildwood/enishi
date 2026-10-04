@@ -75,9 +75,9 @@ fun SearchScreen(
                         },
                     )
                 },
-                navigationIcon = { BarButton(Icons.BackLight, stringResource(R.string.cd_back), onBack) },
+                navigationIcon = { BarButton(Icons.Back, stringResource(R.string.cd_back), onBack) },
                 actions = {
-                    if (query.isNotEmpty()) BarButton(Icons.CloseLight, stringResource(R.string.cd_clear)) { query = "" }
+                    if (query.isNotEmpty()) BarButton(Icons.Close, stringResource(R.string.cd_clear)) { query = "" }
                 },
             )
         },

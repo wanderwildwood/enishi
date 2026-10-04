@@ -77,7 +77,7 @@ fun GroupScreen(
         topBar = {
             Bar(
                 title = { BarTitle(group.title) },
-                navigationIcon = { BarButton(Icons.BackLight, stringResource(R.string.cd_back), onBack) },
+                navigationIcon = { BarButton(Icons.Back, stringResource(R.string.cd_back), onBack) },
             )
         },
         bottomBar = { notice?.let { NoticeStrip(it) { notice = null } } },
@@ -203,7 +203,7 @@ fun AddPeopleScreen(model: BookModel, groupId: Long, onDone: (String?) -> Unit) 
         topBar = {
             Bar(
                 title = { BarTitle(group?.title.orEmpty()) },
-                navigationIcon = { BarButton(Icons.CloseLight, stringResource(R.string.cd_close)) { onDone(null) } },
+                navigationIcon = { BarButton(Icons.Close, stringResource(R.string.cd_close)) { onDone(null) } },
             )
         },
         bottomBar = {

@@ -55,9 +55,9 @@ fun HomeScreen(
             Bar(
                 title = { BarTitle(stringResource(R.string.app_name)) },
                 actions = {
-                    BarButton(Icons.SearchLight, stringResource(R.string.cd_search), onSearch)
-                    BarButton(Icons.SettingsLight, stringResource(R.string.cd_settings), onSettings)
-                    BarButton(Icons.InfoLight, stringResource(R.string.cd_about), onAbout)
+                    BarButton(Icons.Search, stringResource(R.string.cd_search), onSearch)
+                    BarButton(Icons.Settings, stringResource(R.string.cd_settings), onSettings)
+                    BarButton(Icons.Info, stringResource(R.string.cd_about), onAbout)
                 },
             )
         },
@@ -148,7 +148,7 @@ fun FavouritesScreen(model: BookModel, onBack: () -> Unit, onOpen: (Person) -> U
         topBar = {
             Bar(
                 title = { BarTitle(stringResource(R.string.tab_favourites)) },
-                navigationIcon = { BarButton(Icons.BackLight, stringResource(R.string.cd_back), onBack) },
+                navigationIcon = { BarButton(Icons.Back, stringResource(R.string.cd_back), onBack) },
             )
         },
     ) { padding ->
@@ -169,7 +169,7 @@ fun GroupsScreen(model: BookModel, onBack: () -> Unit, onGroup: (Long) -> Unit, 
         topBar = {
             Bar(
                 title = { BarTitle(stringResource(R.string.tab_groups)) },
-                navigationIcon = { BarButton(Icons.BackLight, stringResource(R.string.cd_back), onBack) },
+                navigationIcon = { BarButton(Icons.Back, stringResource(R.string.cd_back), onBack) },
             )
         },
     ) { padding ->

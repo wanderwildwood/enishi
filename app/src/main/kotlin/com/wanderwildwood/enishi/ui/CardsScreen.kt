@@ -79,7 +79,7 @@ fun CardsScreen(
         topBar = {
             Bar(
                 title = { BarTitle(stringResource(R.string.cards_title)) },
-                navigationIcon = { BarButton(Icons.BackLight, stringResource(R.string.cd_back), onBack) },
+                navigationIcon = { BarButton(Icons.Back, stringResource(R.string.cd_back), onBack) },
             )
         },
     ) { padding ->

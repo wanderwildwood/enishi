@@ -40,7 +40,7 @@ fun SettingsScreen(
         topBar = {
             Bar(
                 title = { BarTitle(stringResource(R.string.settings_title)) },
-                navigationIcon = { BarButton(Icons.BackLight, stringResource(R.string.cd_back), onBack) },
+                navigationIcon = { BarButton(Icons.Back, stringResource(R.string.cd_back), onBack) },
             )
         },
         bottomBar = { notice?.let { NoticeStrip(it, onNoticeSeen) } },
