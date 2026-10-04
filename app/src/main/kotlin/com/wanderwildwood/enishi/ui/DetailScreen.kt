@@ -171,11 +171,11 @@ fun DetailScreen(
                     ActionTile(Icons.CallLight, stringResource(R.string.call)) {
                         if (phones.size == 1) dial(phones[0].value) else choosing = true to phones
                     }
-                    ActionTile(Icons.MessageLight, stringResource(R.string.message)) {
+                    ActionTile(Icons.Messaging, stringResource(R.string.message)) {
                         if (phones.size == 1) text(phones[0].value) else choosing = false to phones
                     }
                 } else if (d.emails.isNotEmpty()) {
-                    ActionTile(Icons.MessageLight, stringResource(R.string.field_email)) {
+                    ActionTile(Icons.MailLight, stringResource(R.string.field_email)) {
                         open(Intent(Intent.ACTION_SENDTO, Uri.fromParts("mailto", d.emails.first().value, null)))
                     }
                 }
