@@ -29,7 +29,12 @@ at a time.
 ## What it does
 
 - **Everyone in one plain list**, in the phone's own language and order, the surname in bold.
-- **Favourites and groups**, two rows above everyone. A group can be texted or emailed all at once.
+- **Favourites as the phone keeps them**: a star on a person's page, and they are in the Phone
+  app's Favorites, as with the phone's own contacts app.
+- **Choose several at once** with a long press, then merge, share or delete them together.
+- **Merge duplicates by hand**: choose whose name stays, and every number, address, note and
+  photo the others have is added to that person, nothing written twice. A copy a messenger keeps
+  is joined rather than deleted.
 - **Call and Message under a person's name**, and More for everything else they have: a press on
   any number calls it, on an address opens it in a map, on an email address writes to it.
 - **Search** by any part of a name, a run of digits from any number, or part of an email
@@ -40,6 +45,8 @@ at a time.
 - **Contact cards (.vcf)**: open one received in a message and add the person from it; read a
   whole address book from another phone, with anyone already here left alone rather than added
   twice; save everyone to one file any phone can read; share a person as a card.
+- **Automatic backups**: everyone saved to a folder you choose, every day or every week, the
+  newest ten files kept.
 - **Answers every standard request other apps make**: show a person, add someone, add a number
   or an address to someone, show or add the sender of an email, pick a person, a number, an
   email address or a postal address. Done, it goes back to the app that asked.
@@ -49,16 +56,15 @@ at a time.
 ## What it does not do
 
 No photographs: a face the size of a list row is a grey smudge on this screen, so none are
-shown — and none are lost, because a save leaves them where they are. No merging of duplicates
-by hand; Android joins the same person from two accounts itself. Nothing is sent anywhere: the
-app has no internet permission at all.
+shown — and none are lost, because a save leaves them where they are. Nothing is sent anywhere:
+the app has no internet permission at all.
 
 ## Where this is up to
 
-Version 0.1.1. What it writes is worked out by plain code that is unit tested on its own: which
+Version 0.1.7. What it writes is worked out by plain code that is unit tested on its own: which
 rows a save adds, changes and deletes; how vCards from 2.1 to 4.0 read, including old phones'
 quoted-printable in other character sets; dates without a year; search; who in a file is
-already here.
+already here; what a merge adds and what it leaves.
 
 Every screen has been driven on an Android 12 emulator the size of a Kompakt, and so has every
 request Messaging and Email make of it: Messaging's real "Attach a contact" came back as the

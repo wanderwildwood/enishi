@@ -416,12 +416,19 @@ internal fun start(context: Context, intent: Intent): Boolean = try {
  * Messaging sends it as a contact card. Written by the store itself, so nothing is lost on
  * the way.
  */
-private fun shareFile(context: Context, name: String, lookup: String, book: com.wanderwildwood.enishi.data.Book): Intent {
+private fun shareFile(context: Context, name: String, lookup: String, book: com.wanderwildwood.enishi.data.Book): Intent =
+    shareCards(context, name) { book.vcardOf(lookup, it) }
+
+/** Several people as one .vcf, for sharing everyone chosen at once. */
+internal fun shareMany(context: Context, lookups: List<String>, book: com.wanderwildwood.enishi.data.Book): Intent =
+    shareCards(context, "contacts") { book.exportTo(lookups, it) }
+
+private fun shareCards(context: Context, name: String, write: (java.io.OutputStream) -> Unit): Intent {
     val dir = File(context.cacheDir, "shared").apply { mkdirs() }
     dir.listFiles()?.forEach { it.delete() }
     val safe = name.replace(Regex("[\\\\/:*?\"<>|]"), " ").trim().ifBlank { "contact" }
     val file = File(dir, "$safe.vcf")
-    file.outputStream().use { book.vcardOf(lookup, it) }
+    file.outputStream().use(write)
     val uri = FileProvider.getUriForFile(context, context.packageName + ".files", file)
     val send = Intent(Intent.ACTION_SEND)
         .setType("text/x-vcard")

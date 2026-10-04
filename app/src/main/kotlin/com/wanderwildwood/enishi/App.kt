@@ -46,17 +46,16 @@ import com.wanderwildwood.enishi.data.Account
 import com.wanderwildwood.enishi.data.Card
 import com.wanderwildwood.enishi.data.Draft
 import com.wanderwildwood.enishi.ui.AboutDialog
-import com.wanderwildwood.enishi.ui.AddPeopleScreen
 import com.wanderwildwood.enishi.ui.BookModel
 import com.wanderwildwood.enishi.ui.CardsScreen
 import com.wanderwildwood.enishi.ui.DetailScreen
 import com.wanderwildwood.enishi.ui.EditScreen
-import com.wanderwildwood.enishi.ui.FavouritesScreen
-import com.wanderwildwood.enishi.ui.GroupsScreen
 import com.wanderwildwood.enishi.ui.MoreScreen
-import com.wanderwildwood.enishi.ui.GroupScreen
 import com.wanderwildwood.enishi.ui.HomeScreen
-import com.wanderwildwood.enishi.ui.NewGroupDialog
+import com.wanderwildwood.enishi.ui.MergeScreen
+import com.wanderwildwood.enishi.ui.shareMany
+import com.wanderwildwood.enishi.ui.start
+import com.wanderwildwood.enishi.data.Backups
 import com.wanderwildwood.enishi.ui.PickScreen
 import com.wanderwildwood.enishi.ui.SearchScreen
 import com.wanderwildwood.enishi.ui.SettingsScreen
@@ -74,12 +73,10 @@ sealed interface Route {
     data object Search : Route
     data class Detail(val id: Long) : Route
     data class More(val id: Long) : Route
-    data object Favourites : Route
-    data object Groups : Route
     data class Edit(val card: Card?, val seed: Draft, val account: Account) : Route
     data object Settings : Route
-    data class Group(val id: Long) : Route
-    data class AddPeople(val groupId: Long) : Route
+    /** Choosing whose name stays when several people are made one. */
+    data class Merge(val ids: List<Long>) : Route
     data class Cards(val uri: Uri) : Route
     data class Pick(val kind: PickKind) : Route
     data class PickSearch(val kind: PickKind) : Route
@@ -119,8 +116,14 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
     val stack = remember { mutableStateListOf<Route>(if (asked == Asked.Browse) Route.Home else Route.Opening(asked)) }
     val listState = rememberLazyListState()
     var about by remember { mutableStateOf(false) }
-    var newGroup by remember { mutableStateOf(false) }
     var settingsNotice by remember { mutableStateOf<String?>(null) }
+    var homeNotice by remember { mutableStateOf<String?>(null) }
+    /** Everyone chosen on the list, while several are being chosen; empty the rest of the time. */
+    var chosen by remember { mutableStateOf<Set<Long>>(emptySet()) }
+    val backups = remember { Backups(context) }
+    var backupsSeen by remember { mutableStateOf(0) }
+    /** A schedule asked for before there was a folder: set once one is chosen. */
+    var everyOnceChosen by remember { mutableStateOf(0) }
 
     fun push(r: Route) { stack.add(r) }
     fun replace(r: Route) { stack.removeAt(stack.lastIndex); stack.add(r) }
@@ -133,7 +136,11 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
         activity.finish()
     }
     fun back() {
-        if (stack.size <= 1) finish() else stack.removeAt(stack.lastIndex)
+        when {
+            stack.lastOrNull() == Route.Home && chosen.isNotEmpty() -> chosen = emptySet()
+            stack.size <= 1 -> finish()
+            else -> stack.removeAt(stack.lastIndex)
+        }
     }
     fun contactUri(id: Long): Uri =
         ContactsContract.Contacts.getLookupUri(context.contentResolver, ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, id))
@@ -155,6 +162,13 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
             settingsNotice = if (ok) context.resources.getQuantityString(R.plurals.export_done, lookups.size, lookups.size)
             else context.getString(R.string.export_failed)
         }
+    }
+    val pickFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        backups.choose(uri)
+        if (everyOnceChosen > 0) backups.every = everyOnceChosen
+        everyOnceChosen = 0
+        backupsSeen++
     }
     val importTypes = arrayOf("text/x-vcard", "text/vcard", "text/directory", "application/octet-stream", "text/plain")
     fun newContact(seed: Draft = Draft()) {
@@ -179,12 +193,33 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
             onSearch = { push(Route.Search) },
             onSettings = { push(Route.Settings) },
             onAbout = { about = true },
-            onFavourites = { push(Route.Favourites) },
-            onGroups = { push(Route.Groups) },
             onImport = { pickFile.launch(importTypes) },
+            chosen = chosen,
+            onChoose = { p -> chosen = if (p.id in chosen) chosen - p.id else chosen + p.id },
+            onChosenDone = { chosen = emptySet() },
+            onMerge = { push(Route.Merge(model.people.filter { it.id in chosen }.map { it.id })) },
+            onShareChosen = {
+                scope.launch {
+                    val lookups = model.people.filter { it.id in chosen }.map { it.lookup }
+                    val shared = model.io { shareMany(context, lookups, it) }.getOrNull()
+                    if (shared == null || !start(context, shared)) homeNotice = context.getString(R.string.share_failed)
+                }
+            },
+            onDeleteChosen = {
+                scope.launch {
+                    val going = model.people.filter { it.id in chosen }
+                    val failed = going.count { p -> model.io { it.delete(p.id, p.lookup) }.isFailure }
+                    chosen = emptySet()
+                    if (failed > 0) homeNotice = context.resources.getQuantityString(R.plurals.chosen_deleted_some, failed, failed)
+                }
+            },
+            notice = homeNotice,
+            onNoticeSeen = { homeNotice = null },
         )
-        Route.Favourites -> FavouritesScreen(model, ::back) { push(Route.Detail(it.id)) }
-        Route.Groups -> GroupsScreen(model, ::back, onGroup = { push(Route.Group(it)) }, onNewGroup = { newGroup = true })
+        is Route.Merge -> MergeScreen(model, top.ids, ::back) { id ->
+            chosen = emptySet()
+            replace(Route.Detail(id))
+        }
         Route.Search -> SearchScreen(model, stringResource(R.string.search_title), ::back) { replace(Route.Detail(it.id)) }
         is Route.Detail -> DetailScreen(
             model, top.id,
@@ -220,12 +255,30 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
             },
             notice = settingsNotice,
             onNoticeSeen = { settingsNotice = null },
+            backups = backups,
+            backupsSeen = backupsSeen,
+            onBackupEvery = { days ->
+                if (days > 0 && backups.folder == null) {
+                    everyOnceChosen = days
+                    pickFolder.launch(null)
+                } else {
+                    backups.every = days
+                    backupsSeen++
+                }
+            },
+            onBackupFolder = { pickFolder.launch(backups.folder) },
+            onBackupNow = {
+                if (backups.folder == null) pickFolder.launch(null)
+                else scope.launch {
+                    val saved = model.io { backups.run().getOrThrow() }
+                    backupsSeen++
+                    settingsNotice = saved.fold(
+                        { context.resources.getQuantityString(R.plurals.export_done, it, it) },
+                        { context.getString(R.string.export_failed) },
+                    )
+                }
+            },
         )
-        is Route.Group -> GroupScreen(model, top.id, ::back, { push(Route.Detail(it.id)) }, { push(Route.AddPeople(top.id)) })
-        is Route.AddPeople -> AddPeopleScreen(model, top.groupId) { problem ->
-            back()
-            problem?.let { settingsNotice = it }
-        }
         is Route.Cards -> CardsScreen(
             model, top.uri, ::back,
             onAddOne = { newContact(it) },
@@ -262,7 +315,6 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
     }
 
     if (about) AboutDialog { about = false }
-    if (newGroup) NewGroupDialog(model, onDismiss = { newGroup = false }) { push(Route.Group(it)) }
 }
 
 /** Where a request from another app leads, once the person it names has been looked up. */

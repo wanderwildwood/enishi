@@ -1,7 +1,9 @@
 package com.wanderwildwood.enishi.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,12 +20,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import com.mudita.mmd.components.buttons.FloatingActionButtonMMD
+import com.mudita.mmd.components.checkbox.CheckboxMMD
+import com.mudita.mmd.components.divider.HorizontalDividerMMD
 import com.mudita.mmd.components.lazy.LazyColumnMMD
 import com.mudita.mmd.components.text.TextMMD
 import com.mudita.mmd.components.top_app_bar.TopAppBarMMD
@@ -32,9 +34,12 @@ import com.wanderwildwood.enishi.data.Person
 
 /**
  * Where the app opens, drawn as the phone's own contacts app is: a bold title, everyone in one
- * plain list with the surname in bold, and a round + for someone new. Favourites and groups are
- * two rows above everyone rather than tabs, so the list itself looks like the one the phone
- * already had. A cog and an `i`, top right, as in every app here.
+ * plain list with the surname in bold, and a round + for someone new. Nothing above everyone:
+ * favourites are the Phone app's to list, as on the phone's own apps. A cog and an `i`, top
+ * right, as in every app here.
+ *
+ * A long press on anyone starts choosing several: a box beside every row, the count in the bar,
+ * and Merge, Share and Delete along the foot. Back, or the cross, stops.
  */
 @Composable
 fun HomeScreen(
@@ -45,23 +50,43 @@ fun HomeScreen(
     onSearch: () -> Unit,
     onSettings: () -> Unit,
     onAbout: () -> Unit,
-    onFavourites: () -> Unit,
-    onGroups: () -> Unit,
     onImport: () -> Unit,
+    chosen: Set<Long>,
+    onChoose: (Person) -> Unit,
+    onChosenDone: () -> Unit,
+    onMerge: () -> Unit,
+    onShareChosen: () -> Unit,
+    onDeleteChosen: () -> Unit,
+    notice: String?,
+    onNoticeSeen: () -> Unit,
 ) {
+    val choosing = chosen.isNotEmpty()
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
-            Bar(
-                title = { BarTitle(stringResource(R.string.app_name)) },
-                actions = {
-                    BarButton(Icons.Search, stringResource(R.string.cd_search), onSearch)
-                    BarButton(Icons.Settings, stringResource(R.string.cd_settings), onSettings)
-                    BarButton(Icons.Info, stringResource(R.string.cd_about), onAbout)
-                },
-            )
+            if (choosing) {
+                Bar(
+                    title = { BarTitle(pluralStringResource(R.plurals.chosen_title, chosen.size, chosen.size)) },
+                    navigationIcon = { BarButton(Icons.Close, stringResource(R.string.cd_close), onChosenDone) },
+                )
+            } else {
+                Bar(
+                    title = { BarTitle(stringResource(R.string.app_name)) },
+                    actions = {
+                        BarButton(Icons.Search, stringResource(R.string.cd_search), onSearch)
+                        BarButton(Icons.Settings, stringResource(R.string.cd_settings), onSettings)
+                        BarButton(Icons.Info, stringResource(R.string.cd_about), onAbout)
+                    },
+                )
+            }
         },
-        floatingActionButton = { NewButton(onNew) },
+        bottomBar = {
+            Column {
+                notice?.let { NoticeStrip(it, onNoticeSeen) }
+                if (choosing) ChosenBar(chosen.size, onMerge, onShareChosen, onDeleteChosen)
+            }
+        },
+        floatingActionButton = { if (!choosing) NewButton(onNew) },
     ) { padding ->
         val body = Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.surface)
         when {
@@ -74,27 +99,13 @@ fun HomeScreen(
                 FootButton(stringResource(R.string.all_empty_import), Modifier.fillMaxWidth(), onClick = onImport)
             }
             else -> {
-                val starred = model.people.count { it.starred }
-                val groups = model.groups.size
                 PeopleList(
                     people = model.people,
                     state = listState,
                     modifier = body,
-                    above = {
-                        if (starred > 0) {
-                            NameRow(
-                                AnnotatedString(stringResource(R.string.tab_favourites)),
-                                note = pluralStringResource(R.plurals.group_size, starred, starred),
-                                onPress = onFavourites,
-                            )
-                        }
-                        NameRow(
-                            AnnotatedString(stringResource(R.string.tab_groups)),
-                            note = if (groups > 0) pluralStringResource(R.plurals.groups_count, groups, groups) else null,
-                            onPress = onGroups,
-                        )
-                    },
-                    onOpen = onOpen,
+                    chosen = if (choosing) chosen else null,
+                    onLongPress = onChoose,
+                    onOpen = { if (choosing) onChoose(it) else onOpen(it) },
                 )
             }
         }
@@ -123,66 +134,60 @@ internal fun PeopleList(
     modifier: Modifier,
     above: (@Composable () -> Unit)? = null,
     note: (Person) -> String? = { null },
+    /** While several are being chosen: who is, and a box beside every row. */
+    chosen: Set<Long>? = null,
+    onLongPress: ((Person) -> Unit)? = null,
     onOpen: (Person) -> Unit,
 ) {
     LazyColumnMMD(modifier, state = state) {
         if (above != null) item(key = "above") { Column { above() } }
-        items(people, key = { it.id }) { p -> PersonRow(p, note(p)) { onOpen(p) } }
+        items(people, key = { it.id }) { p ->
+            PersonRow(p, note(p), chosen = chosen?.let { p.id in it }, onLongPress = onLongPress?.let { { it(p) } }) { onOpen(p) }
+        }
         // Room under the last row, so the round + never sits on top of a name.
         item(key = "foot") { Spacer(Modifier.height(80.dp)) }
     }
 }
 
 @Composable
-internal fun PersonRow(person: Person, note: String? = null, onPress: () -> Unit) {
+internal fun PersonRow(
+    person: Person,
+    note: String? = null,
+    chosen: Boolean? = null,
+    onLongPress: (() -> Unit)? = null,
+    onPress: () -> Unit,
+) {
     val name = person.name.ifBlank { stringResource(R.string.no_name) }
-    NameRow(boldSurname(name, person.family), note = note, onPress = onPress)
+    NameRow(
+        boldSurname(name, person.family),
+        note = note,
+        leading = chosen?.let { on -> { CheckboxMMD(checked = on, onCheckedChange = null) } },
+        onLongPress = onLongPress,
+        onPress = onPress,
+    )
 }
 
-/** The people someone starred. */
+/**
+ * What can be done to everyone chosen, along the foot: merge them into one (two or more), share
+ * them as one card file, or delete them — that last asks first, as every delete here does.
+ */
 @Composable
-fun FavouritesScreen(model: BookModel, onBack: () -> Unit, onOpen: (Person) -> Unit) {
-    val starred = model.people.filter { it.starred }
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.surface,
-        topBar = {
-            Bar(
-                title = { BarTitle(stringResource(R.string.tab_favourites)) },
-                navigationIcon = { BarButton(Icons.Back, stringResource(R.string.cd_back), onBack) },
+private fun ChosenBar(count: Int, onMerge: () -> Unit, onShare: () -> Unit, onDelete: () -> Unit) {
+    val (armed, press) = rememberArmed(count, onDelete)
+    Column {
+        HorizontalDividerMMD()
+        if (armed) {
+            FootButton(
+                pluralStringResource(R.plurals.chosen_delete_armed, count, count),
+                Modifier.fillMaxWidth().padding(10.dp),
+                onClick = press,
             )
-        },
-    ) { padding ->
-        val body = Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.surface)
-        if (starred.isEmpty()) Quiet(stringResource(R.string.favourites_empty), body)
-        else PeopleList(starred, modifier = body, onOpen = onOpen)
-    }
-}
-
-/** Every group, and a row to make another. */
-@Composable
-fun GroupsScreen(model: BookModel, onBack: () -> Unit, onGroup: (Long) -> Unit, onNewGroup: () -> Unit) {
-    val context = LocalContext.current
-    // The account is named only when there is more than one, where it tells two "Family"s apart.
-    val many = model.groups.map { it.account }.distinct().size > 1
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.surface,
-        topBar = {
-            Bar(
-                title = { BarTitle(stringResource(R.string.tab_groups)) },
-                navigationIcon = { BarButton(Icons.Back, stringResource(R.string.cd_back), onBack) },
-            )
-        },
-    ) { padding ->
-        LazyColumnMMD(Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.surface)) {
-            items(model.groups, key = { it.id }) { g ->
-                val size = pluralStringResource(R.plurals.group_size, g.size, g.size)
-                NameRow(
-                    AnnotatedString(g.title),
-                    note = if (many) "$size · ${Labels.account(context, g.account)}" else size,
-                    onPress = { onGroup(g.id) },
-                )
+        } else {
+            Row(Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                FootButton(stringResource(R.string.chosen_merge), Modifier.weight(1f), enabled = count >= 2, onClick = onMerge)
+                FootButton(stringResource(R.string.chosen_share), Modifier.weight(1f), onClick = onShare)
+                FootButton(stringResource(R.string.chosen_delete), Modifier.weight(1f), onClick = press)
             }
-            item { NameRow(AnnotatedString(stringResource(R.string.group_new)), onPress = onNewGroup) }
         }
     }
 }

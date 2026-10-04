@@ -403,6 +403,99 @@ class Book(context: Context) {
         resolver.delete(Contacts.getLookupUri(contactId, lookup) ?: ContentUris.withAppendedId(Contacts.CONTENT_URI, contactId), null, null)
     }
 
+    /** Every row of these raw contacts, every column, as the store keeps them. */
+    private fun storeRows(rawIds: Collection<Long>): List<StoreRow> {
+        if (rawIds.isEmpty()) return emptyList()
+        val columns = (1..15).map { "data$it" }
+        val out = mutableListOf<StoreRow>()
+        resolver.query(
+            Data.CONTENT_URI,
+            arrayOf(Data._ID, Data.MIMETYPE) + columns,
+            "${Data.RAW_CONTACT_ID} IN (${rawIds.joinToString(",")})",
+            null, "${Data.RAW_CONTACT_ID} ASC, ${Data.IS_SUPER_PRIMARY} DESC, ${Data._ID} ASC",
+        )?.use { c ->
+            while (c.moveToNext()) {
+                val values = mutableMapOf<String, Any?>()
+                columns.forEachIndexed { i, name ->
+                    val at = i + 2
+                    when (c.getType(at)) {
+                        android.database.Cursor.FIELD_TYPE_INTEGER -> values[name] = c.getLong(at)
+                        android.database.Cursor.FIELD_TYPE_FLOAT -> values[name] = c.getDouble(at)
+                        android.database.Cursor.FIELD_TYPE_BLOB -> values[name] = c.getBlob(at)
+                        android.database.Cursor.FIELD_TYPE_STRING -> values[name] = c.getString(at)
+                        else -> Unit
+                    }
+                }
+                out += StoreRow(c.getLong(0), c.getString(1).orEmpty(), values)
+            }
+        }
+        return out
+    }
+
+    /**
+     * Makes one person of several, by hand: everything the others have that [keepId] lacks is
+     * written into the kept person's own copy, and then the others' copies go. A copy kept by a
+     * messenger (WhatsApp, Signal) is that app's to keep, so it is joined to the kept person
+     * instead of deleted — Android then shows them as one, as it does for any two copies.
+     *
+     * One batch: either all of it happens or none of it does. Returns the kept person's id.
+     */
+    fun merge(keepId: Long, otherIds: Collection<Long>): Long {
+        val keep = card(keepId, false) ?: error("the person to keep is gone")
+        val target = target(keep, null) ?: error("the person to keep cannot be written to")
+        val syncing = syncingTypes()
+        val keptRows = storeRows(keep.parts.filter { kept(it.account, syncing).writable }.map { it.rawId })
+
+        val othersWritable = mutableListOf<Long>()
+        val othersJoined = mutableListOf<Long>()
+        var starred = keep.draft.starred
+        for (id in otherIds.filter { it != keepId }) {
+            val other = card(id, false) ?: continue
+            starred = starred || other.draft.starred
+            for (part in other.parts) {
+                if (kept(part.account, syncing).writable) othersWritable += part.rawId else othersJoined += part.rawId
+            }
+        }
+        val groupsHere = groups().filter { it.account == target.account }.map { it.id }.toSet()
+        val plan = planMerge(keptRows, storeRows(othersWritable), groupsHere)
+
+        val ops = arrayListOf<ContentProviderOperation>()
+        for (op in plan) {
+            ops += when (op) {
+                is Op.Insert -> ContentProviderOperation.newInsert(Data.CONTENT_URI)
+                    .withValue(Data.RAW_CONTACT_ID, target.rawId)
+                    .withValue(Data.MIMETYPE, op.mime)
+                    .also { b -> op.values.forEach { (k, v) -> b.withValue(k, v) } }
+                    .build()
+                is Op.Update -> ContentProviderOperation.newUpdate(ContentUris.withAppendedId(Data.CONTENT_URI, op.dataId))
+                    .also { b -> op.values.forEach { (k, v) -> b.withValue(k, v) } }
+                    .build()
+                is Op.Delete -> ContentProviderOperation.newDelete(ContentUris.withAppendedId(Data.CONTENT_URI, op.dataId)).build()
+            }
+        }
+        for (raw in othersJoined) {
+            ops += ContentProviderOperation.newUpdate(ContactsContract.AggregationExceptions.CONTENT_URI)
+                .withValue(ContactsContract.AggregationExceptions.TYPE, ContactsContract.AggregationExceptions.TYPE_KEEP_TOGETHER)
+                .withValue(ContactsContract.AggregationExceptions.RAW_CONTACT_ID1, target.rawId)
+                .withValue(ContactsContract.AggregationExceptions.RAW_CONTACT_ID2, raw)
+                .build()
+        }
+        // Deleted as any app deletes: marked, so an account's sync removes the copy it holds too.
+        for (raw in othersWritable) {
+            ops += ContentProviderOperation.newDelete(ContentUris.withAppendedId(RawContacts.CONTENT_URI, raw)).build()
+        }
+        if (starred && !keep.draft.starred) {
+            ops += ContentProviderOperation.newUpdate(ContentUris.withAppendedId(RawContacts.CONTENT_URI, target.rawId))
+                .withValue(RawContacts.STARRED, 1)
+                .build()
+        }
+        if (ops.isNotEmpty()) resolver.applyBatch(ContactsContract.AUTHORITY, ops)
+        return resolver.query(
+            ContentUris.withAppendedId(RawContacts.CONTENT_URI, target.rawId),
+            arrayOf(RawContacts.CONTACT_ID), null, null, null,
+        )?.use { if (it.moveToFirst()) it.getLong(0) else null } ?: keepId
+    }
+
     // ---------------------------------------------------------------- groups
 
     /** Groups a person can be put in. The store's own "starred" and "everyone" lists are not. */

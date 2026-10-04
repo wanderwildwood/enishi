@@ -20,8 +20,9 @@ import com.mudita.mmd.components.text.TextMMD
 import com.mudita.mmd.components.top_app_bar.TopAppBarMMD
 import com.wanderwildwood.enishi.R
 import com.wanderwildwood.enishi.data.Account
+import com.wanderwildwood.enishi.data.Backups
 
-/** How names are ordered and shown, where new people go, and a whole book in or out. */
+/** How names are ordered and shown, where new people go, a whole book in or out, and backups. */
 @Composable
 fun SettingsScreen(
     model: BookModel,
@@ -30,6 +31,12 @@ fun SettingsScreen(
     onExport: () -> Unit,
     notice: String?,
     onNoticeSeen: () -> Unit,
+    backups: Backups,
+    /** Bumped whenever a backup setting changes or one is written, so the rows read again. */
+    backupsSeen: Int,
+    onBackupEvery: (Int) -> Unit,
+    onBackupFolder: () -> Unit,
+    onBackupNow: () -> Unit,
 ) {
     val context = LocalContext.current
     var saveTo by remember { mutableStateOf<Account?>(null) }
@@ -81,6 +88,41 @@ fun SettingsScreen(
                     note = pluralStringResource(R.plurals.settings_export_note, model.people.size, model.people.size),
                     onPress = onExport,
                 )
+            }
+            item { Heading(stringResource(R.string.settings_backups)) }
+            item {
+                val every = remember(backupsSeen) { backups.every }
+                PlainRow(
+                    title = stringResource(R.string.backup_every),
+                    note = stringResource(
+                        when (every) {
+                            0 -> R.string.backup_off
+                            1 -> R.string.backup_daily
+                            else -> R.string.backup_weekly
+                        },
+                    ),
+                    // Off, every day, every week, and round again — one press each, as "Sort by" goes.
+                    onPress = { onBackupEvery(if (every == 0) 1 else if (every == 1) 7 else 0) },
+                )
+            }
+            item {
+                val name = remember(backupsSeen) { backups.folderName() }
+                PlainRow(
+                    title = stringResource(R.string.backup_folder),
+                    note = name ?: stringResource(R.string.backup_folder_none),
+                    onPress = onBackupFolder,
+                )
+            }
+            item {
+                val note = remember(backupsSeen) {
+                    backups.problem?.let { context.getString(R.string.backup_problem, it) }
+                        ?: backups.last.takeIf { it > 0 }?.let {
+                            val day = java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT).format(java.util.Date(it))
+                            context.resources.getQuantityString(R.plurals.backup_note, Backups.KEEP, day, Backups.KEEP)
+                        }
+                        ?: context.getString(R.string.backup_never)
+                }
+                PlainRow(title = stringResource(R.string.backup_now), note = note, onPress = onBackupNow)
             }
         }
     }

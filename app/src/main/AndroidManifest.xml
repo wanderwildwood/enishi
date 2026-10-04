@@ -10,6 +10,9 @@
     <!-- A press on a number calls it. Asked for the first time one is pressed; refused, the
          number goes to the dialer instead. -->
     <uses-permission android:name="android.permission.CALL_PHONE" />
+    <!-- Only so a scheduled backup is still scheduled after the phone restarts. Nothing runs
+         at start-up: Android's job scheduler keeps the schedule. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!-- No INTERNET permission: nothing in this app can reach the network. The llama's
          address is handed to a browser. -->
@@ -145,6 +148,12 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <!-- The scheduled backup, run by Android's job scheduler and nothing else. -->
+        <service
+            android:name=".data.BackupJob"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
 
     </application>
 

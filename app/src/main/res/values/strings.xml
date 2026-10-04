@@ -14,23 +14,11 @@
     <!-- The list -->
 
     <string name="tab_all">All</string>
-    <string name="tab_favourites">Favourites</string>
-    <string name="tab_groups">Groups</string>
     <string name="all_empty">No contacts yet.</string>
     <string name="all_empty_new">Add someone</string>
     <string name="all_empty_import">Read them from a file</string>
-    <string name="favourites_empty">No favourites yet. Open someone and press the star.</string>
     <!-- A person the store has no name for -->
     <string name="no_name">No name</string>
-    <plurals name="group_size">
-        <item quantity="one">%d person</item>
-        <item quantity="other">%d people</item>
-    </plurals>
-    <string name="group_new">New group</string>
-    <plurals name="groups_count">
-        <item quantity="one">%d group</item>
-        <item quantity="other">%d groups</item>
-    </plurals>
     <!-- The phone itself, as a place contacts are kept, beside any accounts -->
     <string name="account_phone">Phone</string>
 
@@ -125,24 +113,7 @@
     <!-- ============================================================ -->
     <!-- Groups -->
 
-    <string name="group_text_all">Text everyone</string>
-    <string name="group_email_all">Email everyone</string>
-    <string name="group_no_numbers">Nobody in this group has a number.</string>
-    <string name="group_no_emails">Nobody in this group has an email address.</string>
-    <string name="group_remove_armed">Take out of the group — tap again</string>
-    <string name="group_add_people">Add people</string>
-    <string name="group_rename">Rename</string>
-    <string name="group_delete">Delete the group</string>
-    <string name="group_delete_armed">Delete the group — tap again; the people stay</string>
-    <plurals name="group_add_n">
-        <item quantity="one">Add %d person</item>
-        <item quantity="other">Add %d people</item>
-    </plurals>
     <!-- A group belongs to one account, and only people kept there can join it -->
-    <plurals name="group_refused">
-        <item quantity="one">%1$d person is not kept in %2$s, so could not join.</item>
-        <item quantity="other">%1$d people are not kept in %2$s, so could not join.</item>
-    </plurals>
 
     <!-- ============================================================ -->
     <!-- Another app asking for someone -->
@@ -209,6 +180,60 @@
         <item quantity="other">Saved %d contacts.</item>
     </plurals>
     <string name="export_failed">The file could not be written.</string>
+    <string name="settings_backups">Backups</string>
+    <string name="backup_every">Save everyone automatically</string>
+    <string name="backup_off">Off</string>
+    <string name="backup_daily">Every day</string>
+    <string name="backup_weekly">Every week</string>
+    <string name="backup_folder">Folder</string>
+    <string name="backup_folder_none">Choose where the files go</string>
+    <string name="backup_now">Save a backup now</string>
+    <plurals name="backup_note">
+        <item quantity="one">Last saved %1$s. The newest %2$d file is kept.</item>
+        <item quantity="other">Last saved %1$s. The newest %2$d files are kept.</item>
+    </plurals>
+    <string name="backup_never">Not saved yet.</string>
+    <string name="backup_problem">The last one failed: %1$s</string>
+
+    <!-- ============================================================ -->
+    <!-- Choosing several -->
+
+    <plurals name="chosen_title">
+        <item quantity="one">%d chosen</item>
+        <item quantity="other">%d chosen</item>
+    </plurals>
+    <string name="chosen_merge">Merge</string>
+    <string name="chosen_share">Share</string>
+    <string name="chosen_delete">Delete</string>
+    <plurals name="chosen_delete_armed">
+        <item quantity="one">Delete %d — tap again</item>
+        <item quantity="other">Delete %d — tap again</item>
+    </plurals>
+    <plurals name="chosen_deleted_some">
+        <item quantity="one">%d could not be deleted.</item>
+        <item quantity="other">%d could not be deleted.</item>
+    </plurals>
+
+    <!-- ============================================================ -->
+    <!-- Merging -->
+
+    <string name="merge_title">Merge</string>
+    <string name="merge_body">Choose whose name to keep. Every number, address and note the others have is added to that person, and the others go.</string>
+    <string name="merge_into">Merge into %1$s</string>
+    <string name="merge_failed">The phone’s contacts would not merge these. Nothing was changed.</string>
+    <string name="merge_messenger">Kept by another app; it is joined, not changed</string>
+    <plurals name="merge_numbers">
+        <item quantity="one">%d number</item>
+        <item quantity="other">%d numbers</item>
+    </plurals>
+    <plurals name="merge_emails">
+        <item quantity="one">%d email</item>
+        <item quantity="other">%d emails</item>
+    </plurals>
+    <plurals name="merge_addresses">
+        <item quantity="one">%d address</item>
+        <item quantity="other">%d addresses</item>
+    </plurals>
 
     <!-- ============================================================ -->
     <!-- About -->
