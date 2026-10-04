@@ -2,6 +2,8 @@ package com.wanderwildwood.enishi.ui
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.unit.dp
@@ -68,6 +70,39 @@ object Icons {
 
     val MoreLight: ImageVector = symbol("MoreLight", "M140-520v-300h300v300H140Zm0 380v-300h300v300H140Zm380-380v-300h300v300H520Zm0 380v-300h300v300H520ZM200-580h180v-180H200v180Zm380 0h180v-180H580v180Zm0 380h180v-180H580v180Zm-380 0h180v-180H200v180Zm380-380Zm0 200Zm-200 0Zm0-200Z")
 
-    /** For the one button that opens Email rather than Messaging, when a person has only an address. */
-    val MailLight: ImageVector = symbol("MailLight", "M172.31-180Q142-180 121-201q-21-21-21-51.31v-455.38Q100-738 121-759q21-21 51.31-21h615.38Q818-780 839-759q21 21 21 51.31v455.38Q860-222 839-201q-21 21-51.31 21H172.31ZM480-457.69 160-662.31v410q0 5.39 3.46 8.85t8.85 3.46h615.38q5.39 0 8.85-3.46t3.46-8.85v-410L480-457.69Zm0-62.31 313.85-200h-627.7L480-520ZM160-662.31V-720v467.69q0 5.39 3.46 8.85t8.85 3.46H160v-422.31Z")
+
+    /**
+     * Email's own envelope — the page, the flap and the droplet seal of its launcher icon, taken
+     * line for line from tayori's ic_tayori_foreground.xml (108 grid) and set on this 960 grid,
+     * its line widened to Call's and More's 60 units. For the button that opens Email when a
+     * person has only an address.
+     */
+    val Email: ImageVector = ImageVector.Builder(
+        name = "Email",
+        defaultWidth = 24.dp,
+        defaultHeight = 24.dp,
+        viewportWidth = 960f,
+        viewportHeight = 960f,
+    )
+        .addGroup(name = "Email", translationX = -445.96f, translationY = -471.49f, scaleX = 17.0213f, scaleY = 17.0213f)
+        .addPath(
+            pathData = PathParser().parsePathString("M31.4,40.2 C46.2,39.4 62.8,39.6 77.2,40.6 C77.9,50.8 77.6,61.4 76.8,71.6 C61.9,72.4 46.1,72.2 31.8,71.4 C31.0,61.0 30.9,50.6 31.4,40.2 Z").toNodes(),
+            stroke = SolidColor(Color.Black),
+            strokeLineWidth = 3.525f,
+            strokeLineCap = StrokeCap.Round,
+            strokeLineJoin = StrokeJoin.Round,
+        )
+        .addPath(
+            pathData = PathParser().parsePathString("M32.0,41.4 C39.8,47.6 46.6,53.0 53.2,57.4 C60.4,52.8 68.2,47.2 76.4,41.6").toNodes(),
+            stroke = SolidColor(Color.Black),
+            strokeLineWidth = 3.525f,
+            strokeLineCap = StrokeCap.Round,
+            strokeLineJoin = StrokeJoin.Round,
+        )
+        .addPath(
+            pathData = PathParser().parsePathString("M53.3,54.2 A3.4,3.3 0 1 0 53.4,54.2 Z").toNodes(),
+            fill = SolidColor(Color.Black),
+        )
+        .clearGroup()
+        .build()
 }

@@ -175,7 +175,7 @@ fun DetailScreen(
                         if (phones.size == 1) text(phones[0].value) else choosing = false to phones
                     }
                 } else if (d.emails.isNotEmpty()) {
-                    ActionTile(Icons.MailLight, stringResource(R.string.field_email)) {
+                    ActionTile(Icons.Email, stringResource(R.string.field_email)) {
                         open(Intent(Intent.ACTION_SENDTO, Uri.fromParts("mailto", d.emails.first().value, null)))
                     }
                 }
