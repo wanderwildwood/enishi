@@ -42,8 +42,8 @@ at a time.
 - **Edits only what changed.** A photo, a ringtone or a messenger handle written by another app
   is never touched by a save here, because nothing here edits it.
 - **Birthdays with or without a year**, entered in the order the phone writes a date. A switch
-  under the birthday, **Add to calendar**, puts it in a "Birthdays" calendar kept on the phone:
-  every year, with a reminder at nine in the morning on the day, shown by any calendar app.
+  under the birthday, **Add to calendar**, puts it in a "Birthdays" calendar kept on the phone,
+  every year, shown by any calendar app.
   Change the name or the day here and the calendar follows.
 - **Contact cards (.vcf)**: open one received in a message and add the person from it; read a
   whole address book from another phone, with anyone already here left alone rather than added

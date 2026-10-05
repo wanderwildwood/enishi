@@ -9,7 +9,6 @@ import android.net.Uri
 import android.provider.CalendarContract
 import android.provider.CalendarContract.Calendars
 import android.provider.CalendarContract.Events
-import android.provider.CalendarContract.Reminders
 import android.provider.ContactsContract.CommonDataKinds.Event
 import android.provider.ContactsContract.Contacts
 import android.provider.ContactsContract.Data
@@ -20,7 +19,7 @@ import java.time.ZoneOffset
 /**
  * Birthdays put in the phone's calendar, one person at a time, when the switch beside their
  * birthday is on. They go in a calendar of this app's own, kept on the phone and called
- * "Birthdays", so any calendar app shows them and its reminders ring for them, and nothing is
+ * "Birthdays", so any calendar app shows them, with no reminder of their own; and nothing is
  * written into a calendar that syncs somewhere else. It is read-only to calendar apps: the
  * birthday is changed here, and the calendar follows.
  *
@@ -48,15 +47,7 @@ class Birthdays(private val context: Context) {
         val values = eventValues(calendar, contactId, lookup, name, day)
         val have = events().filter { it.contactId == contactId }
         if (have.isEmpty()) {
-            val id = resolver.insert(asCalendar(Events.CONTENT_URI), values)?.let(ContentUris::parseId) ?: return
-            resolver.insert(
-                asCalendar(Reminders.CONTENT_URI),
-                ContentValues().apply {
-                    put(Reminders.EVENT_ID, id)
-                    put(Reminders.MINUTES, REMIND_AT)
-                    put(Reminders.METHOD, Reminders.METHOD_ALERT)
-                },
-            )
+            resolver.insert(asCalendar(Events.CONTENT_URI), values)
         } else {
             resolver.update(asCalendar(ContentUris.withAppendedId(Events.CONTENT_URI, have.first().id)), values, null, null)
             have.drop(1).forEach { delete(it.id) }
@@ -180,7 +171,7 @@ class Birthdays(private val context: Context) {
             put(Events.EVENT_TIMEZONE, "UTC")
             put(Events.RRULE, rule)
             put(Events.AVAILABILITY, Events.AVAILABILITY_FREE)
-            put(Events.HAS_ALARM, 1)
+            put(Events.HAS_ALARM, 0)
             put(Events.SYNC_DATA1, lookup)
             put(Events.SYNC_DATA2, contactId.toString())
         }
@@ -210,9 +201,6 @@ class Birthdays(private val context: Context) {
         val PERMISSIONS = arrayOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR)
         private const val ACCOUNT = "Contacts"
         private const val CALENDAR = "enishi_birthdays"
-
-        /** On the day, at nine in the morning: minutes before the midnight that starts it. */
-        const val REMIND_AT = -540
 
         /**
          * Where the yearly event starts, and how it repeats. A known year starts it on the day
