@@ -42,16 +42,14 @@ import kotlinx.coroutines.delay
 @Composable
 internal fun BarButton(icon: ImageVector, description: String, onClick: () -> Unit) {
     Box(
-        modifier = Modifier.size(56.dp).clickable(onClick = onClick),
+        modifier = Modifier.size(48.dp).clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
             imageVector = icon,
             contentDescription = description,
             tint = MaterialTheme.colorScheme.onSurface,
-            // The phone's own contacts app draws its bar icons 35px across. A Material symbol
-            // fills two thirds of its box, so the box is half as big again: 40dp draws 35px.
-            modifier = Modifier.size(40.dp),
+            modifier = Modifier.size(22.dp),
         )
     }
 }
