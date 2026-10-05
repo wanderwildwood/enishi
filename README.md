@@ -61,7 +61,7 @@ the app has no internet permission at all.
 
 ## Where this is up to
 
-Version 0.1.7. What it writes is worked out by plain code that is unit tested on its own: which
+Version 0.1.8. What it writes is worked out by plain code that is unit tested on its own: which
 rows a save adds, changes and deletes; how vCards from 2.1 to 4.0 read, including old phones'
 quoted-printable in other character sets; dates without a year; search; who in a file is
 already here; what a merge adds and what it leaves.
