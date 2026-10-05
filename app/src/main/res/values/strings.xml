@@ -97,6 +97,13 @@
     <string name="edit_add_address">Add an address</string>
     <string name="edit_add_birthday">Add a birthday</string>
     <string name="edit_add_date">Add a date</string>
+    <!-- The switch under a birthday in the editor; on, the birthday goes in the phone's calendar -->
+    <string name="edit_birthday_calendar">Add to calendar</string>
+    <string name="edit_calendar_refused">The calendar was not allowed, so the birthday stays here only.</string>
+    <!-- The calendar this app keeps birthdays in, as calendar apps list it -->
+    <string name="birthdays_calendar">Birthdays</string>
+    <!-- A birthday as a calendar shows it: the person's name -->
+    <string name="birthdays_title">%1$s’s birthday</string>
     <string name="edit_add_website">Add a website</string>
     <string name="edit_save_to">Save to</string>
     <string name="hint_phone">Phone number</string>

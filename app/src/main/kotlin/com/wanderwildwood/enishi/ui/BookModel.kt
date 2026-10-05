@@ -11,6 +11,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.wanderwildwood.enishi.data.Account
+import com.wanderwildwood.enishi.data.Birthdays
 import com.wanderwildwood.enishi.data.Book
 import com.wanderwildwood.enishi.data.Findable
 import com.wanderwildwood.enishi.data.Group
@@ -29,6 +30,7 @@ import kotlinx.coroutines.withContext
 class BookModel(app: Application) : AndroidViewModel(app) {
     val book = Book(app)
     val prefs = Prefs(app)
+    val birthdays = Birthdays(app)
 
     var people by mutableStateOf<List<Person>>(emptyList())
         private set
@@ -80,7 +82,10 @@ class BookModel(app: Application) : AndroidViewModel(app) {
                         book.groups(),
                         book.accounts(),
                     )
-                }.getOrNull()
+                }.getOrNull().also {
+                    // Birthdays put in the calendar follow the contacts, wherever they were changed.
+                    runCatching { birthdays.follow() }
+                }
             } ?: return@launch
             people = read.people
             findable = read.findable

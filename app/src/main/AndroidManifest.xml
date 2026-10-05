@@ -10,6 +10,10 @@
     <!-- A press on a number calls it. Asked for the first time one is pressed; refused, the
          number goes to the dialer instead. -->
     <uses-permission android:name="android.permission.CALL_PHONE" />
+    <!-- Only for a birthday whose switch is on: it goes in a calendar of this app's own.
+         Asked for the first time that switch is pressed. -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+    <uses-permission android:name="android.permission.WRITE_CALENDAR" />
     <!-- Only so a scheduled backup is still scheduled after the phone restarts. Nothing runs
          at start-up: Android's job scheduler keeps the schedule. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />

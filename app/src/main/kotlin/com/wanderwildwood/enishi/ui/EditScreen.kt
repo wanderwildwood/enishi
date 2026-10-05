@@ -1,6 +1,8 @@
 package com.wanderwildwood.enishi.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -54,6 +56,7 @@ import com.mudita.mmd.components.text.TextMMD
 import com.mudita.mmd.components.top_app_bar.TopAppBarMMD
 import com.wanderwildwood.enishi.R
 import com.wanderwildwood.enishi.data.Account
+import com.wanderwildwood.enishi.data.Birthdays
 import com.wanderwildwood.enishi.data.Card
 import com.wanderwildwood.enishi.data.Day
 import com.wanderwildwood.enishi.data.Draft
@@ -100,6 +103,19 @@ fun EditScreen(
     var moreNames by remember { mutableStateOf(listOf(start.prefix, start.middle, start.suffix, start.nickname).any { it.isNotBlank() }) }
     var problem by remember { mutableStateOf<String?>(null) }
     var saving by remember { mutableStateOf(false) }
+    // Whether the birthday is in the calendar too. The calendar itself is the only record of
+    // it, read once the form is open.
+    var startCalendar by remember { mutableStateOf(false) }
+    var calendar by remember { mutableStateOf(false) }
+    LaunchedEffect(card) {
+        if (card != null) model.io { model.birthdays.isOn(card.id) }.getOrNull()?.let {
+            startCalendar = it
+            calendar = it
+        }
+    }
+    val askCalendar = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
+        if (granted.values.all { it }) calendar = true else problem = context.getString(R.string.edit_calendar_refused)
+    }
     // The date the reader just added, which takes the cursor.
     var addedDate by remember { mutableStateOf<Int?>(null) }
     // A refused Save says why at the top of the form, so the form goes there to say it.
@@ -123,7 +139,7 @@ fun EditScreen(
 
     // Measured against what is stored, not against the form as it opened: "add this address to
     // someone" opens with the address already in, and that is something to save.
-    val dirty = if (card == null) !draft.isEmpty else draft.copy(events = emptyList()) != card.draft.copy(events = emptyList()) || events != startBoxes
+    val dirty = if (card == null) !draft.isEmpty else draft.copy(events = emptyList()) != card.draft.copy(events = emptyList()) || events != startBoxes || calendar != startCalendar
     val (leaving, pressLeave) = rememberArmed(dirty) { onCancel() }
     val close = { if (dirty) pressLeave() else onCancel() }
     BackHandler(onBack = close)
@@ -148,7 +164,10 @@ fun EditScreen(
         saving = true
         scope.launch {
             val result = model.io { book ->
-                if (card == null) book.create(after, account) else { book.save(card, after, target); card.id }
+                val id = if (card == null) book.create(after, account) else { book.save(card, after, target); card.id }
+                // A calendar that could not be written to does not undo the contact.
+                if (id != null) runCatching { if (calendar) model.birthdays.add(id) else if (startCalendar) model.birthdays.remove(id) }
+                id
             }
             saving = false
             val id = result.getOrNull()
@@ -232,6 +251,19 @@ fun EditScreen(
                         focusNow = addedDate == i,
                     )
                 }
+                if (e.type == android.provider.ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY &&
+                    events.indexOfFirst { it.type == e.type } == i
+                ) {
+                    item(key = "calendar") {
+                        SwitchLine(stringResource(R.string.edit_birthday_calendar), calendar) {
+                            when {
+                                calendar -> calendar = false
+                                model.birthdays.allowed() -> calendar = true
+                                else -> askCalendar.launch(Birthdays.PERMISSIONS)
+                            }
+                        }
+                    }
+                }
             }
             item {
                 val birthday = android.provider.ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY
@@ -285,17 +317,7 @@ fun EditScreen(
             }
 
             item {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { draft = draft.copy(starred = !draft.starred) }
-                        .padding(horizontal = 16.dp, vertical = 16.dp),
-                ) {
-                    TextMMD(text = stringResource(R.string.field_favourite), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                    SwitchMMD(checked = draft.starred, onCheckedChange = null)
-                }
-                DottedRule()
+                SwitchLine(stringResource(R.string.field_favourite), draft.starred) { draft = draft.copy(starred = !draft.starred) }
             }
 
             // Only a new contact chooses; an existing one stays where it is.
@@ -490,6 +512,22 @@ private fun EventLine(
                 }
             }
         }
+    }
+    DottedRule()
+}
+
+/** A word and a switch, the whole line pressable. */
+@Composable
+private fun SwitchLine(text: String, on: Boolean, onPress: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onPress)
+            .padding(horizontal = 16.dp, vertical = 16.dp),
+    ) {
+        TextMMD(text = text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        SwitchMMD(checked = on, onCheckedChange = null)
     }
     DottedRule()
 }
