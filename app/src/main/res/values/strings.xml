@@ -99,6 +99,8 @@
     <string name="edit_add_date">Add a date</string>
     <!-- The switch under a birthday in the editor; on, the birthday goes in the phone's calendar -->
     <string name="edit_birthday_calendar">Add to calendar</string>
+    <!-- In place of that switch, when the contacts' own server already keeps a birthday calendar: its name -->
+    <string name="edit_birthday_synced">Already in %1$s</string>
     <string name="edit_calendar_refused">The calendar was not allowed, so the birthday stays here only.</string>
     <!-- The calendar this app keeps birthdays in, as calendar apps list it -->
     <string name="birthdays_calendar">Birthdays</string>

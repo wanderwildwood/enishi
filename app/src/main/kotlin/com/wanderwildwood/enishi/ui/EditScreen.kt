@@ -113,8 +113,23 @@ fun EditScreen(
             calendar = it
         }
     }
+    // A calendar the contacts' own server already fills with birthdays — Nextcloud's, Google's —
+    // in which case the switch gives way to saying so, rather than show the birthday twice.
+    var synced by remember { mutableStateOf<String?>(null) }
+    val accountTypes = card?.parts?.map { it.account.type } ?: listOf(account.type)
+    LaunchedEffect(accountTypes) {
+        synced = model.io { model.birthdays.syncedCalendar(accountTypes) }.getOrNull()
+    }
     val askCalendar = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
-        if (granted.values.all { it }) calendar = true else problem = context.getString(R.string.edit_calendar_refused)
+        if (granted.values.all { it }) {
+            scope.launch {
+                val found = model.io { model.birthdays.syncedCalendar(accountTypes) }.getOrNull()
+                synced = found
+                if (found == null) calendar = true
+            }
+        } else {
+            problem = context.getString(R.string.edit_calendar_refused)
+        }
     }
     // The date the reader just added, which takes the cursor.
     var addedDate by remember { mutableStateOf<Int?>(null) }
@@ -255,6 +270,17 @@ fun EditScreen(
                     events.indexOfFirst { it.type == e.type } == i
                 ) {
                     item(key = "calendar") {
+                        val already = synced
+                        // One already switched on stays a switch, so it can be switched off.
+                        if (already != null && !calendar && !startCalendar) {
+                            TextMMD(
+                                text = stringResource(R.string.edit_birthday_synced, already),
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp),
+                            )
+                            DottedRule()
+                            return@item
+                        }
                         SwitchLine(stringResource(R.string.edit_birthday_calendar), calendar) {
                             when {
                                 calendar -> calendar = false

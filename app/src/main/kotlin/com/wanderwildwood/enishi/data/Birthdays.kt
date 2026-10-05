@@ -55,6 +55,62 @@ class Birthdays(private val context: Context) {
         }
     }
 
+    /**
+     * The name of a calendar that already shows birthdays for someone kept in one of these
+     * accounts, made by the server the contacts sync with, or null when there is none. With one,
+     * the switch would only show the birthday twice. Nextcloud's "Contact birthdays" is known by
+     * the mark Nextcloud puts on each of its events (DAVx5 keeps it), or by its name while it is
+     * still empty; Google's by the address Google gives it. A person kept only on the phone is in
+     * neither.
+     */
+    fun syncedCalendar(accountTypes: Collection<String?>): String? {
+        if (!allowed()) return null
+        val dav = accountTypes.any { t -> t != null && (t.contains("davdroid") || t.contains("davx5")) }
+        val google = accountTypes.any { it == GOOGLE }
+        if (!dav && !google) return null
+        class Cal(val id: Long, val name: String, val type: String, val owner: String, val access: Int)
+        val calendars = mutableListOf<Cal>()
+        resolver.query(
+            Calendars.CONTENT_URI,
+            arrayOf(Calendars._ID, Calendars.CALENDAR_DISPLAY_NAME, Calendars.ACCOUNT_TYPE, Calendars.OWNER_ACCOUNT, Calendars.CALENDAR_ACCESS_LEVEL),
+            "${Calendars.VISIBLE} = 1 AND ${Calendars.ACCOUNT_TYPE} != ?",
+            arrayOf(CalendarContract.ACCOUNT_TYPE_LOCAL),
+            null,
+        )?.use { c ->
+            while (c.moveToNext()) {
+                calendars += Cal(c.getLong(0), c.getString(1).orEmpty(), c.getString(2).orEmpty(), c.getString(3).orEmpty(), c.getInt(4))
+            }
+        }
+        if (google) {
+            calendars.firstOrNull { it.type == GOOGLE && it.owner.endsWith(GOOGLE_BIRTHDAYS) }?.let { return it.name }
+        }
+        if (dav) {
+            val davCalendars = calendars.filter { it.type.contains("davdroid") || it.type.contains("davx5") }
+            if (davCalendars.isEmpty()) return null
+            val marked = mutableSetOf<Long>()
+            resolver.query(
+                CalendarContract.ExtendedProperties.CONTENT_URI,
+                arrayOf(CalendarContract.ExtendedProperties.EVENT_ID),
+                "${CalendarContract.ExtendedProperties.VALUE} LIKE ?",
+                arrayOf("%$NEXTCLOUD_MARK%"),
+                null,
+            )?.use { c -> while (c.moveToNext()) marked += c.getLong(0) }
+            if (marked.isNotEmpty()) {
+                val inCalendars = mutableSetOf<Long>()
+                resolver.query(
+                    Events.CONTENT_URI,
+                    arrayOf(Events.CALENDAR_ID),
+                    "${Events._ID} IN (${marked.joinToString(",")})",
+                    null,
+                    null,
+                )?.use { c -> while (c.moveToNext()) inCalendars += c.getLong(0) }
+                davCalendars.firstOrNull { it.id in inCalendars }?.let { return it.name }
+            }
+            davCalendars.firstOrNull { it.name == NEXTCLOUD_NAME && it.access <= Calendars.CAL_ACCESS_READ }?.let { return it.name }
+        }
+        return null
+    }
+
     fun remove(contactId: Long) {
         if (!allowed()) return
         events().filter { it.contactId == contactId }.forEach { delete(it.id) }
@@ -202,6 +258,10 @@ class Birthdays(private val context: Context) {
         val PERMISSIONS = arrayOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR)
         private const val ACCOUNT = "Contacts"
         private const val CALENDAR = "enishi_birthdays"
+        private const val GOOGLE = "com.google"
+        private const val GOOGLE_BIRTHDAYS = "#contacts@group.v.calendar.google.com"
+        private const val NEXTCLOUD_MARK = "X-NEXTCLOUD-BC-FIELD-TYPE"
+        private const val NEXTCLOUD_NAME = "Contact birthdays"
 
         /**
          * Where the yearly event starts, and how it repeats. A known year starts it on the day

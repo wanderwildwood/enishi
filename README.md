@@ -43,7 +43,8 @@ at a time.
   is never touched by a save here, because nothing here edits it.
 - **Birthdays with or without a year**, entered in the order the phone writes a date. A switch
   under the birthday, **Add to calendar**, puts it in a "Birthdays" calendar kept on the phone,
-  every year, shown by any calendar app.
+  every year, shown by any calendar app. Where the contacts' own server already keeps one —
+  Nextcloud's "Contact birthdays", Google's birthdays — it says so instead of offering the switch.
   Change the name or the day here and the calendar follows.
 - **Contact cards (.vcf)**: open one received in a message and add the person from it; read a
   whole address book from another phone, with anyone already here left alone rather than added
@@ -64,7 +65,7 @@ the app has no internet permission at all.
 
 ## Where this is up to
 
-Version 0.1.9. What it writes is worked out by plain code that is unit tested on its own: which
+Version 0.1.10. What it writes is worked out by plain code that is unit tested on its own: which
 rows a save adds, changes and deletes; how vCards from 2.1 to 4.0 read, including old phones'
 quoted-printable in other character sets; dates without a year; search; who in a file is
 already here; what a merge adds and what it leaves.
