@@ -10,6 +10,8 @@
     <!-- A press on a number calls it. Asked for the first time one is pressed; refused, the
          number goes to the dialer instead. -->
     <uses-permission android:name="android.permission.CALL_PHONE" />
+    <!-- The calls with a person, under their name, as the phone's own contacts app shows them. -->
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
     <!-- Only for a birthday whose switch is on: it goes in a calendar of this app's own.
          Asked for the first time that switch is pressed. -->
     <uses-permission android:name="android.permission.READ_CALENDAR" />

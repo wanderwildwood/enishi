@@ -2,7 +2,7 @@ package com.wanderwildwood.enishi.data
 
 import android.content.Context
 
-/** The three things a reader can set. Kept on the phone, never anywhere else. */
+/** What a reader can set, and what they have said no to. Kept on the phone, never anywhere else. */
 class Prefs(context: Context) {
     private val prefs = context.applicationContext.getSharedPreferences("enishi", Context.MODE_PRIVATE)
 
@@ -25,4 +25,9 @@ class Prefs(context: Context) {
                 putBoolean("save_to_set", true); putString("save_to_name", v.name); putString("save_to_type", v.type)
             }
         }.apply()
+
+    /** Said no to the call log once; the row asking again is not shown after that. */
+    var callsDeclined: Boolean
+        get() = prefs.getBoolean("calls_declined", false)
+        set(v) = prefs.edit().putBoolean("calls_declined", v).apply()
 }
