@@ -19,9 +19,10 @@ import java.time.ZoneOffset
 /**
  * Birthdays put in the phone's calendar, one person at a time, when the switch beside their
  * birthday is on. They go in a calendar of this app's own, kept on the phone and called
- * "Birthdays", so any calendar app shows them, with no reminder of their own; and nothing is
- * written into a calendar that syncs somewhere else. It is read-only to calendar apps: the
- * birthday is changed here, and the calendar follows.
+ * "Birthdays", so any calendar app shows them, and nothing is written into a calendar that syncs
+ * somewhere else. They come with no reminder; one added to the event in a calendar app stays,
+ * since nothing here touches reminders. The name and the day are this app's: changed in a
+ * calendar app, they are put back, and changed here, the calendar follows.
  *
  * Each event remembers its person by lookup key and id, the pair Android resolves even after
  * the contact is joined or split. That is the only record of which switches are on: there is
@@ -137,7 +138,8 @@ class Birthdays(private val context: Context) {
             put(Calendars.NAME, CALENDAR)
             put(Calendars.CALENDAR_DISPLAY_NAME, context.getString(R.string.birthdays_calendar))
             put(Calendars.CALENDAR_COLOR, 0xFF000000.toInt())
-            put(Calendars.CALENDAR_ACCESS_LEVEL, Calendars.CAL_ACCESS_READ)
+            // Editable, so a calendar app lets a reminder be added to a birthday.
+            put(Calendars.CALENDAR_ACCESS_LEVEL, Calendars.CAL_ACCESS_OWNER)
             put(Calendars.CALENDAR_TIME_ZONE, "UTC")
             put(Calendars.VISIBLE, 1)
             put(Calendars.SYNC_EVENTS, 1)
@@ -147,8 +149,7 @@ class Birthdays(private val context: Context) {
 
     /**
      * Written as the calendar's own keeper: a local calendar has no sync adapter, so a delete
-     * made any other way would wait for one forever, and a read-only calendar takes writes from
-     * no one else.
+     * made any other way would wait for one forever.
      */
     private fun asCalendar(uri: Uri): Uri = uri.buildUpon()
         .appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER, "true")
