@@ -102,7 +102,13 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
     var allowed by remember { mutableStateOf(hasAccess(activity)) }
     val owner = LocalLifecycleOwner.current
     DisposableEffect(owner) {
-        val o = LifecycleEventObserver { _, e -> if (e == Lifecycle.Event.ON_RESUME) allowed = hasAccess(activity) }
+        val o = LifecycleEventObserver { _, e ->
+            if (e == Lifecycle.Event.ON_RESUME) {
+                allowed = hasAccess(activity)
+                // A change made while the app was out of sight may not have reached it.
+                if (allowed) model.followBirthdays()
+            }
+        }
         owner.lifecycle.addObserver(o)
         onDispose { owner.lifecycle.removeObserver(o) }
     }

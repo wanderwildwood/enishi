@@ -95,6 +95,11 @@ class BookModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Brings the birthdays in the calendar up to date with the contacts. */
+    fun followBirthdays() {
+        viewModelScope.launch(Dispatchers.IO) { runCatching { birthdays.follow() } }
+    }
+
     private class Snapshot(val people: List<Person>, val findable: Map<Long, Findable>, val groups: List<Group>, val accounts: List<Account>)
 
     fun chooseSortByLast(v: Boolean) {
