@@ -59,14 +59,17 @@ internal fun whenSaid(
     at: Long,
     now: Long,
     yesterday: String,
+    hours24: Boolean,
     zone: ZoneId = ZoneId.systemDefault(),
     locale: Locale = Locale.getDefault(),
 ): String {
     val then = Instant.ofEpochMilli(at).atZone(zone)
     val today = Instant.ofEpochMilli(now).atZone(zone).toLocalDate()
     val day: LocalDate = then.toLocalDate()
-    // Newer Java puts a narrow no-break space before "AM"; a plain one reads the same.
-    val time = then.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(locale)).replace('\u202F', ' ')
+    // The phone's own clock setting, as its call log follows it. Newer Java puts a narrow
+    // no-break space before "AM"; a plain one reads the same.
+    val time = if (hours24) then.format(DateTimeFormatter.ofPattern("H:mm", locale))
+    else then.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(locale)).replace('\u202F', ' ')
     return when {
         day == today -> time
         day == today.minusDays(1) -> "$yesterday $time"

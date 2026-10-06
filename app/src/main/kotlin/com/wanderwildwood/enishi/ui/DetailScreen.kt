@@ -264,6 +264,7 @@ private fun RecentCalls(model: BookModel, numbers: List<String>, dial: (String) 
             return@Column
         }
         val now = System.currentTimeMillis()
+        val hours24 = android.text.format.DateFormat.is24HourFormat(context)
         val several = numbers.map(::numberKey).distinct().size > 1
         list.forEach { call ->
             val kind = stringResource(
@@ -277,13 +278,28 @@ private fun RecentCalls(model: BookModel, numbers: List<String>, dial: (String) 
             val title = buildAnnotatedString {
                 if (call.kind == Call.Kind.MISSED) withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(kind) } else append(kind)
                 append("  ")
-                append(whenSaid(call.at, now, stringResource(R.string.calls_yesterday)))
+                append(whenSaid(call.at, now, stringResource(R.string.calls_yesterday), hours24))
             }
             // Which number, only when they have more than one; how long, when it was answered.
             val note = listOfNotNull(call.number.takeIf { several }, howLong(call.seconds)).joinToString(" · ")
-            NameRow(title, note = note.ifEmpty { null }) { dial(call.number) }
+            CallRow(title, note.ifEmpty { null }) { dial(call.number) }
         }
     }
+}
+
+/** A call, closer set than a person in the list: there are many, and each says little. */
+@Composable
+private fun CallRow(title: AnnotatedString, note: String?, onPress: () -> Unit) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onPress)
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+    ) {
+        TextMMD(text = title, style = MaterialTheme.typography.bodyLarge, maxLines = 1)
+        if (note != null) TextMMD(text = note, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+    }
+    DottedRule()
 }
 
 private fun kindAndValue(kind: String, value: String): AnnotatedString = buildAnnotatedString {
