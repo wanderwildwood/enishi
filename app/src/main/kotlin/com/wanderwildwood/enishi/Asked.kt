@@ -10,6 +10,8 @@ import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
 import android.provider.ContactsContract.Intents.Insert
 import com.wanderwildwood.enishi.data.Draft
 import com.wanderwildwood.enishi.data.Field
+import org.json.JSONArray
+import org.json.JSONObject
 
 /** What a person picks when another app asks for "a contact", and what goes back. */
 enum class PickKind { CONTACT, PHONE, EMAIL, ADDRESS }
@@ -42,10 +44,14 @@ sealed interface Asked {
                 Intent.ACTION_VIEW -> when {
                     type in VCARD_TYPES || data?.lastPathSegment?.endsWith(".vcf", true) == true ->
                         data?.let(::Cards) ?: Browse
+                    data != null && isEncoded(data) -> stranger(data)
                     data != null -> Show(data)
                     else -> Browse
                 }
-                ContactsContract.QuickContact.ACTION_QUICK_CONTACT -> data?.let(::Show) ?: Browse
+                ContactsContract.QuickContact.ACTION_QUICK_CONTACT -> when {
+                    data != null && isEncoded(data) -> stranger(data)
+                    else -> data?.let(::Show) ?: Browse
+                }
                 Intent.ACTION_EDIT -> data?.let(::Edit) ?: Browse
                 Intent.ACTION_INSERT -> Create(seed(intent))
                 Intent.ACTION_INSERT_OR_EDIT -> AddTo(seed(intent))
@@ -62,6 +68,41 @@ sealed interface Asked {
                 Intent.ACTION_PICK, Intent.ACTION_GET_CONTENT -> Pick(kindOf(type, data))
                 else -> Browse
             }
+        }
+
+        /**
+         * A Phone app's link for someone who is not in the book, such as a caller from an unsaved
+         * number: contacts/lookup/encoded, with what is known about them as JSON in the fragment.
+         * There is no one to look up, so it becomes "show or add" for the number it carries.
+         */
+        private fun isEncoded(uri: Uri): Boolean =
+            uri.pathSegments.let { it.size >= 3 && it[it.size - 2] == "lookup" && it.last() == "encoded" }
+
+        private fun stranger(uri: Uri): Asked {
+            val json = runCatching { JSONObject(uri.fragment.orEmpty()) }.getOrNull() ?: return Browse
+            val rows = json.optJSONObject(ContactsContract.Contacts.CONTENT_ITEM_TYPE)
+            fun fields(mime: String, otherwise: Int): List<Field> {
+                val list = when (val v = rows?.opt(mime)) {
+                    is JSONObject -> listOf(v)
+                    is JSONArray -> (0 until v.length()).mapNotNull(v::optJSONObject)
+                    else -> emptyList()
+                }
+                return list.mapNotNull { r ->
+                    val value = r.optString(ContactsContract.Data.DATA1).trim()
+                    val type = r.optInt(ContactsContract.Data.DATA2, 0).takeIf { it != 0 } ?: otherwise
+                    value.takeIf { it.isNotEmpty() }?.let { Field(it, type) }
+                }
+            }
+            val phones = fields(Phone.CONTENT_ITEM_TYPE, Phone.TYPE_MOBILE)
+            val emails = fields(Email.CONTENT_ITEM_TYPE, Email.TYPE_OTHER)
+            if (phones.isEmpty() && emails.isEmpty()) return Browse
+            // An unknown caller's display name is usually just the number again.
+            val name = json.optString(ContactsContract.Contacts.DISPLAY_NAME).trim().takeIf { n -> n.any(Char::isLetter) }.orEmpty()
+            return ShowOrCreate(
+                phones.firstOrNull()?.value,
+                emails.firstOrNull()?.value.takeIf { phones.isEmpty() },
+                Draft(wholeName = name, phones = phones, emails = emails),
+            )
         }
 
         val VCARD_TYPES = setOf("text/x-vcard", "text/vcard", "text/directory")
