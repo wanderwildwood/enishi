@@ -60,6 +60,9 @@
     <string name="kind_groups">Groups</string>
     <string name="share">Share as a contact card</string>
     <string name="share_failed">The card could not be made.</string>
+    <!-- On a person's More page, only when that app is on the phone -->
+    <string name="to_medicine">Set as pharmacy in Medicine</string>
+    <string name="to_field_kit">Add to emergency card</string>
     <!-- "Kept in: Phone" or "Kept in: Phone, work@example.com" -->
     <string name="kept_in">Kept in: %1$s</string>
     <string name="delete_contact">Delete</string>

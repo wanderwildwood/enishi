@@ -30,6 +30,10 @@
         <intent>
             <action android:name="android.content.SyncAdapter" />
         </intent>
+        <!-- Medicine and Field Kit, so a person's More page can offer them only when they are
+             on the phone (ui/Elsewhere.kt). -->
+        <package android:name="com.wanderwildwood.fukuyaku" />
+        <package android:name="com.wanderwildwood.zatsuno" />
     </queries>
 
     <application

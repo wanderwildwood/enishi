@@ -311,8 +311,9 @@ internal fun rememberDialer(onNothing: () -> Unit): (String) -> Unit {
 
 /**
  * Everything a person has, a bold label over each value, as the phone's own app lists it.
- * A press on a number calls it, on an address opens it. Sharing, where they are kept, and
- * delete — which asks in its own face — come last.
+ * A press on a number calls it, on an address opens it. Sharing, where they are kept, handing
+ * them to Medicine or Field Kit when those are on the phone, and delete — which asks in its
+ * own face — come last.
  */
 @Composable
 fun MoreScreen(
@@ -330,6 +331,13 @@ fun MoreScreen(
     fun open(intent: Intent) {
         if (!start(context, intent)) notice = context.getString(R.string.nothing_opens)
     }
+    // Looked at again on every return, so an app added or removed meanwhile shows or goes.
+    var elsewhere by remember { mutableStateOf(Elsewhere.installed(context)) }
+    androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
+        elsewhere = Elsewhere.installed(context)
+        onPauseOrDispose { }
+    }
+    var handing by remember { mutableStateOf<Elsewhere?>(null) }
     val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
     fun copy(value: String) {
         clipboard.setText(AnnotatedString(value))
@@ -354,8 +362,9 @@ fun MoreScreen(
             return@Scaffold
         }
         val d = c.draft
+        val numbers = distinctNumbers(d.phones)
         androidx.compose.runtime.CompositionLocalProvider(LocalCopy provides ::copy) { LazyColumnMMD(body) {
-            distinctNumbers(d.phones).forEach { p ->
+            numbers.forEach { p ->
                 item {
                     KindRow(Labels.phone(context, p.type, p.label), p.value, ::copy) { dial(p.value) }
                 }
@@ -412,6 +421,17 @@ fun MoreScreen(
                     }
                 })
             }
+            // Medicine and Field Kit, when they are on the phone: both want a number.
+            if (numbers.isNotEmpty()) {
+                elsewhere.forEach { app ->
+                    item {
+                        PlainRow(stringResource(app.label), onPress = {
+                            if (numbers.size == 1) open(app.intent(c.id, c.lookup, c.name, numbers[0].value))
+                            else handing = app
+                        })
+                    }
+                }
+            }
             item {
                 val (armed, press) = rememberArmed(c.id) {
                     scope.launch {
@@ -427,6 +447,24 @@ fun MoreScreen(
                 )
             }
         } }
+    }
+
+    // Which number goes, when a person has more than one.
+    val c = card
+    handing?.let { app ->
+        if (c == null) return@let
+        EInkDialog(onDismiss = { handing = null }) {
+            distinctNumbers(c.draft.phones).forEach { p ->
+                NameRow(
+                    AnnotatedString(p.value),
+                    note = Labels.phone(context, p.type, p.label),
+                    onPress = {
+                        handing = null
+                        open(app.intent(c.id, c.lookup, c.name, p.value))
+                    },
+                )
+            }
+        }
     }
 }
 

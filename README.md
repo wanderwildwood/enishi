@@ -41,6 +41,9 @@ at a time.
   the calls with them, newest first, an arrow for the way each went, when and how long. A press
   calls back. The call log is asked for the first time, from a row that says so, and read on
   the phone only.
+- **Medicine and Field Kit**, when they are on the phone: a person's More page can set them as
+  the pharmacy in Medicine, or add them to the emergency card in Field Kit. That app shows the
+  name and number and asks before it keeps them.
 - **Search** by any part of a name, a run of digits from any number, or part of an email
   address or a company. Accents and capitals do not count.
 - **Edits only what changed.** A photo, a ringtone or a messenger handle written by another app
