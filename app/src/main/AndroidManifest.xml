@@ -23,6 +23,15 @@
     <!-- No INTERNET permission: nothing in this app can reach the network. The llama's
          address is handed to a browser. -->
 
+    <!-- Which accounts sync contacts up to a server (DAVx5, Google…): since Android 11 another
+         app's sync service is hidden unless asked for, and without it every server-kept
+         person looked like a messenger's and could not be edited. -->
+    <queries>
+        <intent>
+            <action android:name="android.content.SyncAdapter" />
+        </intent>
+    </queries>
+
     <application
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"

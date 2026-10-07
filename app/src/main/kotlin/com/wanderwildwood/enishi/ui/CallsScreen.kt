@@ -6,6 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -67,7 +69,7 @@ fun CallsScreen(model: BookModel, contactId: Long, onBack: () -> Unit) {
     var calls by remember(numbers) { mutableStateOf<List<Call>?>(null) }
     LaunchedEffect(numbers, granted) {
         if (granted && numbers.isNotEmpty()) calls = withContext(Dispatchers.IO) {
-            runCatching { callsWith(context.contentResolver, numbers) }.getOrDefault(emptyList())
+            runCatching { callsWith(context.contentResolver, numbers, limit = Int.MAX_VALUE) }.getOrDefault(emptyList())
         }
     }
 
@@ -116,7 +118,7 @@ fun CallsScreen(model: BookModel, contactId: Long, onBack: () -> Unit) {
                     },
                 )
                 // "2 min 0 sec • Outgoing", and which number only when they have more than one.
-                val note = listOfNotNull(howLong(call.seconds), kind, call.number.takeIf { several }).joinToString(" • ")
+                val note = listOfNotNull(howLong(call.seconds), kind, call.number.takeIf { several })
                 CallRow(
                     icon = when (call.kind) {
                         Call.Kind.IN -> Icons.CallIn
@@ -136,13 +138,13 @@ fun CallsScreen(model: BookModel, contactId: Long, onBack: () -> Unit) {
  * the dotted rule from the words to the edge of the page.
  */
 @Composable
-private fun CallRow(icon: ImageVector, title: String, note: String, onPress: () -> Unit) {
+private fun CallRow(icon: ImageVector, title: String, note: List<String>, onPress: () -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onPress)
-            .padding(start = 17.5.dp, end = 16.dp, top = 12.dp, bottom = 16.5.dp),
+            .padding(start = 17.5.dp, end = 16.dp, top = 14.dp, bottom = 16.5.dp),
     ) {
         Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(28.dp))
         Spacer(Modifier.width(15.5.dp))
@@ -155,13 +157,40 @@ private fun CallRow(icon: ImageVector, title: String, note: String, onPress: () 
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(bottom = 4.dp),
             )
-            TextMMD(
-                text = note,
-                style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            NoteLine(note)
         }
     }
     DottedRule(start = 61.dp, end = 0.dp)
+}
+
+/**
+ * "2 min 0 sec · Outgoing": the parts set apart by the small raised dot the phone's own history
+ * draws between them — 4dp across, its foot 7dp above the line, 8.5dp clear on each side — rather
+ * than a bullet out of the font, which sits low and heavy.
+ */
+@Composable
+private fun NoteLine(parts: List<String>) {
+    val style = MaterialTheme.typography.bodyLarge
+    // The dot's foot sits this far above the words' baseline.
+    val raise = with(androidx.compose.ui.platform.LocalDensity.current) { 7.dp.roundToPx() }
+    Row(Modifier.fillMaxWidth()) {
+        parts.forEachIndexed { i, part ->
+            if (i > 0) {
+                Box(
+                    Modifier
+                        .alignBy { it.measuredHeight + raise }
+                        .padding(horizontal = 8.5.dp)
+                        .size(4.dp)
+                        .background(MaterialTheme.colorScheme.onSurface, CircleShape),
+                )
+            }
+            TextMMD(
+                text = part,
+                style = style,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.alignByBaseline().let { if (i == parts.lastIndex) it.weight(1f, fill = false) else it },
+            )
+        }
+    }
 }

@@ -256,8 +256,16 @@ class Book(context: Context) {
 
     // ---------------------------------------------------------------- accounts
 
+    private companion object {
+        /**
+         * Address books known to sync up to a server, counted as syncing even when the phone
+         * does not say so: the sync services list leaves out what this app is not allowed to see.
+         */
+        val KNOWN_SYNCING = setOf("at.bitfire.davdroid.address_book", "com.google", "com.nextcloud.client", "com.etesync.syncadapter.address_book")
+    }
+
     /** Account types whose contacts sync up to somewhere — the ones a new contact may go to. */
-    private fun syncingTypes(): Set<String> = runCatching {
+    private fun syncingTypes(): Set<String> = KNOWN_SYNCING + runCatching {
         ContentResolver.getSyncAdapterTypes()
             .filter { it.authority == ContactsContract.AUTHORITY && it.supportsUploading() }
             .map { it.accountType }.toSet()
