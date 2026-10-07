@@ -421,7 +421,7 @@ fun MoreScreen(
                     }
                 })
             }
-            // Medicine and Field Kit, when they are on the phone: both want a number.
+            // Medicine and Field Kit, when they are on the phone: each wants a number.
             if (numbers.isNotEmpty()) {
                 elsewhere.forEach { app ->
                     item {

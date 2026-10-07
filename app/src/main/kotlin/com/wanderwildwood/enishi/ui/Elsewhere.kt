@@ -7,7 +7,7 @@ import com.wanderwildwood.enishi.R
 
 /**
  * Other apps of this shop a person can be handed to from their More page: Medicine takes them
- * as a pharmacy, Field Kit as an emergency contact. Each row shows only while that app is on
+ * as a pharmacy or a doctor, Field Kit as an emergency contact. Each row shows only while that app is on
  * the phone and says it takes them; the app itself asks before it keeps anything.
  *
  * Both are plain intents with the name and one number as string extras, each named in the
@@ -15,6 +15,8 @@ import com.wanderwildwood.enishi.R
  */
 internal enum class Elsewhere(val pkg: String, val action: String, val label: Int) {
     MEDICINE("com.wanderwildwood.fukuyaku", "com.wanderwildwood.fukuyaku.action.SET_PHARMACY", R.string.to_medicine),
+    // Medicine 0.1.2 and later; an older Medicine has no such action, and the row stays hidden.
+    MEDICINE_DOCTOR("com.wanderwildwood.fukuyaku", "com.wanderwildwood.fukuyaku.action.SET_DOCTOR", R.string.to_medicine_doctor),
     FIELD_KIT("com.wanderwildwood.zatsuno", "com.wanderwildwood.zatsuno.action.ADD_EMERGENCY_CONTACT", R.string.to_field_kit);
 
     fun intent(id: Long, lookup: String, name: String, number: String): Intent =
@@ -23,7 +25,7 @@ internal enum class Elsewhere(val pkg: String, val action: String, val label: In
             .putExtra("$pkg.extra.NUMBER", number)
             .also {
                 // Medicine keeps the entry, for its "Open in Contacts".
-                if (this == MEDICINE && lookup.isNotEmpty()) {
+                if (pkg == MEDICINE.pkg && lookup.isNotEmpty()) {
                     ContactsContract.Contacts.getLookupUri(id, lookup)?.let { uri -> it.putExtra("$pkg.extra.CONTACT", uri.toString()) }
                 }
             }
