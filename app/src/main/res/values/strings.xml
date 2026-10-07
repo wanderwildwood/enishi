@@ -67,7 +67,9 @@
     <string name="delete_failed">The phone\'s contacts would not delete this person. Nothing was changed.</string>
     <string name="contact_gone">This person is no longer in the contacts.</string>
     <string name="copied">Copied.</string>
-    <string name="calls_title">Recent calls</string>
+    <!-- The button along the foot of a person's page, and the title of the calls page is their name -->
+    <string name="call_history">Call history</string>
+    <string name="calls_today">Today</string>
     <string name="calls_show">Show calls with them</string>
     <string name="calls_show_note">Reads the phone\'s call log, which stays on the phone</string>
     <string name="calls_in">Incoming</string>

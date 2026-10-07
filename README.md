@@ -37,10 +37,10 @@ at a time.
   is joined rather than deleted.
 - **Call and Message under a person's name**, and More for everything else they have: a press on
   any number calls it, on an address opens it in a map, on an email address writes to it.
-- **Recent calls with them** under the buttons, newest first, as the phone's own contacts app
-  shows them when a call's "i" opens a person: missed in bold, how long when answered, a press
+- **Call history** along the foot of a person's page, as the phone's own contacts app has it:
+  the calls with them, newest first, an arrow for the way each went, when and how long. A press
   calls back. The call log is asked for the first time, from a row that says so, and read on
-  the phone only; a no is remembered.
+  the phone only.
 - **Search** by any part of a name, a run of digits from any number, or part of an email
   address or a company. Accents and capitals do not count.
 - **Edits only what changed.** A photo, a ringtone or a messenger handle written by another app

@@ -2,69 +2,140 @@ package com.wanderwildwood.enishi.ui
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.unit.dp
 
 /**
- * The icons this app draws, all Material Symbols (Apache-2.0) in the house cut — outlined, the
- * default weight — kept as the path data they ship as. A glyph any other app of this shop also
- * draws is that app's path byte for byte. Everything else on the screen is a word.
+ * The icons this app draws, cut like the phone's own contacts app draws its: a line two
+ * units wide with round ends on a 28-unit grid, so a glyph at the bar's 28dp has a 2dp line and
+ * the big tiles under a name a little more. Nothing is filled but a dot and the starred star.
+ * Everything else on the screen is a word.
  *
- * Call, Message and Email are the standard glyphs for each, not the apps' launcher marks: a mark
- * is drawn by hand and belongs on the launcher; a button is interface, and draws from this set.
+ * Each is drawn here from measurements of the phone's own — the arrow's reach, where the
+ * handset's ears sit, how far apart the four squares are — not copied from it.
  */
 object Icons {
 
+    private const val GRID = 28f
+
     /**
-     * Material Symbols are authored in a 960 grid whose origin sits at the bottom left,
-     * so the path data runs from -960 to 0 vertically. Shifting the whole thing down by
-     * 960 puts it in the top-left grid Compose uses.
+     * The glyph in a Call or Message tile is drawn at 49dp, with the line still 2.5dp as the
+     * phone's own is; More's four squares at 56dp, their line 2.2dp. Thinner here, so the
+     * larger drawing comes out right.
      */
-    private fun symbol(name: String, pathData: String): ImageVector =
-        ImageVector.Builder(
-            name = name,
-            defaultWidth = 24.dp,
-            defaultHeight = 24.dp,
-            viewportWidth = 960f,
-            viewportHeight = 960f,
-        )
-            .addGroup(name = name, translationY = 960f)
-            .addPath(
-                pathData = PathParser().parsePathString(pathData).toNodes(),
-                fill = SolidColor(Color.Black),
-            )
-            .clearGroup()
+    private const val TILE = 1.45f
+    private const val MORE = 1.1f
+
+    private class Stroke(val d: String, val width: Float = 2f)
+
+    /** One or more stroked paths, with an optional filled one (a dot, a filled star). */
+    private fun lined(name: String, vararg strokes: Stroke, filled: String? = null): ImageVector =
+        ImageVector.Builder(name = name, defaultWidth = 28.dp, defaultHeight = 28.dp, viewportWidth = GRID, viewportHeight = GRID)
+            .apply {
+                strokes.forEach { s ->
+                    addPath(
+                        pathData = PathParser().parsePathString(s.d).toNodes(),
+                        stroke = SolidColor(Color.Black),
+                        strokeLineWidth = s.width,
+                        strokeLineCap = StrokeCap.Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                    )
+                }
+                if (filled != null) addPath(pathData = PathParser().parsePathString(filled).toNodes(), fill = SolidColor(Color.Black))
+            }
             .build()
 
-    val Back: ImageVector = symbol("Back", "m313-440 224 224-57 56-320-320 320-320 57 56-224 224h487v80H313Z")
+    private fun lined(name: String, d: String, filled: String? = null) = lined(name, Stroke(d), filled = filled)
 
-    val Close: ImageVector = symbol("Close", "m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z")
+    /** A five-pointed star about (14, 15), outer reach 13, inner 5.4, point up. */
+    private val starPath: String = buildString {
+        val cx = 14.0; val cy = 15.0
+        for (i in 0 until 10) {
+            val r = if (i % 2 == 0) 13.0 else 5.4
+            val a = Math.toRadians(-90.0 + i * 36.0)
+            append(if (i == 0) "M" else "L")
+            append("%.2f,%.2f".format(java.util.Locale.ROOT, cx + r * Math.cos(a), cy + r * Math.sin(a)))
+        }
+        append("Z")
+    }
 
-    val Info: ImageVector = symbol("Info", "M440-280h80v-240h-80v240Zm40-320q17 0 28.5-11.5T520-640q0-17-11.5-28.5T480-680q-17 0-28.5 11.5T440-640q0 17 11.5 28.5T480-600Zm0 520q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z")
+    val Back: ImageVector = lined("Back", "M26,14H2M2,14L13,3M2,14L13,25")
 
-    val Search: ImageVector = symbol("Search", "M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z")
+    val Close: ImageVector = lined("Close", "M5,5L23,23M23,5L5,23")
 
-    val Settings: ImageVector = symbol("Settings", "m370-80-16-128q-13-5-24.5-12T307-235l-119 50L78-375l103-78q-1-7-1-13.5v-27q0-6.5 1-13.5L78-585l110-190 119 50q11-8 23-15t24-12l16-128h220l16 128q13 5 24.5 12t22.5 15l119-50 110 190-103 78q1 7 1 13.5v27q0 6.5-2 13.5l103 78-110 190-118-50q-11 8-23 15t-24 12L590-80H370Zm70-80h79l14-106q31-8 57.5-23.5T639-327l99 41 39-68-86-65q5-14 7-29.5t2-31.5q0-16-2-31.5t-7-29.5l86-65-39-68-99 42q-22-23-48.5-38.5T533-694l-13-106h-79l-14 106q-31 8-57.5 23.5T321-633l-99-41-39 68 86 64q-5 15-7 30t-2 32q0 16 2 31t7 30l-86 65 39 68 99-42q22 23 48.5 38.5T427-266l13 106Zm42-180q58 0 99-41t41-99q0-58-41-99t-99-41q-59 0-99.5 41T342-480q0 58 40.5 99t99.5 41Zm-2-140Z")
+    val Info: ImageVector = lined(
+        "Info",
+        Stroke("M14,26.25A12.25,12.25 0 1 1 14,1.75A12.25,12.25 0 1 1 14,26.25Z"),
+        Stroke("M11.2,20.6H16.8M14,20.6V14H12.1"),
+        filled = "M14,9.4m-1.6,0a1.6,1.6 0 1 1 3.2,0a1.6,1.6 0 1 1 -3.2,0",
+    )
 
-    val Edit: ImageVector = symbol("Edit", "M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z")
+    val Search: ImageVector = lined("Search", "M11.5,20.25A8.75,8.75 0 1 1 11.5,2.75A8.75,8.75 0 1 1 11.5,20.25ZM17.8,17.8L25,25")
 
-    val Add: ImageVector = symbol("Add", "M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z")
+    /** Three sliders, as the phone's own Phone app marks its settings. */
+    val Settings: ImageVector = lined(
+        "Settings",
+        Stroke("M3,7H14.5M21.5,7H25M3,14H5.5M12.5,14H25M3,21H16.5M23.5,21H25"),
+        Stroke("M18,7m-3.5,0a3.5,3.5 0 1 1 7,0a3.5,3.5 0 1 1 -7,0M9,14m-3.5,0a3.5,3.5 0 1 1 7,0a3.5,3.5 0 1 1 -7,0M20,21m-3.5,0a3.5,3.5 0 1 1 7,0a3.5,3.5 0 1 1 -7,0"),
+    )
 
-    /** Filled for a favourite, outlined for not: a hollow star alone reads as a smudge. */
-    val Star: ImageVector = symbol("Star", "m233-120 65-281L80-590l288-25 112-265 112 265 288 25-218 189 65 281-247-149-247 149Z")
+    val Edit: ImageVector = lined("Edit", "M1.5,26.5L2.9,20L20.6,2.3A2.7,2.7 0 0 1 24.4,2.3L25.7,3.6A2.7,2.7 0 0 1 25.7,7.4L8,25.1ZM18.3,4.6L23.4,9.7")
 
-    val StarBorder: ImageVector = symbol("StarBorder", "m354-287 126-76 126 77-33-144 111-96-146-13-58-136-58 135-146 13 111 97-33 143ZM233-120l65-281L80-590l288-25 112-265 112 265 288 25-218 189 65 281-247-149-247 149Zm247-350Z")
+    val Add: ImageVector = lined("Add", "M14,4V24M4,14H24")
 
-    val ChevronDown: ImageVector = symbol("ChevronDown", "M480-344 240-584l56-56 184 184 184-184 56 56-240 240Z")
+    /** Filled for a favourite, outlined for not. */
+    val Star: ImageVector = lined("Star", starPath, filled = starPath)
 
-    val Call: ImageVector = symbol("Call", "M798-120q-125 0-247-54.5T329-329Q229-429 174.5-551T120-798q0-18 12-30t30-12h162q14 0 25 9.5t13 22.5l26 140q2 16-1 27t-11 19l-97 98q20 37 47.5 71.5T387-386q31 31 65 57.5t72 48.5l94-94q9-9 23.5-13.5T670-390l138 28q14 4 23 14.5t9 23.5v162q0 18-12 30t-30 12ZM241-600l66-66-17-94h-89q5 41 14 81t26 79Zm358 358q39 17 79.5 27t81.5 13v-88l-94-19-67 67ZM241-600Zm358 358Z")
+    val StarBorder: ImageVector = lined("StarBorder", starPath)
 
-    /** Message: the speech bubble with three dots — Messaging's own motif. */
-    val Sms: ImageVector = symbol("Sms", "M348.5-531.5Q360-543 360-560t-11.5-28.5Q337-600 320-600t-28.5 11.5Q280-577 280-560t11.5 28.5Q303-520 320-520t28.5-11.5Zm160 0Q520-543 520-560t-11.5-28.5Q497-600 480-600t-28.5 11.5Q440-577 440-560t11.5 28.5Q463-520 480-520t28.5-11.5Zm160 0Q680-543 680-560t-11.5-28.5Q657-600 640-600t-28.5 11.5Q600-577 600-560t11.5 28.5Q623-520 640-520t28.5-11.5ZM80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Zm126-240h594v-480H160v525l46-45Zm-46 0v-480 480Z")
+    val ChevronDown: ImageVector = lined("ChevronDown", "M7,11L14,18L21,11")
 
-    /** Email, for a person with only an address: the envelope — Email's own motif. */
-    val Mail: ImageVector = symbol("Mail", "M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm320-280L160-640v400h640v-400L480-440Zm0-80 320-200H160l320 200ZM160-640v-80 480-400Z")
+    /**
+     * The handset, its two ears joined by the curve of the grip: the outline of Material
+     * Symbols' `call` (Apache-2.0), brought onto this grid and drawn as a line instead of filled.
+     */
+    val Call: ImageVector = lined(
+        "Call",
+        Stroke(
+            "M23.3,24.5Q19.7,24.5 16.1,22.9T9.6,18.4Q6.7,15.5 5.1,11.9T3.5,4.7Q3.5,4.2 3.85,3.85T4.7,3.5H9.45" +
+            "Q9.86,3.5 10.2,3.78T10.56,4.43L11.3,8.5Q11.36,8.97 11.27,9.29T10.97,9.86L8.1,12.7" +
+            "Q8.68,13.8 9.49,14.8T11.3,16.7Q12.2,17.6 13.2,18.4T15.3,19.8L18,17.1Q18.3,16.8 18.7,16.7T19.5,16.6" +
+                "L23.6,17.4Q24,17.5 24.3,17.8T24.5,18.6V23.3Q24.5,23.8 24.15,24.15T23.3,24.5Z",
+            TILE,
+        ),
+    )
 
-    val GridView: ImageVector = symbol("GridView", "M120-520v-320h320v320H120Zm0 400v-320h320v320H120Zm400-400v-320h320v320H520Zm0 400v-320h320v320H520ZM200-600h160v-160H200v160Zm400 0h160v-160H600v160Zm0 400h160v-160H600v160Zm-400 0h160v-160H200v160Zm400-400Zm0 240Zm-240 0Zm0-240Z")
+    /** The round speech bubble with three dots — a message. */
+    val Sms: ImageVector = lined(
+        "Sms",
+        Stroke("M6,18.5A10.1,10.1 0 1 1 10.5,22.3L3.5,25Z", TILE),
+        filled = "M9.5,13m-1.3,0a1.3,1.3 0 1 1 2.6,0a1.3,1.3 0 1 1 -2.6,0M14.5,13m-1.3,0a1.3,1.3 0 1 1 2.6,0a1.3,1.3 0 1 1 -2.6,0M19.5,13m-1.3,0a1.3,1.3 0 1 1 2.6,0a1.3,1.3 0 1 1 -2.6,0",
+    )
+
+    /** The envelope, for a person with only an email address. */
+    val Mail: ImageVector = lined("Mail", Stroke("M5,6H23A2,2 0 0 1 25,8V20A2,2 0 0 1 23,22H5A2,2 0 0 1 3,20V8A2,2 0 0 1 5,6ZM3,8.5L14,16L25,8.5", TILE))
+
+    /** Four rounded squares — More. */
+    val GridView: ImageVector = lined(
+        "GridView",
+        Stroke(
+            "M3.75,1.75H9.75A2,2 0 0 1 11.75,3.75V9.75A2,2 0 0 1 9.75,11.75H3.75A2,2 0 0 1 1.75,9.75V3.75A2,2 0 0 1 3.75,1.75Z" +
+                "M18.25,1.75H24.25A2,2 0 0 1 26.25,3.75V9.75A2,2 0 0 1 24.25,11.75H18.25A2,2 0 0 1 16.25,9.75V3.75A2,2 0 0 1 18.25,1.75Z" +
+                "M3.75,16.25H9.75A2,2 0 0 1 11.75,18.25V24.25A2,2 0 0 1 9.75,26.25H3.75A2,2 0 0 1 1.75,24.25V18.25A2,2 0 0 1 3.75,16.25Z" +
+                "M18.25,16.25H24.25A2,2 0 0 1 26.25,18.25V24.25A2,2 0 0 1 24.25,26.25H18.25A2,2 0 0 1 16.25,24.25V18.25A2,2 0 0 1 18.25,16.25Z",
+            MORE,
+        ),
+    )
+
+    // The three ways a call went, as the phone's own call log marks them: an arrow that came
+    // in, one that went out, and the bent one that was missed.
+
+    val CallIn: ImageVector = lined("CallIn", "M23,6L7,22M7,10V22H19")
+
+    val CallOut: ImageVector = lined("CallOut", "M5,23L21,7M9,7H21V19")
+
+    val CallMissed: ImageVector = lined("CallMissed", "M3,9L14,20L25,9M3,19V9H13")
 }

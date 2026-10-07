@@ -33,12 +33,14 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.mudita.mmd.components.buttons.OutlinedButtonMMD
 import com.mudita.mmd.components.divider.HorizontalDividerMMD
 import com.mudita.mmd.components.text.TextMMD
 import com.mudita.mmd.components.text_field.TextFieldMMD
 import kotlinx.coroutines.delay
 
+/** A glyph in the top bar: 28dp in a 48dp box, as the phone's own contacts app sets its. */
 @Composable
 internal fun BarButton(icon: ImageVector, description: String, onClick: () -> Unit) {
     Box(
@@ -49,7 +51,7 @@ internal fun BarButton(icon: ImageVector, description: String, onClick: () -> Un
             imageVector = icon,
             contentDescription = description,
             tint = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.size(22.dp),
+            modifier = Modifier.size(28.dp),
         )
     }
 }
@@ -219,16 +221,19 @@ internal fun BareField(
 // Contacts is drawn to sit beside the Kompakt's own contacts app: the same bold title, the
 // same plain list with the surname in bold, the same dotted rule between rows. Measured off
 // that app on the phone, not guessed: a rule of 3px dashes and 2px gaps, inset to the text,
-// rows 85px apart, names at 20sp.
+// rows 85px apart, names at 22sp.
+
+/** A name in a list, a number on a page: 22sp there, on a 20sp body. */
+internal val rowText: androidx.compose.ui.unit.TextUnit = 22.sp
 
 /** The dotted rule between rows, inset to where the text starts and ends. */
 @Composable
-internal fun DottedRule(modifier: Modifier = Modifier) {
+internal fun DottedRule(modifier: Modifier = Modifier, start: androidx.compose.ui.unit.Dp = 16.dp, end: androidx.compose.ui.unit.Dp = 16.dp) {
     val ink = MaterialTheme.colorScheme.onSurface
     androidx.compose.foundation.Canvas(
         modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
+            .padding(start = start, end = end)
             .height(1.dp),
     ) {
         drawLine(
@@ -286,7 +291,7 @@ internal fun NameRow(
             androidx.compose.foundation.layout.Spacer(Modifier.size(14.dp))
         }
         Column(Modifier.weight(1f)) {
-            TextMMD(text = name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            TextMMD(text = name, style = MaterialTheme.typography.bodyLarge.copy(fontSize = rowText), maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (!note.isNullOrEmpty()) {
                 TextMMD(text = note, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
@@ -314,7 +319,7 @@ internal fun LabelValue(label: String, value: String, lines: Int = 6, onPress: (
             .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
         TextMMD(text = label, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-        TextMMD(text = value, style = MaterialTheme.typography.bodyLarge, maxLines = lines, overflow = TextOverflow.Ellipsis)
+        TextMMD(text = value, style = MaterialTheme.typography.bodyLarge.copy(fontSize = rowText), maxLines = lines, overflow = TextOverflow.Ellipsis)
     }
     DottedRule()
 }
@@ -333,7 +338,11 @@ internal fun Bar(
         com.mudita.mmd.components.top_app_bar.TopAppBarMMD(
             title = title,
             navigationIcon = navigationIcon,
-            actions = actions,
+            // The phone's own bar sets its glyphs 2dp further from the edge than the library does.
+            actions = {
+                actions()
+                androidx.compose.foundation.layout.Spacer(Modifier.size(2.dp))
+            },
             showDivider = false,
         )
         HorizontalDividerMMD(thickness = 3.dp, color = MaterialTheme.colorScheme.onSurface)

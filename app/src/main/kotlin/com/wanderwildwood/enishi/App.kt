@@ -48,6 +48,7 @@ import com.wanderwildwood.enishi.data.Draft
 import com.wanderwildwood.enishi.ui.AboutDialog
 import com.wanderwildwood.enishi.ui.BookModel
 import com.wanderwildwood.enishi.ui.CardsScreen
+import com.wanderwildwood.enishi.ui.CallsScreen
 import com.wanderwildwood.enishi.ui.DetailScreen
 import com.wanderwildwood.enishi.ui.EditScreen
 import com.wanderwildwood.enishi.ui.MoreScreen
@@ -73,6 +74,7 @@ sealed interface Route {
     data object Search : Route
     data class Detail(val id: Long) : Route
     data class More(val id: Long) : Route
+    data class Calls(val id: Long) : Route
     data class Edit(val card: Card?, val seed: Draft, val account: Account) : Route
     data object Settings : Route
     /** Choosing whose name stays when several people are made one. */
@@ -232,7 +234,9 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
             onBack = ::back,
             onEdit = { card -> scope.launch { push(Route.Edit(card, Draft(), model.newContactAccount())) } },
             onMore = { push(Route.More(top.id)) },
+            onCalls = { push(Route.Calls(top.id)) },
         )
+        is Route.Calls -> CallsScreen(model, top.id, ::back)
         is Route.More -> MoreScreen(
             model, top.id,
             onBack = ::back,

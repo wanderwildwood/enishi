@@ -52,37 +52,39 @@ private fun kindOf(type: Int): Call.Kind = when (type) {
 }
 
 /**
- * When a call was, as the phone's own call log says it: the time alone today, "Yesterday" and
- * the time, the weekday within the week, and the date before that.
+ * When a call was, as the phone's own call history says it: "Today, 10:24 PM", "Yesterday,
+ * 9:05 AM", the weekday within the week, the date before that, and the year once it is another.
  */
 internal fun whenSaid(
     at: Long,
     now: Long,
+    today: String,
     yesterday: String,
     hours24: Boolean,
     zone: ZoneId = ZoneId.systemDefault(),
     locale: Locale = Locale.getDefault(),
 ): String {
     val then = Instant.ofEpochMilli(at).atZone(zone)
-    val today = Instant.ofEpochMilli(now).atZone(zone).toLocalDate()
+    val todayDate = Instant.ofEpochMilli(now).atZone(zone).toLocalDate()
     val day: LocalDate = then.toLocalDate()
     // The phone's own clock setting, as its call log follows it. Newer Java puts a narrow
     // no-break space before "AM"; a plain one reads the same.
     val time = if (hours24) then.format(DateTimeFormatter.ofPattern("H:mm", locale))
     else then.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(locale)).replace('\u202F', ' ')
-    return when {
-        day == today -> time
-        day == today.minusDays(1) -> "$yesterday $time"
-        day.isAfter(today.minusDays(7)) -> then.format(DateTimeFormatter.ofPattern("EEEE", locale)) + " " + time
-        day.year == today.year -> then.format(DateTimeFormatter.ofPattern("MMM d", locale))
+    val dayWord = when {
+        day == todayDate -> today
+        day == todayDate.minusDays(1) -> yesterday
+        day.isAfter(todayDate.minusDays(7)) -> then.format(DateTimeFormatter.ofPattern("EEEE", locale))
+        day.year == todayDate.year -> then.format(DateTimeFormatter.ofPattern("MMM d", locale))
         else -> then.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale))
     }
+    return "$dayWord, $time"
 }
 
-/** How long a call went on: "45 s", "3 min", "1 h 5 min". Nothing for one never answered. */
+/** How long a call went on, said as the phone's own call history says it: "7 sec", "2 min 0 sec", "1 h 5 min". Nothing for one never answered. */
 internal fun howLong(seconds: Long): String? = when {
     seconds <= 0 -> null
-    seconds < 60 -> "$seconds s"
-    seconds < 3600 -> "${seconds / 60} min"
-    else -> "${seconds / 3600} h" + ((seconds % 3600) / 60).let { if (it > 0) " $it min" else "" }
+    seconds < 60 -> "$seconds sec"
+    seconds < 3600 -> "${seconds / 60} min ${seconds % 60} sec"
+    else -> "${seconds / 3600} h ${(seconds % 3600) / 60} min"
 }

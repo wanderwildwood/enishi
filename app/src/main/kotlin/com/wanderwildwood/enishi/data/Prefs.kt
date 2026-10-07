@@ -25,9 +25,4 @@ class Prefs(context: Context) {
                 putBoolean("save_to_set", true); putString("save_to_name", v.name); putString("save_to_type", v.type)
             }
         }.apply()
-
-    /** Said no to the call log once; the row asking again is not shown after that. */
-    var callsDeclined: Boolean
-        get() = prefs.getBoolean("calls_declined", false)
-        set(v) = prefs.edit().putBoolean("calls_declined", v).apply()
 }

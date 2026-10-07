@@ -122,7 +122,7 @@ internal fun NewButton(onNew: () -> Unit) {
         containerColor = MaterialTheme.colorScheme.onSurface,
         contentColor = MaterialTheme.colorScheme.surface,
     ) {
-        Icon(Icons.Add, contentDescription = stringResource(R.string.cd_new_contact), modifier = Modifier.size(30.dp))
+        Icon(Icons.Add, contentDescription = stringResource(R.string.cd_new_contact), modifier = Modifier.size(34.dp))
     }
 }
 

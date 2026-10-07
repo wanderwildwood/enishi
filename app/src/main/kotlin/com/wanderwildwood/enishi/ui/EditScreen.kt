@@ -441,7 +441,7 @@ private fun KindMenu(current: String, choices: List<Pair<Int, String>>, onPick: 
         ) {
             TextMMD(text = current, style = MaterialTheme.typography.bodyLarge)
             if (choices.isNotEmpty()) {
-                Icon(Icons.ChevronDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
+                Icon(Icons.ChevronDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(26.dp))
             }
         }
         DropdownMenuMMD(expanded = open, onDismissRequest = { open = false }) {

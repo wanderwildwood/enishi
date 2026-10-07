@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -39,6 +40,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -56,21 +58,14 @@ import com.mudita.mmd.components.lazy.LazyColumnMMD
 import com.mudita.mmd.components.text.TextMMD
 import com.mudita.mmd.components.top_app_bar.TopAppBarMMD
 import com.wanderwildwood.enishi.R
-import com.wanderwildwood.enishi.data.Call
 import com.wanderwildwood.enishi.data.Card
 import com.wanderwildwood.enishi.data.Field
-import com.wanderwildwood.enishi.data.callsWith
-import com.wanderwildwood.enishi.data.howLong
-import com.wanderwildwood.enishi.data.numberKey
-import com.wanderwildwood.enishi.data.whenSaid
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import java.io.File
 
 /** The person, read again whenever the store changes, which is how an edit anywhere shows. */
 @Composable
-private fun rememberCard(model: BookModel, contactId: Long): Pair<Card?, Boolean> {
+internal fun rememberCard(model: BookModel, contactId: Long): Pair<Card?, Boolean> {
     var card by remember(contactId) { mutableStateOf<Card?>(null) }
     var missing by remember(contactId) { mutableStateOf(false) }
     LaunchedEffect(contactId, model.people, model.lastNameFirst) {
@@ -89,10 +84,6 @@ private fun rememberCard(model: BookModel, contactId: Long): Pair<Card?, Boolean
 internal fun distinctNumbers(phones: List<Field>): List<Field> =
     phones.distinctBy { p -> p.value.filter(Char::isDigit).takeLast(10).ifEmpty { p.value } }
 
-/** What the buttons under a name act on: a mobile if there is one, else the first number. */
-private fun mainNumber(phones: List<Field>): Field? =
-    phones.firstOrNull { it.type == android.provider.ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE } ?: phones.firstOrNull()
-
 /**
  * One person, as the phone's own contacts app shows one: the name large in the middle, the
  * number under it, and three buttons — Call, Message and More. Everything else a person has
@@ -105,6 +96,7 @@ fun DetailScreen(
     onBack: () -> Unit,
     onEdit: (Card) -> Unit,
     onMore: () -> Unit,
+    onCalls: () -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -150,49 +142,70 @@ fun DetailScreen(
         }
         val d = c.draft
         val phones = distinctNumbers(d.phones)
-        val main = mainNumber(phones)
-        Column(body.verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
-            Column(Modifier.padding(horizontal = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                // Sizes and gaps measured off the phone's own Details page: a 35px capital in the
-                // name, the buttons well below it. Larger than the type scale goes, on purpose.
-                Spacer(Modifier.height(100.dp))
-                TextMMD(
-                    text = c.name.ifBlank { stringResource(R.string.no_name) },
-                    style = MaterialTheme.typography.headlineLarge.copy(fontSize = 36.sp, lineHeight = 42.sp),
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                    maxLines = 3,
-                )
-                listOf(d.jobTitle, d.company).filter { it.isNotBlank() }.joinToString(", ").takeIf { it.isNotEmpty() }?.let {
-                    TextMMD(text = it, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
-                }
-                Spacer(Modifier.height(10.dp))
-                // Under the name, the number the buttons act on, its kind first, as the phone does it.
-                val line: AnnotatedString? = when {
-                    main != null -> kindAndValue(Labels.phone(context, main.type, main.label).lowercase(), main.value)
-                    d.emails.isNotEmpty() -> kindAndValue(stringResource(R.string.field_email).lowercase(), d.emails.first().value)
-                    else -> null
-                }
-                line?.let { TextMMD(text = it, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center) }
-
-                Spacer(Modifier.height(100.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                    if (phones.isNotEmpty()) {
-                        ActionTile(Icons.Call, stringResource(R.string.call)) {
-                            if (phones.size == 1) dial(phones[0].value) else choosing = true to phones
-                        }
-                        ActionTile(Icons.Sms, stringResource(R.string.message)) {
-                            if (phones.size == 1) text(phones[0].value) else choosing = false to phones
-                        }
-                    } else if (d.emails.isNotEmpty()) {
-                        ActionTile(Icons.Mail, stringResource(R.string.field_email)) {
-                            open(Intent(Intent.ACTION_SENDTO, Uri.fromParts("mailto", d.emails.first().value, null)))
-                        }
+        Column(body) {
+            // Above the buttons, the name and every number, centred in the room there is —
+            // sizes and places measured off the phone's own Details page: a 36sp name, numbers
+            // at 26sp and 46dp apart, the buttons fixed below them, and a Call history button
+            // along the foot.
+            Box(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp), contentAlignment = Alignment.Center) {
+                Column(
+                    Modifier.verticalScroll(rememberScrollState()).padding(bottom = 15.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    TextMMD(
+                        text = c.name.ifBlank { stringResource(R.string.no_name) },
+                        style = MaterialTheme.typography.headlineLarge.copy(fontSize = 36.sp, lineHeight = 42.sp),
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        maxLines = 3,
+                    )
+                    listOf(d.jobTitle, d.company).filter { it.isNotBlank() }.joinToString(", ").takeIf { it.isNotEmpty() }?.let {
+                        TextMMD(text = it, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
                     }
-                    ActionTile(Icons.GridView, stringResource(R.string.more), outlined = false, onPress = onMore)
+                    Spacer(Modifier.height(8.dp))
+                    // Every number, its kind first, as the phone's own page lists them; the
+                    // email address instead for someone who has only that.
+                    val lines: List<AnnotatedString> = when {
+                        phones.isNotEmpty() -> phones.map { kindAndValue(Labels.phone(context, it.type, it.label).lowercase(), it.value) }
+                        d.emails.isNotEmpty() -> listOf(kindAndValue(stringResource(R.string.field_email).lowercase(), d.emails.first().value))
+                        else -> emptyList()
+                    }
+                    lines.forEach {
+                        TextMMD(
+                            text = it,
+                            style = MaterialTheme.typography.bodyLarge.copy(fontSize = 26.sp),
+                            textAlign = TextAlign.Center,
+                            maxLines = 1,
+                            modifier = Modifier.padding(vertical = 7.5.dp),
+                        )
+                    }
                 }
             }
-            if (phones.isNotEmpty()) RecentCalls(model, phones.map { it.value }, dial)
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(30.dp, Alignment.CenterHorizontally),
+            ) {
+                if (phones.isNotEmpty()) {
+                    ActionTile(Icons.Call, stringResource(R.string.call)) {
+                        if (phones.size == 1) dial(phones[0].value) else choosing = true to phones
+                    }
+                    ActionTile(Icons.Sms, stringResource(R.string.message)) {
+                        if (phones.size == 1) text(phones[0].value) else choosing = false to phones
+                    }
+                } else if (d.emails.isNotEmpty()) {
+                    ActionTile(Icons.Mail, stringResource(R.string.field_email)) {
+                        open(Intent(Intent.ACTION_SENDTO, Uri.fromParts("mailto", d.emails.first().value, null)))
+                    }
+                }
+                ActionTile(Icons.GridView, stringResource(R.string.more), outlined = false, onPress = onMore)
+            }
+            // The foot keeps the button's room even for someone with no number, so the
+            // buttons above sit in the same place for everyone.
+            Spacer(Modifier.height(33.dp))
+            Box(Modifier.fillMaxWidth().height(49.dp)) {
+                if (phones.isNotEmpty()) FootOutlined(stringResource(R.string.call_history), onCalls)
+            }
+            Spacer(Modifier.height(17.dp))
         }
     }
 
@@ -214,92 +227,23 @@ fun DetailScreen(
 }
 
 /**
- * The calls with them, newest first, under the buttons, as the phone's own contacts app shows
- * them when a call's "i" opens a person. The call log is asked for the first time it would be
- * shown, from a row that says so; a no is remembered, and the row does not ask again.
+ * A wide outlined button along the foot of a page, as the phone's own Details page shows
+ * "Call history": 49dp tall, 20dp in from the sides, a 2dp line with soft corners.
  */
 @Composable
-private fun RecentCalls(model: BookModel, numbers: List<String>, dial: (String) -> Unit) {
-    val context = LocalContext.current
-    fun allowed() = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALL_LOG) == PackageManager.PERMISSION_GRANTED
-    var granted by remember { mutableStateOf(allowed()) }
-    var declined by remember { mutableStateOf(model.prefs.callsDeclined) }
-    val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { yes ->
-        granted = yes
-        if (!yes) {
-            model.prefs.callsDeclined = true
-            declined = true
-        }
-    }
-    var calls by remember(numbers) { mutableStateOf<List<Call>?>(null) }
-    LaunchedEffect(numbers, granted) {
-        if (granted) calls = withContext(Dispatchers.IO) {
-            runCatching { callsWith(context.contentResolver, numbers) }.getOrDefault(emptyList())
-        }
-    }
-    if (!granted && declined) return
-
-    Spacer(Modifier.height(28.dp))
-    Column(Modifier.fillMaxWidth()) {
-        TextMMD(
-            text = stringResource(R.string.calls_title),
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-        )
-        DottedRule()
-        if (!granted) {
-            NameRow(AnnotatedString(stringResource(R.string.calls_show)), note = stringResource(R.string.calls_show_note)) {
-                ask.launch(Manifest.permission.READ_CALL_LOG)
-            }
-            return@Column
-        }
-        val list = calls ?: return@Column
-        if (list.isEmpty()) {
-            TextMMD(
-                text = stringResource(R.string.calls_none),
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-            )
-            return@Column
-        }
-        val now = System.currentTimeMillis()
-        val hours24 = android.text.format.DateFormat.is24HourFormat(context)
-        val several = numbers.map(::numberKey).distinct().size > 1
-        list.forEach { call ->
-            val kind = stringResource(
-                when (call.kind) {
-                    Call.Kind.IN -> R.string.calls_in
-                    Call.Kind.OUT -> R.string.calls_out
-                    Call.Kind.MISSED -> R.string.calls_missed
-                    Call.Kind.DECLINED -> R.string.calls_declined
-                },
-            )
-            val title = buildAnnotatedString {
-                if (call.kind == Call.Kind.MISSED) withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(kind) } else append(kind)
-                append("  ")
-                append(whenSaid(call.at, now, stringResource(R.string.calls_yesterday), hours24))
-            }
-            // Which number, only when they have more than one; how long, when it was answered.
-            val note = listOfNotNull(call.number.takeIf { several }, howLong(call.seconds)).joinToString(" · ")
-            CallRow(title, note.ifEmpty { null }) { dial(call.number) }
-        }
-    }
-}
-
-/** A call, closer set than a person in the list: there are many, and each says little. */
-@Composable
-private fun CallRow(title: AnnotatedString, note: String?, onPress: () -> Unit) {
-    Column(
-        Modifier
+internal fun FootOutlined(label: String, onPress: () -> Unit) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onPress)
-            .padding(horizontal = 16.dp, vertical = 6.dp),
+            .padding(horizontal = 20.dp)
+            .height(49.dp)
+            .border(BorderStroke(2.25.dp, MaterialTheme.colorScheme.onSurface), RoundedCornerShape(9.dp))
+            .clip(RoundedCornerShape(9.dp))
+            .clickable(onClick = onPress),
     ) {
-        TextMMD(text = title, style = MaterialTheme.typography.bodyLarge, maxLines = 1)
-        if (note != null) TextMMD(text = note, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+        TextMMD(text = label, style = MaterialTheme.typography.bodyLarge.copy(fontSize = rowText), fontWeight = FontWeight.Bold, maxLines = 1)
     }
-    DottedRule()
 }
 
 private fun kindAndValue(kind: String, value: String): AnnotatedString = buildAnnotatedString {
@@ -308,25 +252,37 @@ private fun kindAndValue(kind: String, value: String): AnnotatedString = buildAn
     withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(value) }
 }
 
-/** A big outlined square with an icon and its word under it — Call, Message, More. */
+/**
+ * A big outlined square with an icon and its word under it — Call, Message, More — as the
+ * phone's own Details page draws them: 81dp square, a 17dp corner, a 2dp line, the glyph 37dp
+ * across; More is the four squares alone, with no frame.
+ */
 @Composable
 private fun ActionTile(icon: ImageVector, label: String, outlined: Boolean = true, onPress: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.width(96.dp).clickable(onClick = onPress),
+        modifier = Modifier.width(81.dp).clickable(onClick = onPress),
     ) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(width = 80.dp, height = 64.dp)
+                .size(81.dp)
                 .let {
-                    if (outlined) it.border(BorderStroke(2.dp, MaterialTheme.colorScheme.onSurface), RoundedCornerShape(14.dp)) else it
+                    if (outlined) it.border(BorderStroke(2.25.dp, MaterialTheme.colorScheme.onSurface), RoundedCornerShape(17.dp)) else it
                 },
         ) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(48.dp))
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(if (outlined) 47.dp else 50.dp))
         }
         Spacer(Modifier.height(8.dp))
-        TextMMD(text = label, style = MaterialTheme.typography.bodyLarge)
+        // The word may be wider than the tile; it is centred under it all the same.
+        TextMMD(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge.copy(fontSize = rowText),
+            textAlign = TextAlign.Center,
+            softWrap = false,
+            maxLines = 1,
+            modifier = Modifier.requiredWidth(120.dp),
+        )
     }
 }
 
@@ -335,7 +291,7 @@ private fun ActionTile(icon: ImageVector, label: String, outlined: Boolean = tru
  * refused, the number goes to the dialer to press call there.
  */
 @Composable
-private fun rememberDialer(onNothing: () -> Unit): (String) -> Unit {
+internal fun rememberDialer(onNothing: () -> Unit): (String) -> Unit {
     val context = LocalContext.current
     var calling by remember { mutableStateOf<String?>(null) }
     val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
