@@ -363,7 +363,7 @@ fun MoreScreen(
         }
         val d = c.draft
         val numbers = distinctNumbers(d.phones)
-        androidx.compose.runtime.CompositionLocalProvider(LocalCopy provides ::copy) { LazyColumnMMD(body) {
+        androidx.compose.runtime.CompositionLocalProvider(LocalCopy provides ::copy) { LazyColumnMMD(body, isScrollbarVisible = false) {
             numbers.forEach { p ->
                 item {
                     KindRow(Labels.phone(context, p.type, p.label), p.value, ::copy) { dial(p.value) }

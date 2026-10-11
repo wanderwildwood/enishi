@@ -106,7 +106,7 @@ fun CardsScreen(
                     return@Scaffold
                 }
                 val fresh = cards.filterIndexed { i, _ -> here[i] == null }
-                LazyColumnMMD(body) {
+                LazyColumnMMD(body, isScrollbarVisible = false) {
                     item {
                         Column(Modifier.padding(16.dp)) {
                             TextMMD(
@@ -156,7 +156,7 @@ fun CardsScreen(
 @Composable
 private fun OneCard(card: Draft, here: Person?, modifier: Modifier, onAdd: () -> Unit, onOpen: (Person) -> Unit) {
     val context = LocalContext.current
-    LazyColumnMMD(modifier) {
+    LazyColumnMMD(modifier, isScrollbarVisible = false) {
         item {
             Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 12.dp)) {
                 TextMMD(text = card.spokenName.ifBlank { stringResource(R.string.no_name) }, style = MaterialTheme.typography.headlineSmall)

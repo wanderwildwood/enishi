@@ -139,7 +139,7 @@ internal fun PeopleList(
     onLongPress: ((Person) -> Unit)? = null,
     onOpen: (Person) -> Unit,
 ) {
-    LazyColumnMMD(modifier, state = state) {
+    LazyColumnMMD(modifier, state = state, isScrollbarVisible = false) {
         if (above != null) item(key = "above") { Column { above() } }
         items(people, key = { it.id }) { p ->
             PersonRow(p, note(p), chosen = chosen?.let { p.id in it }, onLongPress = onLongPress?.let { { it(p) } }) { onOpen(p) }

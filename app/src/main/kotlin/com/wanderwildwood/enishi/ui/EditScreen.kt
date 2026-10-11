@@ -209,6 +209,7 @@ fun EditScreen(
         LazyColumnMMD(
             Modifier.fillMaxSize().padding(padding).imePadding().background(MaterialTheme.colorScheme.surface),
             state = listState,
+            isScrollbarVisible = false,
         ) {
             problem?.let {
                 item {

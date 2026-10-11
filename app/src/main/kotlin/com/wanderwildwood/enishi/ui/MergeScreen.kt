@@ -83,7 +83,7 @@ fun MergeScreen(model: BookModel, ids: List<Long>, onBack: () -> Unit, onMerged:
             }
         },
     ) { padding ->
-        LazyColumnMMD(Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.surface)) {
+        LazyColumnMMD(Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.surface), isScrollbarVisible = false) {
             item {
                 TextMMD(
                     text = stringResource(R.string.merge_body),

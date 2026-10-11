@@ -52,7 +52,7 @@ fun SettingsScreen(
         },
         bottomBar = { notice?.let { NoticeStrip(it, onNoticeSeen) } },
     ) { padding ->
-        LazyColumnMMD(Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.surface)) {
+        LazyColumnMMD(Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.surface), isScrollbarVisible = false) {
             item {
                 PlainRow(
                     title = stringResource(R.string.settings_sort),

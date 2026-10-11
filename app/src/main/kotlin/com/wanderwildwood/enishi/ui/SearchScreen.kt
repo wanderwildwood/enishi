@@ -86,7 +86,7 @@ fun SearchScreen(
         when {
             query.isBlank() -> Unit
             found.isEmpty() -> Quiet(stringResource(R.string.search_none), body)
-            else -> LazyColumnMMD(body) {
+            else -> LazyColumnMMD(body, isScrollbarVisible = false) {
                 items(found, key = { it.person.id }) { f -> PersonRow(f.person, f.by) { onOpen(f.person) } }
             }
         }

@@ -106,7 +106,7 @@ fun CallsScreen(model: BookModel, contactId: Long, onBack: () -> Unit) {
         val several = numbers.map(::numberKey).distinct().size > 1
         val today = stringResource(R.string.calls_today)
         val yesterday = stringResource(R.string.calls_yesterday)
-        LazyColumnMMD(body) {
+        LazyColumnMMD(body, isScrollbarVisible = false) {
             items(list.size) { i ->
                 val call = list[i]
                 val kind = stringResource(
