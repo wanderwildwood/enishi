@@ -25,7 +25,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
-import com.mudita.mmd.components.lazy.LazyColumnMMD
 import com.mudita.mmd.components.text.TextMMD
 import com.mudita.mmd.components.top_app_bar.TopAppBarMMD
 import com.wanderwildwood.enishi.R
@@ -86,7 +85,7 @@ fun SearchScreen(
         when {
             query.isBlank() -> Unit
             found.isEmpty() -> Quiet(stringResource(R.string.search_none), body)
-            else -> LazyColumnMMD(body, isScrollbarVisible = false) {
+            else -> PagedColumn(body) {
                 items(found, key = { it.person.id }) { f -> PersonRow(f.person, f.by) { onOpen(f.person) } }
             }
         }

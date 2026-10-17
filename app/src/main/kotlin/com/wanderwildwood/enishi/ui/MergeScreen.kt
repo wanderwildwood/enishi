@@ -27,7 +27,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mudita.mmd.components.divider.HorizontalDividerMMD
-import com.mudita.mmd.components.lazy.LazyColumnMMD
 import com.mudita.mmd.components.radio_button.RadioButtonMMD
 import com.mudita.mmd.components.text.TextMMD
 import com.wanderwildwood.enishi.R
@@ -83,7 +82,7 @@ fun MergeScreen(model: BookModel, ids: List<Long>, onBack: () -> Unit, onMerged:
             }
         },
     ) { padding ->
-        LazyColumnMMD(Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.surface), isScrollbarVisible = false) {
+        PagedColumn(Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.surface)) {
             item {
                 TextMMD(
                     text = stringResource(R.string.merge_body),

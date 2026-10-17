@@ -36,7 +36,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import com.mudita.mmd.components.lazy.LazyColumnMMD
 import com.mudita.mmd.components.text.TextMMD
 import com.wanderwildwood.enishi.R
 import com.wanderwildwood.enishi.data.Call
@@ -105,7 +104,7 @@ fun CallsScreen(model: BookModel, contactId: Long, onBack: () -> Unit) {
         val today = stringResource(R.string.calls_today)
         val yesterday = stringResource(R.string.calls_yesterday)
         val state = rememberLazyListState()
-        ListJumpBox(state, ListJump.Pages, body) { LazyColumnMMD(Modifier.fillMaxSize(), state = state, isScrollbarVisible = false) {
+        ListJumpBox(state, ListJump.Pages, body) { PagedColumn(Modifier.fillMaxSize(), state = state) {
             items(list.size) { i ->
                 val call = list[i]
                 val kind = stringResource(

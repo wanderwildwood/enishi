@@ -54,7 +54,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
-import com.mudita.mmd.components.lazy.LazyColumnMMD
 import com.mudita.mmd.components.text.TextMMD
 import com.mudita.mmd.components.top_app_bar.TopAppBarMMD
 import com.wanderwildwood.enishi.R
@@ -362,7 +361,7 @@ fun MoreScreen(
         }
         val d = c.draft
         val numbers = distinctNumbers(d.phones)
-        androidx.compose.runtime.CompositionLocalProvider(LocalCopy provides ::copy) { LazyColumnMMD(body, isScrollbarVisible = false) {
+        androidx.compose.runtime.CompositionLocalProvider(LocalCopy provides ::copy) { PagedColumn(body) {
             numbers.forEach { p ->
                 item {
                     // A number here only shows; a long press copies it. Calling is the Call

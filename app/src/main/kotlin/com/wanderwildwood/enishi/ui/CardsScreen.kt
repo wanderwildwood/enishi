@@ -22,7 +22,6 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.mudita.mmd.components.divider.HorizontalDividerMMD
-import com.mudita.mmd.components.lazy.LazyColumnMMD
 import com.mudita.mmd.components.text.TextMMD
 import com.mudita.mmd.components.top_app_bar.TopAppBarMMD
 import com.wanderwildwood.enishi.R
@@ -106,7 +105,7 @@ fun CardsScreen(
                     return@Scaffold
                 }
                 val fresh = cards.filterIndexed { i, _ -> here[i] == null }
-                LazyColumnMMD(body, isScrollbarVisible = false) {
+                PagedColumn(body) {
                     item {
                         Column(Modifier.padding(16.dp)) {
                             TextMMD(
@@ -156,7 +155,7 @@ fun CardsScreen(
 @Composable
 private fun OneCard(card: Draft, here: Person?, modifier: Modifier, onAdd: () -> Unit, onOpen: (Person) -> Unit) {
     val context = LocalContext.current
-    LazyColumnMMD(modifier, isScrollbarVisible = false) {
+    PagedColumn(modifier) {
         item {
             Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 12.dp)) {
                 TextMMD(text = card.spokenName.ifBlank { stringResource(R.string.no_name) }, style = MaterialTheme.typography.headlineSmall)

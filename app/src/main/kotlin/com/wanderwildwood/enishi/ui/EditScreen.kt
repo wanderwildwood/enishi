@@ -48,7 +48,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mudita.mmd.components.buttons.ButtonMMD
 import com.mudita.mmd.components.checkbox.CheckboxMMD
-import com.mudita.mmd.components.lazy.LazyColumnMMD
 import com.mudita.mmd.components.menus.DropdownMenuItemMMD
 import com.mudita.mmd.components.menus.DropdownMenuMMD
 import com.mudita.mmd.components.switcher.SwitchMMD
@@ -206,7 +205,7 @@ fun EditScreen(
             )
         },
     ) { padding ->
-        LazyColumnMMD(
+        PagedColumn(
             Modifier.fillMaxSize().padding(padding).imePadding().background(MaterialTheme.colorScheme.surface),
             state = listState,
             isScrollbarVisible = false,
@@ -325,16 +324,17 @@ fun EditScreen(
                 groups.forEach { g ->
                     item(key = "g${g.id}") {
                         val inIt = g.id in draft.groups
+                        val toggle = {
+                            draft = draft.copy(groups = if (inIt) draft.groups - g.id else draft.groups + (g.id to start.groups[g.id].orEmpty()))
+                        }
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable {
-                                    draft = draft.copy(groups = if (inIt) draft.groups - g.id else draft.groups + (g.id to start.groups[g.id].orEmpty()))
-                                }
+                                .clickable(onClick = toggle)
                                 .padding(horizontal = 16.dp, vertical = 10.dp),
                         ) {
-                            CheckboxMMD(checked = inIt, onCheckedChange = null)
+                            CheckboxMMD(checked = inIt, onCheckedChange = { toggle() })
                             Spacer(Modifier.width(14.dp))
                             TextMMD(text = g.title, style = MaterialTheme.typography.bodyLarge)
                         }
@@ -356,7 +356,6 @@ fun EditScreen(
                     }
                 }
             }
-            item { Spacer(Modifier.height(24.dp)) }
         }
     }
 }

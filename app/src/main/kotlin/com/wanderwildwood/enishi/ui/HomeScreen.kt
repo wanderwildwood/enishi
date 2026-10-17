@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.dp
 import com.mudita.mmd.components.buttons.FloatingActionButtonMMD
 import com.mudita.mmd.components.checkbox.CheckboxMMD
 import com.mudita.mmd.components.divider.HorizontalDividerMMD
-import com.mudita.mmd.components.lazy.LazyColumnMMD
 import com.mudita.mmd.components.text.TextMMD
 import com.mudita.mmd.components.top_app_bar.TopAppBarMMD
 import com.wanderwildwood.enishi.R
@@ -151,13 +150,11 @@ internal fun PeopleList(
     // list is sorted by surname, whatever the names show.
     val jump = remember(people, above != null) { ListJump.Letters(people.map { it.section }, firstIndex = if (above != null) 1 else 0) }
     ListJumpBox(state, jump, modifier, clearBelow = clearBelow) {
-        LazyColumnMMD(Modifier.fillMaxSize(), state = state, isScrollbarVisible = false) {
+        PagedColumn(Modifier.fillMaxSize(), state = state) {
             if (above != null) item(key = "above") { Column { above() } }
             items(people, key = { it.id }) { p ->
                 PersonRow(p, note(p), chosen = chosen?.let { p.id in it }, onLongPress = onLongPress?.let { { it(p) } }) { onOpen(p) }
             }
-            // Room under the last row, so the round + never sits on top of a name.
-            item(key = "foot") { Spacer(Modifier.height(80.dp)) }
         }
     }
 }
@@ -174,7 +171,7 @@ internal fun PersonRow(
     NameRow(
         boldSurname(name, person.family),
         note = note,
-        leading = chosen?.let { on -> { CheckboxMMD(checked = on, onCheckedChange = null) } },
+        leading = chosen?.let { on -> { CheckboxMMD(checked = on, onCheckedChange = { onPress() }) } },
         onLongPress = onLongPress,
         onPress = onPress,
     )
