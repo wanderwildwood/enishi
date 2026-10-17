@@ -248,11 +248,10 @@ internal fun DottedRule(modifier: Modifier = Modifier, start: androidx.compose.u
     }
 }
 
-/** A top bar's title, in bold as the phone's own apps set it. */
+/** A top bar's title, in the bar's own type: never bold or resized, as in every app here. */
 @Composable
 internal fun BarTitle(text: String) {
-    // Black, not Bold: the phone's own titles measure a 5px stem at this size, Bold a 4px one.
-    TextMMD(text = text, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    TextMMD(text = text, maxLines = 1, overflow = TextOverflow.Ellipsis)
 }
 
 /** A name with the surname in bold: "Ada **Whitlock**", or "**Whitlock**, Ada" turned round. */
@@ -324,27 +323,16 @@ internal fun LabelValue(label: String, value: String, lines: Int = 6, onPress: (
     DottedRule()
 }
 
-/**
- * The top bar, with the heavy rule under it that the phone's own contacts app draws: 4px there,
- * where the library's bar draws one.
- */
+/** The top bar: the library's own, its height, type, inset and rule, as in every app here. */
 @Composable
 internal fun Bar(
     title: @Composable () -> Unit,
     navigationIcon: @Composable () -> Unit = {},
     actions: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit = {},
 ) {
-    Column {
-        com.mudita.mmd.components.top_app_bar.TopAppBarMMD(
-            title = title,
-            navigationIcon = navigationIcon,
-            // The phone's own bar sets its glyphs 2dp further from the edge than the library does.
-            actions = {
-                actions()
-                androidx.compose.foundation.layout.Spacer(Modifier.size(2.dp))
-            },
-            showDivider = false,
-        )
-        HorizontalDividerMMD(thickness = 3.dp, color = MaterialTheme.colorScheme.onSurface)
-    }
+    com.mudita.mmd.components.top_app_bar.TopAppBarMMD(
+        title = title,
+        navigationIcon = navigationIcon,
+        actions = actions,
+    )
 }

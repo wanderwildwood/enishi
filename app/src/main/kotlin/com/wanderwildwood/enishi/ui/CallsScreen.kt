@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -106,7 +107,8 @@ fun CallsScreen(model: BookModel, contactId: Long, onBack: () -> Unit) {
         val several = numbers.map(::numberKey).distinct().size > 1
         val today = stringResource(R.string.calls_today)
         val yesterday = stringResource(R.string.calls_yesterday)
-        LazyColumnMMD(body, isScrollbarVisible = false) {
+        val state = rememberLazyListState()
+        ListJumpBox(state, ListJump.Pages, body) { LazyColumnMMD(Modifier.fillMaxSize(), state = state, isScrollbarVisible = false) {
             items(list.size) { i ->
                 val call = list[i]
                 val kind = stringResource(
@@ -129,7 +131,7 @@ fun CallsScreen(model: BookModel, contactId: Long, onBack: () -> Unit) {
                     note = note,
                 ) { dial(call.number) }
             }
-        }
+        } }
     }
 }
 

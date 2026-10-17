@@ -18,10 +18,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mudita.mmd.components.buttons.FloatingActionButtonMMD
 import com.mudita.mmd.components.checkbox.CheckboxMMD
@@ -106,11 +108,15 @@ fun HomeScreen(
                     chosen = if (choosing) chosen else null,
                     onLongPress = onChoose,
                     onOpen = { if (choosing) onChoose(it) else onOpen(it) },
+                    clearBelow = if (choosing) 0.dp else FAB_CLEARANCE,
                 )
             }
         }
     }
 }
+
+/** The round + and the margin the scaffold keeps round it. */
+private val FAB_CLEARANCE = 72.dp
 
 /** The round + in the corner, as on the phone's own contacts list. */
 @Composable
@@ -138,14 +144,21 @@ internal fun PeopleList(
     chosen: Set<Long>? = null,
     onLongPress: ((Person) -> Unit)? = null,
     onOpen: (Person) -> Unit,
+    /** The height of the round + over the foot of the list, which the letters stop above. */
+    clearBelow: Dp = 0.dp,
 ) {
-    LazyColumnMMD(modifier, state = state, isScrollbarVisible = false) {
-        if (above != null) item(key = "above") { Column { above() } }
-        items(people, key = { it.id }) { p ->
-            PersonRow(p, note(p), chosen = chosen?.let { p.id in it }, onLongPress = onLongPress?.let { { it(p) } }) { onOpen(p) }
+    // The letters are the store's own index letters, the ones it sorted by: by surname when the
+    // list is sorted by surname, whatever the names show.
+    val jump = remember(people, above != null) { ListJump.Letters(people.map { it.section }, firstIndex = if (above != null) 1 else 0) }
+    ListJumpBox(state, jump, modifier, clearBelow = clearBelow) {
+        LazyColumnMMD(Modifier.fillMaxSize(), state = state, isScrollbarVisible = false) {
+            if (above != null) item(key = "above") { Column { above() } }
+            items(people, key = { it.id }) { p ->
+                PersonRow(p, note(p), chosen = chosen?.let { p.id in it }, onLongPress = onLongPress?.let { { it(p) } }) { onOpen(p) }
+            }
+            // Room under the last row, so the round + never sits on top of a name.
+            item(key = "foot") { Spacer(Modifier.height(80.dp)) }
         }
-        // Room under the last row, so the round + never sits on top of a name.
-        item(key = "foot") { Spacer(Modifier.height(80.dp)) }
     }
 }
 
