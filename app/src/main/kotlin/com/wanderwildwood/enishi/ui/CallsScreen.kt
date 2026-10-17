@@ -5,7 +5,6 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -51,7 +50,8 @@ import kotlinx.coroutines.withContext
 /**
  * The calls with one person, newest first, as the phone's own contacts app shows them behind
  * its Call history button: their name over the list, an arrow for the way each call went, when
- * it was in bold, and how long it lasted under that. A press calls them back.
+ * it was in bold, and how long it lasted under that. A press on a row does nothing: nothing in
+ * a list here calls anyone, so a stray touch cannot dial. Calling is the Call button on their page.
  *
  * The call log is asked for the first time this page would show it, from a row that says so.
  */
@@ -59,8 +59,6 @@ import kotlinx.coroutines.withContext
 fun CallsScreen(model: BookModel, contactId: Long, onBack: () -> Unit) {
     val context = LocalContext.current
     val (card, missing) = rememberCard(model, contactId)
-    var notice by remember { mutableStateOf<String?>(null) }
-    val dial = rememberDialer { notice = context.getString(R.string.nothing_opens) }
 
     fun allowed() = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALL_LOG) == PackageManager.PERMISSION_GRANTED
     var granted by remember { mutableStateOf(allowed()) }
@@ -82,7 +80,6 @@ fun CallsScreen(model: BookModel, contactId: Long, onBack: () -> Unit) {
                 navigationIcon = { BarButton(Icons.Back, stringResource(R.string.cd_back), onBack) },
             )
         },
-        bottomBar = { notice?.let { NoticeStrip(it) { notice = null } } },
     ) { padding ->
         val body = Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.surface)
         if (card == null) {
@@ -129,7 +126,7 @@ fun CallsScreen(model: BookModel, contactId: Long, onBack: () -> Unit) {
                     },
                     title = whenSaid(call.at, now, today, yesterday, hours24),
                     note = note,
-                ) { dial(call.number) }
+                )
             }
         } }
     }
@@ -140,12 +137,11 @@ fun CallsScreen(model: BookModel, contactId: Long, onBack: () -> Unit) {
  * the dotted rule from the words to the edge of the page.
  */
 @Composable
-private fun CallRow(icon: ImageVector, title: String, note: List<String>, onPress: () -> Unit) {
+private fun CallRow(icon: ImageVector, title: String, note: List<String>) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onPress)
             .padding(start = 17.5.dp, end = 16.dp, top = 14.dp, bottom = 16.5.dp),
     ) {
         Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(28.dp))
