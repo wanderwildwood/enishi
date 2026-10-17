@@ -327,7 +327,6 @@ fun MoreScreen(
     val scope = rememberCoroutineScope()
     val (card, missing) = rememberCard(model, contactId)
     var notice by remember { mutableStateOf<String?>(null) }
-    val dial = rememberDialer { notice = context.getString(R.string.nothing_opens) }
     fun open(intent: Intent) {
         if (!start(context, intent)) notice = context.getString(R.string.nothing_opens)
     }
@@ -366,7 +365,9 @@ fun MoreScreen(
         androidx.compose.runtime.CompositionLocalProvider(LocalCopy provides ::copy) { LazyColumnMMD(body, isScrollbarVisible = false) {
             numbers.forEach { p ->
                 item {
-                    KindRow(Labels.phone(context, p.type, p.label), p.value, ::copy) { dial(p.value) }
+                    // A number here only shows; a long press copies it. Calling is the Call
+                    // button on the person's page, so a stray touch on a list cannot dial.
+                    KindRow(Labels.phone(context, p.type, p.label), p.value, ::copy, onPress = null)
                 }
             }
             d.emails.forEach { e ->
@@ -470,16 +471,17 @@ fun MoreScreen(
 
 /**
  * "Mobile  ·  +1 555 010 1001", one line, as the phone's own More page lists a number. A press
- * uses it; a long press copies it.
+ * uses it, where it has a use that cannot surprise anyone (a number has none: it is never
+ * dialled from here); a long press copies it.
  */
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-private fun KindRow(kind: String, value: String, onCopy: (String) -> Unit, onPress: () -> Unit) {
+private fun KindRow(kind: String, value: String, onCopy: (String) -> Unit, onPress: (() -> Unit)?) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .combinedClickable(onClick = onPress, onLongClick = { onCopy(value) })
+            .combinedClickable(onClick = onPress ?: {}, onLongClick = { onCopy(value) })
             .padding(horizontal = 16.dp, vertical = 22.dp),
     ) {
         TextMMD(text = kind, style = MaterialTheme.typography.bodyLarge)

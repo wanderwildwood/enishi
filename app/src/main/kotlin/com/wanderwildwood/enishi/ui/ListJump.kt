@@ -200,19 +200,31 @@ private fun LetterColumn(state: LazyListState, jump: ListJump.Letters) {
 private fun PageDots(state: LazyListState) {
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
-    val slotPx = with(density) { (DOT_SIZE + DOT_SPACING).toPx() }
+    // In whole pixels, as the column lays them out: summed from fractions, nineteen dots came to
+    // a few pixels less than they take, and the last one was squeezed flat against the foot.
+    val dotPx = with(density) { DOT_SIZE.roundToPx() }
+    val gapPx = with(density) { DOT_SPACING.roundToPx() }
+    val insetPx = with(density) { EDGE_INSET.roundToPx() }
+    val slotPx = (dotPx + gapPx).toFloat()
     var heightPx by remember { mutableIntStateOf(0) }
 
     // A page is a screenful less a row, the step a swipe takes, so a dot lands where swiping
-    // would have.
+    // would have. The rows to a screen are measured once for each length of list and then held:
+    // where rows differ in height a fresh count on every screen would add and drop dots under the
+    // reader's thumb as the list moved. A list that changes length is measured again.
+    val held = remember(state) { intArrayOf(-1, 0) } // the length measured at, rows to a screen
     val pages by remember(state) {
         derivedStateOf {
             val info = state.layoutInfo
             val total = info.totalItemsCount
-            val onScreen = info.visibleItemsInfo.size
             val viewport = info.viewportEndOffset - info.viewportStartOffset
             val row = info.visibleItemsInfo.firstOrNull()?.size ?: 0
-            val step = if (viewport > 0 && row > 0) (viewport / row - 1).coerceAtLeast(1) else 1
+            if (held[0] != total && viewport > 0 && row > 0) {
+                held[0] = total
+                held[1] = viewport / row
+            }
+            val onScreen = held[1].coerceAtLeast(1)
+            val step = (onScreen - 1).coerceAtLeast(1)
             val count = if (total <= onScreen) 1 else (total - onScreen + step - 1) / step + 1
             val lastVisible = info.visibleItemsInfo.lastOrNull()?.index ?: 0
             val current = if (lastVisible >= total - 1) count - 1 else (state.firstVisibleItemIndex + step / 2) / step
@@ -220,7 +232,8 @@ private fun PageDots(state: LazyListState) {
         }
     }
     val (pageCount, currentPage, step) = pages
-    val fits = ((heightPx + with(density) { DOT_SPACING.toPx() }) / slotPx).toInt().coerceAtLeast(1)
+    // Inset from the list's ends as the letters are, so no dot sits on a rule.
+    val fits = ((heightPx + gapPx - insetPx * 2) / slotPx).toInt().coerceAtLeast(1)
     val dots = pageCount.coerceAtMost(fits)
     val latest by rememberUpdatedState(Triple(pageCount, dots, step))
     var touched by remember { mutableStateOf<Int?>(null) }
@@ -234,7 +247,7 @@ private fun PageDots(state: LazyListState) {
         contentAlignment = Alignment.Center,
     ) {
         Column(
-            modifier = Modifier.pointerInput(Unit) {
+            modifier = Modifier.padding(vertical = EDGE_INSET).pointerInput(Unit) {
                 trackSlots(
                     count = { latest.second },
                     slotPx = { slotPx },
