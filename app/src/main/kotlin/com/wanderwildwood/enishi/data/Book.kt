@@ -74,7 +74,9 @@ class Book(context: Context) {
                 if (f.isNotEmpty()) family.putIfAbsent(c.getLong(0), f)
             }
         }
-        return out.map { it.copy(family = family[it.id].orEmpty()) }
+        // The store puts the names it files under # (a figure or a sign first) after Z; they go
+        // first, as Phone lists them and as the letter column has #. Otherwise the store's order.
+        return out.map { it.copy(family = family[it.id].orEmpty()) }.sortedBy { it.section != "#" }
     }
 
     /** Every number, address, company and nickname, by person, for search to look in. */
