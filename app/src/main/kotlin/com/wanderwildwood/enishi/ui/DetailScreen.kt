@@ -389,7 +389,8 @@ fun MoreScreen(
             d.addresses.forEach { a ->
                 item {
                     LabelValue(stringResource(R.string.kind_address, Labels.address(context, a.type, a.label)), a.value) {
-                        open(Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=" + Uri.encode(a.value.replace('\n', ' ')))))
+                        val map = onMap(context, a.value)
+                        if (map == null) notice = context.getString(R.string.nothing_opens) else open(map)
                     }
                 }
             }
@@ -496,6 +497,24 @@ private fun place(context: Context, number: String, direct: Boolean): Boolean {
     if (direct && start(context, Intent(Intent.ACTION_CALL, uri))) return true
     return start(context, Intent(Intent.ACTION_DIAL, uri))
 }
+
+/**
+ * An address shown in whatever map app the phone has, as a plain geo: search. Topo answers
+ * geo: too, but only to mark a beacon at the place it is given — it cannot look up a street
+ * address — so it is left out: when it is among the answers the rest are offered in the
+ * phone's own chooser, and when it is the only one there is nothing to open the address.
+ */
+internal fun onMap(context: Context, address: String): Intent? {
+    val view = Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=" + Uri.encode(address.replace('\n', ' '))))
+    val answers = context.packageManager.queryIntentActivities(view, PackageManager.MATCH_DEFAULT_ONLY)
+    val topo = answers.filter { it.activityInfo.packageName.startsWith(TOPO) }
+    if (topo.isEmpty()) return view
+    if (topo.size == answers.size) return null
+    val leftOut = topo.map { android.content.ComponentName(it.activityInfo.packageName, it.activityInfo.name) }
+    return Intent.createChooser(view, null).putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS, leftOut.toTypedArray())
+}
+
+private const val TOPO = "com.wanderwildwood.chikei"
 
 /** A press that leads nowhere says so, rather than doing nothing. */
 internal fun start(context: Context, intent: Intent): Boolean = try {
