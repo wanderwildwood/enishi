@@ -43,9 +43,9 @@ at a time.
 - **Recent calls** on a person's page, drawn as Phone's Recents are: the last five with them, an
   arrow for the way each went, when and how long, and All calls for the rest. The call log is
   asked for the first time, from a row that says so, and read on the phone only.
-- **Medicine and Field Kit**, when they are on the phone: a person's page can set them as
-  the pharmacy or the doctor in Medicine, or add them to the emergency card in Field Kit. That app shows the
-  name and number and asks before it keeps them.
+- **Field Kit**, when it is on the phone: a person's page can add them to its emergency card.
+  Field Kit shows the name and number and asks before it keeps them. (Medicine chooses a
+  medicine's pharmacy and doctor from Contacts on its own page.)
 - **Search** by any part of a name, a run of digits from any number, or part of an email
   address or a company. Accents and capitals do not count.
 - **Edits only what changed.** A photo, a ringtone or a messenger handle written by another app
@@ -74,7 +74,7 @@ the app has no internet permission at all.
 
 ## Where this is up to
 
-Version 0.2.0. What it writes is worked out by plain code that is unit tested on its own: which
+Version 0.2.1. What it writes is worked out by plain code that is unit tested on its own: which
 rows a save adds, changes and deletes; how vCards from 2.1 to 4.0 read, including old phones'
 quoted-printable in other character sets; dates without a year; search; who in a file is
 already here; what a merge adds and what it leaves.

@@ -90,8 +90,7 @@ private const val RECENT_CALLS = 5
  * it. A press on an email address writes to it, on an address opens it in a map, on a website
  * opens it, and a long press on any of them copies it. Under those, the last few calls with
  * them, drawn as Phone's Recents are, and All calls when there are more. Sharing, handing them
- * to Medicine or Field Kit when those are on the phone, and delete — which asks in its own face
- * — come last.
+ * to Field Kit when it is on the phone, and delete — which asks in its own face — come last.
  */
 @Composable
 fun DetailScreen(
