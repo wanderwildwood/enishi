@@ -6,7 +6,7 @@ import android.provider.ContactsContract
 import com.wanderwildwood.enishi.R
 
 /**
- * Other apps of this shop a person can be handed to from their More page: Medicine takes them
+ * Other apps of this shop a person can be handed to from their page: Medicine takes them
  * as a pharmacy or a doctor, Field Kit as an emergency contact. Each row shows only while that app is on
  * the phone and says it takes them; the app itself asks before it keeps anything.
  *

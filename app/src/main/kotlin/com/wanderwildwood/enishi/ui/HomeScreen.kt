@@ -14,30 +14,39 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
-import com.mudita.mmd.components.buttons.FloatingActionButtonMMD
 import com.mudita.mmd.components.checkbox.CheckboxMMD
 import com.mudita.mmd.components.divider.HorizontalDividerMMD
 import com.mudita.mmd.components.text.TextMMD
 import com.mudita.mmd.components.top_app_bar.TopAppBarMMD
 import com.wanderwildwood.enishi.R
+import com.wanderwildwood.enishi.data.Group
 import com.wanderwildwood.enishi.data.Person
 
+/** The list's tabs, in the order they stand. Groups is there only while there are groups. */
+const val TAB_ALL = 0
+const val TAB_FAVOURITES = 1
+const val TAB_GROUPS = 2
+
 /**
- * Where the app opens, drawn as the phone's own contacts app is: a bold title, everyone in one
- * plain list with the surname in bold, and a round + for someone new. Nothing above everyone:
- * favourites are the Phone app's to list, as on the phone's own apps. A cog and an `i`, top
- * right, as in every app here.
+ * Where the app opens, in the house's look, as Phone and Messaging have it: the plain title, and
+ * along the top right search, a + for someone new, the cog for settings and the `i` for About.
+ * The + is up there rather than floating at the foot of the list, so no page of the list gives up
+ * a row to keep clear of it. Under the bar, tabs: All, Favourites — the people starred here, who
+ * are the Phone app's favourites too — and Groups, while the address book has any.
  *
  * A long press on anyone starts choosing several: a box beside every row, the count in the bar,
  * and Merge, Share and Delete along the foot. Back, or the cross, stops.
@@ -45,8 +54,12 @@ import com.wanderwildwood.enishi.data.Person
 @Composable
 fun HomeScreen(
     model: BookModel,
-    listState: LazyListState,
+    tab: Int,
+    onTab: (Int) -> Unit,
+    /** One place in the list for each tab, so going back to a tab finds it where it was left. */
+    listStates: List<LazyListState>,
     onOpen: (Person) -> Unit,
+    onGroup: (Group) -> Unit,
     onNew: () -> Unit,
     onSearch: () -> Unit,
     onSettings: () -> Unit,
@@ -62,6 +75,9 @@ fun HomeScreen(
     onNoticeSeen: () -> Unit,
 ) {
     val choosing = chosen.isNotEmpty()
+    // A tab chosen while there were groups, and there are none now, falls back to All.
+    val hasGroups = model.groups.isNotEmpty()
+    val shown = if (tab == TAB_GROUPS && !hasGroups) TAB_ALL else tab
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
@@ -75,6 +91,7 @@ fun HomeScreen(
                     title = { BarTitle(stringResource(R.string.app_name)) },
                     actions = {
                         BarButton(Icons.Search, stringResource(R.string.cd_search), onSearch)
+                        BarButton(Icons.Add, stringResource(R.string.cd_new_contact), onNew)
                         BarButton(Icons.Settings, stringResource(R.string.cd_settings), onSettings)
                         BarButton(Icons.Info, stringResource(R.string.cd_about), onAbout)
                     },
@@ -87,7 +104,6 @@ fun HomeScreen(
                 if (choosing) ChosenBar(chosen.size, onMerge, onShareChosen, onDeleteChosen)
             }
         },
-        floatingActionButton = { if (!choosing) NewButton(onNew) },
     ) { padding ->
         val body = Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.surface)
         when {
@@ -99,35 +115,55 @@ fun HomeScreen(
                 Spacer(Modifier.height(10.dp))
                 FootButton(stringResource(R.string.all_empty_import), Modifier.fillMaxWidth(), onClick = onImport)
             }
-            else -> {
-                PeopleList(
-                    people = model.people,
-                    state = listState,
-                    modifier = body,
-                    chosen = if (choosing) chosen else null,
-                    onLongPress = onChoose,
-                    onOpen = { if (choosing) onChoose(it) else onOpen(it) },
-                    clearBelow = if (choosing) 0.dp else FAB_CLEARANCE,
+            else -> Column(body) {
+                val labels = listOfNotNull(
+                    stringResource(R.string.tab_all),
+                    stringResource(R.string.tab_favourites),
+                    if (hasGroups) stringResource(R.string.tab_groups) else null,
                 )
+                StoneTabs(labels = labels, selected = shown, onSelect = onTab)
+                val rest = Modifier.weight(1f).fillMaxWidth()
+                when (shown) {
+                    TAB_GROUPS -> GroupList(model.groups, listStates[TAB_GROUPS], rest, onGroup)
+                    else -> {
+                        val people = if (shown == TAB_FAVOURITES) model.people.filter { it.starred } else model.people
+                        if (people.isEmpty()) {
+                            Quiet(stringResource(R.string.favourites_none), rest)
+                        } else {
+                            PeopleList(
+                                people = people,
+                                state = listStates[shown],
+                                modifier = rest,
+                                chosen = if (choosing) chosen else null,
+                                onLongPress = onChoose,
+                                onOpen = { if (choosing) onChoose(it) else onOpen(it) },
+                            )
+                        }
+                    }
+                }
             }
         }
     }
 }
 
-/** The round + and the margin the scaffold keeps round it. */
-private val FAB_CLEARANCE = 72.dp
-
-/** The round + in the corner, as on the phone's own contacts list. */
+/**
+ * The groups, one row each with how many are in it. Two groups of the same name kept in two
+ * accounts are two rows, each saying where it is kept, since they are two lists.
+ */
 @Composable
-internal fun NewButton(onNew: () -> Unit) {
-    // A filled circle, as theirs is; black, since the panel has no colour to fill it with.
-    FloatingActionButtonMMD(
-        onClick = onNew,
-        shape = androidx.compose.foundation.shape.CircleShape,
-        containerColor = MaterialTheme.colorScheme.onSurface,
-        contentColor = MaterialTheme.colorScheme.surface,
-    ) {
-        Icon(Icons.Add, contentDescription = stringResource(R.string.cd_new_contact), modifier = Modifier.size(34.dp))
+private fun GroupList(groups: List<Group>, state: LazyListState, modifier: Modifier, onGroup: (Group) -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val twice = remember(groups) { groups.groupingBy { it.title }.eachCount().filterValues { it > 1 }.keys }
+    ListJumpBox(state, ListJump.Pages, modifier) {
+        PagedColumn(Modifier.fillMaxSize(), state = state) {
+            items(groups, key = { it.id }) { g ->
+                val count = pluralStringResource(R.plurals.group_size, g.size, g.size)
+                NameRow(
+                    AnnotatedString(g.title),
+                    note = if (g.title in twice) "$count · ${Labels.account(context, g.account)}" else count,
+                ) { onGroup(g) }
+            }
+        }
     }
 }
 
@@ -143,13 +179,11 @@ internal fun PeopleList(
     chosen: Set<Long>? = null,
     onLongPress: ((Person) -> Unit)? = null,
     onOpen: (Person) -> Unit,
-    /** The height of the round + over the foot of the list, which the letters stop above. */
-    clearBelow: Dp = 0.dp,
 ) {
     // The letters are the store's own index letters, the ones it sorted by: by surname when the
     // list is sorted by surname, whatever the names show.
     val jump = remember(people, above != null) { ListJump.Letters(people.map { it.section }, firstIndex = if (above != null) 1 else 0) }
-    ListJumpBox(state, jump, modifier, clearBelow = clearBelow) {
+    ListJumpBox(state, jump, modifier) {
         PagedColumn(Modifier.fillMaxSize(), state = state) {
             if (above != null) item(key = "above") { Column { above() } }
             items(people, key = { it.id }) { p ->
@@ -169,7 +203,8 @@ internal fun PersonRow(
 ) {
     val name = person.name.ifBlank { stringResource(R.string.no_name) }
     NameRow(
-        boldSurname(name, person.family),
+        // Regular weight, as every name in a list here is: bold is kept for what needs attention.
+        AnnotatedString(name),
         note = note,
         leading = chosen?.let { on -> { CheckboxMMD(checked = on, onCheckedChange = { onPress() }) } },
         onLongPress = onLongPress,
@@ -206,5 +241,33 @@ private fun ChosenBar(count: Int, onMerge: () -> Unit, onShare: () -> Unit, onDe
 internal fun Quiet(text: String, modifier: Modifier) {
     Box(modifier.padding(16.dp), contentAlignment = Alignment.TopStart) {
         TextMMD(text = text, style = MaterialTheme.typography.bodyLarge)
+    }
+}
+
+/**
+ * Everyone in one group, from the Groups tab: the group's name in the bar and its people as the
+ * list draws them. Read again whenever the contacts change, so a person put in or taken out
+ * elsewhere shows here.
+ */
+@Composable
+fun GroupScreen(model: BookModel, groupId: Long, onBack: () -> Unit, onOpen: (Person) -> Unit) {
+    val group = model.groups.firstOrNull { it.id == groupId }
+    var members by remember(groupId) { mutableStateOf<Set<Long>?>(null) }
+    LaunchedEffect(groupId, model.people) { members = model.io { it.members(groupId) }.getOrNull() ?: emptySet() }
+    val state = rememberLazyListState()
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.surface,
+        topBar = {
+            Bar(
+                title = { BarTitle(group?.title ?: "") },
+                navigationIcon = { BarButton(Icons.Back, stringResource(R.string.cd_back), onBack) },
+            )
+        },
+    ) { padding ->
+        val body = Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.surface)
+        val ids = members ?: return@Scaffold
+        val people = model.people.filter { it.id in ids }
+        if (people.isEmpty()) Quiet(stringResource(R.string.group_empty), body)
+        else PeopleList(people = people, state = state, modifier = body, onOpen = onOpen)
     }
 }

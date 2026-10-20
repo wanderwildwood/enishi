@@ -19,7 +19,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -51,7 +51,7 @@ import com.wanderwildwood.enishi.ui.CardsScreen
 import com.wanderwildwood.enishi.ui.CallsScreen
 import com.wanderwildwood.enishi.ui.DetailScreen
 import com.wanderwildwood.enishi.ui.EditScreen
-import com.wanderwildwood.enishi.ui.MoreScreen
+import com.wanderwildwood.enishi.ui.GroupScreen
 import com.wanderwildwood.enishi.ui.HomeScreen
 import com.wanderwildwood.enishi.ui.MergeScreen
 import com.wanderwildwood.enishi.ui.shareMany
@@ -73,8 +73,9 @@ sealed interface Route {
     data object Home : Route
     data object Search : Route
     data class Detail(val id: Long) : Route
-    data class More(val id: Long) : Route
     data class Calls(val id: Long) : Route
+    /** Everyone in one group, from the list's Groups tab. */
+    data class Group(val id: Long) : Route
     data class Edit(val card: Card?, val seed: Draft, val account: Account) : Route
     data object Settings : Route
     /** Choosing whose name stays when several people are made one. */
@@ -122,7 +123,9 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
     }
 
     val stack = remember { mutableStateListOf<Route>(if (asked == Asked.Browse) Route.Home else Route.Opening(asked)) }
-    val listState = rememberLazyListState()
+    // One place in the list for each tab — All, Favourites, Groups — and the tab last chosen.
+    val listStates = remember { List(3) { LazyListState() } }
+    var tab by remember { mutableStateOf(model.prefs.homeTab) }
     var about by remember { mutableStateOf(false) }
     var settingsNotice by remember { mutableStateOf<String?>(null) }
     var homeNotice by remember { mutableStateOf<String?>(null) }
@@ -195,8 +198,16 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
             }
         }
         Route.Home -> HomeScreen(
-            model = model, listState = listState,
+            model = model,
+            tab = tab,
+            onTab = {
+                tab = it
+                model.prefs.homeTab = it
+                chosen = emptySet()
+            },
+            listStates = listStates,
             onOpen = { push(Route.Detail(it.id)) },
+            onGroup = { push(Route.Group(it.id)) },
             onNew = { newContact() },
             onSearch = { push(Route.Search) },
             onSettings = { push(Route.Settings) },
@@ -233,17 +244,12 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
             model, top.id,
             onBack = ::back,
             onEdit = { card -> scope.launch { push(Route.Edit(card, Draft(), model.newContactAccount())) } },
-            onMore = { push(Route.More(top.id)) },
             onCalls = { push(Route.Calls(top.id)) },
+            // Deleted: off their page, back to where they were found.
+            onGone = ::back,
         )
         is Route.Calls -> CallsScreen(model, top.id, ::back)
-        is Route.More -> MoreScreen(
-            model, top.id,
-            onBack = ::back,
-            onEdit = { card -> scope.launch { push(Route.Edit(card, Draft(), model.newContactAccount())) } },
-            // Deleted: off the More page and the person both, back to where they were found.
-            onGone = { back(); back() },
-        )
+        is Route.Group -> GroupScreen(model, top.id, ::back) { push(Route.Detail(it.id)) }
         is Route.Edit -> EditScreen(
             model, top.card, top.seed, top.account,
             onSaved = { id ->

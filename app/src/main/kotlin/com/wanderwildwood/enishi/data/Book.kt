@@ -510,11 +510,13 @@ class Book(context: Context) {
 
     /** Groups a person can be put in. The store's own "starred" and "everyone" lists are not. */
     fun groups(): List<Group> {
-        val sizes = mutableMapOf<Long, Int>()
+        // People, not membership rows: a person kept twice (phone and account) is in a group twice.
+        val members = mutableMapOf<Long, MutableSet<Long>>()
         resolver.query(
-            Data.CONTENT_URI, arrayOf(GroupMembership.GROUP_ROW_ID),
+            Data.CONTENT_URI, arrayOf(GroupMembership.GROUP_ROW_ID, Data.CONTACT_ID),
             "${Data.MIMETYPE}=?", arrayOf(GroupMembership.CONTENT_ITEM_TYPE), null,
-        )?.use { c -> while (c.moveToNext()) c.getLong(0).let { sizes[it] = (sizes[it] ?: 0) + 1 } }
+        )?.use { c -> while (c.moveToNext()) members.getOrPut(c.getLong(0)) { mutableSetOf() } += c.getLong(1) }
+        val sizes = members.mapValues { it.value.size }
         val out = mutableListOf<Group>()
         resolver.query(
             Groups.CONTENT_URI,

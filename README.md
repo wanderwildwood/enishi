@@ -8,15 +8,15 @@ device.
 another, not a list of names.
 
 Not a fork. Written from scratch in Kotlin and Jetpack Compose, using Mudita's own
-[MMD](https://github.com/mudita/MMD) design system, and drawn to sit beside the Kompakt's own
-contacts app: the same bold title, plain list with the surname in bold, dotted rules, and
-Call, Message and More under a person's name. What it does is modelled on
+[MMD](https://github.com/mudita/MMD) design system, and drawn in the same hand as Phone and
+Messaging: a plain list under All / Favourites / Groups tabs, a cog for settings, and a person's
+page of plain rows, a press on a number to call it. What it does is modelled on
 [Fossify Contacts](https://github.com/FossifyOrg/Contacts), which sets the bar for a contacts
 app that is free software.
 
 | | |
 |---|---|
-| ![Everyone, the surname in bold, as the phone's own app lists them](screenshots/1-list.png) | ![A person: Call, Message, and More for everything else](screenshots/2-person.png) |
+| ![Everyone, under All, Favourites and Groups tabs](screenshots/1-list.png) | ![A person: every number a row that calls, the bubble at its end to write](screenshots/2-person.png) |
 | ![Editing: each number on one line, its kind a short menu in front](screenshots/3-edit.png) | ![A file of cards: anyone already here is left alone](screenshots/4-cards.png) |
 
 ## Why it exists
@@ -28,20 +28,22 @@ at a time.
 
 ## What it does
 
-- **Everyone in one plain list**, in the phone's own language and order, the surname in bold.
-- **Favourites as the phone keeps them**: a star on a person's page, and they are in the Phone
-  app's Favorites, as with the phone's own contacts app.
+- **Everyone in one plain list**, in the phone's own language and order, under three tabs:
+  All, Favourites, and Groups when the address book has any. A group opens to the people in it.
+  The tab last chosen is the one the app opens on.
+- **Favourites as the phone keeps them**: a star on a person's page puts them under Favourites
+  here and in the Phone app's Favourites.
 - **Choose several at once** with a long press, then merge, share or delete them together.
 - **Merge duplicates by hand**: choose whose name stays, and every number, address, note and
   photo the others have is added to that person, nothing written twice. A copy a messenger keeps
   is joined rather than deleted.
-- **Call and Message under a person's name**, and More for everything else they have: a press on
-  any number calls it, on an address opens it in a map, on an email address writes to it.
-- **Call history** along the foot of a person's page, as the phone's own contacts app has it:
-  the calls with them, newest first, an arrow for the way each went, when and how long. A press
-  calls back. The call log is asked for the first time, from a row that says so, and read on
-  the phone only.
-- **Medicine and Field Kit**, when they are on the phone: a person's More page can set them as
+- **A person's page of plain rows**: a press on a number calls it through the phone app, and
+  the speech bubble at its end writes to it; a press on an email address writes to it, on an
+  address opens it in a map app, on a website opens it. A long press on any of them copies it.
+- **Recent calls** on a person's page, drawn as Phone's Recents are: the last five with them, an
+  arrow for the way each went, when and how long, and All calls for the rest. The call log is
+  asked for the first time, from a row that says so, and read on the phone only.
+- **Medicine and Field Kit**, when they are on the phone: a person's page can set them as
   the pharmacy or the doctor in Medicine, or add them to the emergency card in Field Kit. That app shows the
   name and number and asks before it keeps them.
 - **Search** by any part of a name, a run of digits from any number, or part of an email
@@ -72,7 +74,7 @@ the app has no internet permission at all.
 
 ## Where this is up to
 
-Version 0.1.10. What it writes is worked out by plain code that is unit tested on its own: which
+Version 0.2.0. What it writes is worked out by plain code that is unit tested on its own: which
 rows a save adds, changes and deletes; how vCards from 2.1 to 4.0 read, including old phones'
 quoted-printable in other character sets; dates without a year; search; who in a file is
 already here; what a merge adds and what it leaves.

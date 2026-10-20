@@ -47,10 +47,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * The calls with one person, newest first, as the phone's own contacts app shows them behind
- * its Call history button: their name over the list, an arrow for the way each call went, when
- * it was in bold, and how long it lasted under that. A press on a row does nothing: nothing in
- * a list here calls anyone, so a stray touch cannot dial. Calling is the Call button on their page.
+ * Every call with one person, newest first, behind All calls on their page: their name over
+ * the list, an arrow for the way each call went, when
+ * it was, and how long it lasted under that; a missed call is the one in bold. A press on a row
+ * does nothing, so a stray touch cannot dial. Calling is a number's row on their page.
  *
  * The call log is asked for the first time this page would show it, from a row that says so.
  */
@@ -125,6 +125,7 @@ fun CallsScreen(model: BookModel, contactId: Long, onBack: () -> Unit) {
                     },
                     title = whenSaid(call.at, now, today, yesterday, hours24),
                     note = note,
+                    missed = call.kind == Call.Kind.MISSED,
                 )
             }
         } }
@@ -136,7 +137,7 @@ fun CallsScreen(model: BookModel, contactId: Long, onBack: () -> Unit) {
  * the dotted rule from the words to the edge of the page.
  */
 @Composable
-private fun CallRow(icon: ImageVector, title: String, note: List<String>) {
+private fun CallRow(icon: ImageVector, title: String, note: List<String>, missed: Boolean) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -149,7 +150,7 @@ private fun CallRow(icon: ImageVector, title: String, note: List<String>) {
             TextMMD(
                 text = title,
                 style = MaterialTheme.typography.bodyLarge.copy(fontSize = rowText, lineHeight = 26.sp),
-                fontWeight = FontWeight.Bold,
+                fontWeight = if (missed) FontWeight.Bold else null,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(bottom = 4.dp),

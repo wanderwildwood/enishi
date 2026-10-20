@@ -14,6 +14,11 @@ class Prefs(context: Context) {
         get() = prefs.getBoolean("last_name_first", false)
         set(v) = prefs.edit().putBoolean("last_name_first", v).apply()
 
+    /** The list's tab last chosen — All, Favourites or Groups — so the app opens on it again. */
+    var homeTab: Int
+        get() = prefs.getInt("home_tab", 0)
+        set(v) = prefs.edit().putInt("home_tab", v).apply()
+
     /** Where a new contact goes. Unset means "wherever most of them already are". */
     var saveTo: Account?
         get() = if (!prefs.contains("save_to_set")) null

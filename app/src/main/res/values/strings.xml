@@ -14,6 +14,15 @@
     <!-- The list -->
 
     <string name="tab_all">All</string>
+    <string name="tab_favourites">Favourites</string>
+    <string name="tab_groups">Groups</string>
+    <string name="favourites_none">No favourites yet. The star on a person\'s page puts them here.</string>
+    <!-- Under a group on the Groups tab -->
+    <plurals name="group_size">
+        <item quantity="one">%1$d person</item>
+        <item quantity="other">%1$d people</item>
+    </plurals>
+    <string name="group_empty">Nobody in this group yet.</string>
     <string name="all_empty">No contacts yet.</string>
     <string name="all_empty_new">Add someone</string>
     <string name="all_empty_import">Read them from a file</string>
@@ -45,11 +54,9 @@
     <!-- A person -->
 
     <string name="edit">Edit</string>
-    <string name="details_title">Details</string>
-    <string name="call">Call</string>
-    <string name="message">Message</string>
-    <string name="more">More</string>
     <string name="kept_in_label">Kept in</string>
+    <!-- The speech bubble at the end of a number's row, read aloud: "Message +1 555 010 1001" -->
+    <string name="cd_message_number">Message %1$s</string>
     <!-- The word beside a number; it opens Messaging to write to it -->
     <string name="text">Text</string>
     <!-- Under an email address: "Email · Work" -->
@@ -60,7 +67,7 @@
     <string name="kind_groups">Groups</string>
     <string name="share">Share as a contact card</string>
     <string name="share_failed">The card could not be made.</string>
-    <!-- On a person's More page, only when that app is on the phone -->
+    <!-- At the foot of a person's page, only when that app is on the phone -->
     <string name="to_medicine">Set as pharmacy in Medicine</string>
     <string name="to_medicine_doctor">Set as doctor in Medicine</string>
     <string name="to_field_kit">Add to emergency card</string>
@@ -71,8 +78,9 @@
     <string name="delete_failed">The phone\'s contacts would not delete this person. Nothing was changed.</string>
     <string name="contact_gone">This person is no longer in the contacts.</string>
     <string name="copied">Copied.</string>
-    <!-- The button along the foot of a person's page, and the title of the calls page is their name -->
-    <string name="call_history">Call history</string>
+    <!-- The heading over the last few calls on a person's page, and the row under them that opens the rest -->
+    <string name="calls_recent">Recent calls</string>
+    <string name="calls_all">All calls</string>
     <string name="calls_today">Today</string>
     <string name="calls_show">Show calls with them</string>
     <string name="calls_show_note">Reads the phone\'s call log, which stays on the phone</string>

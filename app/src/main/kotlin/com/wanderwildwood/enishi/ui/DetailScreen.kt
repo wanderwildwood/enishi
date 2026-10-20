@@ -8,30 +8,23 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,26 +33,28 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.mudita.mmd.components.text.TextMMD
-import com.mudita.mmd.components.top_app_bar.TopAppBarMMD
 import com.wanderwildwood.enishi.R
+import com.wanderwildwood.enishi.data.Call
 import com.wanderwildwood.enishi.data.Card
 import com.wanderwildwood.enishi.data.Field
+import com.wanderwildwood.enishi.data.callsWith
+import com.wanderwildwood.enishi.data.howLong
+import com.wanderwildwood.enishi.data.numberKey
+import com.wanderwildwood.enishi.data.whenSaid
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 /** The person, read again whenever the store changes, which is how an edit anywhere shows. */
@@ -83,10 +78,20 @@ internal fun rememberCard(model: BookModel, contactId: Long): Pair<Card?, Boolea
 internal fun distinctNumbers(phones: List<Field>): List<Field> =
     phones.distinctBy { p -> p.value.filter(Char::isDigit).takeLast(10).ifEmpty { p.value } }
 
+
+/** How many of the calls with a person their page shows; All calls has the rest. */
+private const val RECENT_CALLS = 5
+
 /**
- * One person, as the phone's own contacts app shows one: the name large in the middle, the
- * number under it, and three buttons — Call, Message and More. Everything else a person has
- * is on More, as it is there.
+ * One person, as Phone and Messaging draw a page: their name in the bar, and everything they
+ * have as plain rows down the page, the value over what kind it is.
+ *
+ * A press on a number calls it, through the phone app; the speech bubble at its end writes to
+ * it. A press on an email address writes to it, on an address opens it in a map, on a website
+ * opens it, and a long press on any of them copies it. Under those, the last few calls with
+ * them, drawn as Phone's Recents are, and All calls when there are more. Sharing, handing them
+ * to Medicine or Field Kit when those are on the phone, and delete — which asks in its own face
+ * — come last.
  */
 @Composable
 fun DetailScreen(
@@ -94,27 +99,57 @@ fun DetailScreen(
     contactId: Long,
     onBack: () -> Unit,
     onEdit: (Card) -> Unit,
-    onMore: () -> Unit,
     onCalls: () -> Unit,
+    onGone: () -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val (card, missing) = rememberCard(model, contactId)
     var starredNow by remember(contactId) { mutableStateOf<Boolean?>(null) }
     var notice by remember { mutableStateOf<String?>(null) }
-    var choosing by remember { mutableStateOf<Pair<Boolean, List<Field>>?>(null) }
+    // The name in the bar, cut short: then it is said in full at the top of the page.
+    var nameCut by remember(contactId) { mutableStateOf(false) }
     val dial = rememberDialer { notice = context.getString(R.string.nothing_opens) }
 
     fun open(intent: Intent) {
         if (!start(context, intent)) notice = context.getString(R.string.nothing_opens)
     }
     fun text(number: String) = open(Intent(Intent.ACTION_SENDTO, Uri.fromParts("smsto", number, null)))
+    val clipboard = LocalClipboardManager.current
+    fun copy(value: String) {
+        clipboard.setText(AnnotatedString(value))
+        notice = context.getString(R.string.copied)
+    }
+
+    // Looked at again on every return, so an app added or removed meanwhile shows or goes.
+    var elsewhere by remember { mutableStateOf(Elsewhere.installed(context)) }
+    var handing by remember { mutableStateOf<Elsewhere?>(null) }
+
+    // The calls with them, read once the call log may be: one more than are shown, which is how
+    // the page knows whether All calls has anything to add.
+    fun mayReadCalls() = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALL_LOG) == PackageManager.PERMISSION_GRANTED
+    var callsAllowed by remember { mutableStateOf(mayReadCalls()) }
+    val askCalls = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { callsAllowed = it }
+    LifecycleResumeEffect(Unit) {
+        elsewhere = Elsewhere.installed(context)
+        callsAllowed = mayReadCalls()
+        onPauseOrDispose { }
+    }
+    val numbers = card?.let { distinctNumbers(it.draft.phones) } ?: emptyList()
+    var calls by remember(contactId) { mutableStateOf<List<Call>>(emptyList()) }
+    LaunchedEffect(numbers, callsAllowed) {
+        calls = if (!callsAllowed || numbers.isEmpty()) emptyList() else withContext(Dispatchers.IO) {
+            runCatching { callsWith(context.contentResolver, numbers.map { it.value }, limit = RECENT_CALLS + 1) }.getOrDefault(emptyList())
+        }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
             Bar(
-                title = { BarTitle(stringResource(R.string.details_title)) },
+                title = {
+                    card?.let { c -> BarTitle(c.name.ifBlank { stringResource(R.string.no_name) }) { nameCut = it } }
+                },
                 navigationIcon = { BarButton(Icons.Back, stringResource(R.string.cd_back), onBack) },
                 actions = {
                     card?.let { c ->
@@ -140,84 +175,135 @@ fun DetailScreen(
             return@Scaffold
         }
         val d = c.draft
-        val phones = distinctNumbers(d.phones)
-        Column(body) {
-            // Above the buttons, the name and every number, centred in the room there is —
-            // sizes and places measured off the phone's own Details page: a 36sp name, numbers
-            // at 26sp and 46dp apart, the buttons fixed below them, and a Call history button
-            // along the foot.
-            Box(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp), contentAlignment = Alignment.Center) {
-                Column(
-                    Modifier.verticalScroll(rememberScrollState()).padding(bottom = 15.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    TextMMD(
-                        text = c.name.ifBlank { stringResource(R.string.no_name) },
-                        style = MaterialTheme.typography.headlineLarge.copy(fontSize = 36.sp, lineHeight = 42.sp),
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
-                        maxLines = 3,
+        val organisation = listOf(d.jobTitle, d.company).filter { it.isNotBlank() }.joinToString(", ")
+        CompositionLocalProvider(LocalCopy provides ::copy) { PagedColumn(body) {
+            // Who they are, under the bar: the name again only when the bar had to cut it.
+            if (nameCut || organisation.isNotEmpty()) {
+                item(key = "who") {
+                    Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 10.dp)) {
+                        if (nameCut) {
+                            TextMMD(text = c.name, style = MaterialTheme.typography.bodyLarge.copy(fontSize = rowText), maxLines = 3, overflow = TextOverflow.Ellipsis)
+                        }
+                        if (organisation.isNotEmpty()) {
+                            TextMMD(text = organisation, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        }
+                    }
+                    DottedRule()
+                }
+            }
+            numbers.forEach { p ->
+                item {
+                    ValueRow(
+                        value = p.value,
+                        kind = Labels.phone(context, p.type, p.label),
+                        onPress = { dial(p.value) },
+                        trailing = { BarButton(Icons.Sms, stringResource(R.string.cd_message_number, p.value)) { text(p.value) } },
                     )
-                    listOf(d.jobTitle, d.company).filter { it.isNotBlank() }.joinToString(", ").takeIf { it.isNotEmpty() }?.let {
-                        TextMMD(text = it, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    // Every number, its kind first, as the phone's own page lists them; the
-                    // email address instead for someone who has only that.
-                    val lines: List<AnnotatedString> = when {
-                        phones.isNotEmpty() -> phones.map { kindAndValue(Labels.phone(context, it.type, it.label).lowercase(), it.value) }
-                        d.emails.isNotEmpty() -> listOf(kindAndValue(stringResource(R.string.field_email).lowercase(), d.emails.first().value))
-                        else -> emptyList()
-                    }
-                    lines.forEach {
-                        TextMMD(
-                            text = it,
-                            style = MaterialTheme.typography.bodyLarge.copy(fontSize = 26.sp),
-                            textAlign = TextAlign.Center,
-                            maxLines = 1,
-                            modifier = Modifier.padding(vertical = 7.5.dp),
-                        )
+                }
+            }
+            d.emails.forEach { e ->
+                item {
+                    ValueRow(e.value, stringResource(R.string.kind_email, Labels.email(context, e.type, e.label))) {
+                        open(Intent(Intent.ACTION_SENDTO, Uri.fromParts("mailto", e.value, null)))
                     }
                 }
             }
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(30.dp, Alignment.CenterHorizontally),
-            ) {
-                if (phones.isNotEmpty()) {
-                    ActionTile(Icons.Call, stringResource(R.string.call)) {
-                        if (phones.size == 1) dial(phones[0].value) else choosing = true to phones
-                    }
-                    ActionTile(Icons.Sms, stringResource(R.string.message)) {
-                        if (phones.size == 1) text(phones[0].value) else choosing = false to phones
-                    }
-                } else if (d.emails.isNotEmpty()) {
-                    ActionTile(Icons.Mail, stringResource(R.string.field_email)) {
-                        open(Intent(Intent.ACTION_SENDTO, Uri.fromParts("mailto", d.emails.first().value, null)))
+            d.addresses.forEach { a ->
+                item {
+                    ValueRow(a.value, stringResource(R.string.kind_address, Labels.address(context, a.type, a.label)), lines = 4) {
+                        val map = onMap(context, a.value)
+                        if (map == null) notice = context.getString(R.string.nothing_opens) else open(map)
                     }
                 }
-                ActionTile(Icons.GridView, stringResource(R.string.more), outlined = false, onPress = onMore)
             }
-            // The foot keeps the button's room even for someone with no number, so the
-            // buttons above sit in the same place for everyone.
-            Spacer(Modifier.height(33.dp))
-            Box(Modifier.fillMaxWidth().height(49.dp)) {
-                if (phones.isNotEmpty()) FootOutlined(stringResource(R.string.call_history), onCalls)
+            if (d.nickname.isNotBlank()) item { ValueRow(d.nickname, stringResource(R.string.field_nickname)) }
+            d.events.forEach { ev -> item { ValueRow(Labels.day(ev.value), Labels.event(context, ev.type, ev.label)) } }
+            d.websites.forEach { w ->
+                item {
+                    ValueRow(w.value, stringResource(R.string.kind_website)) {
+                        val url = if (w.value.contains("://")) w.value else "https://${w.value}"
+                        open(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                    }
+                }
             }
-            Spacer(Modifier.height(17.dp))
-        }
+            if (d.note.isNotBlank()) item { ValueRow(d.note, stringResource(R.string.kind_note), lines = 30) }
+            val inGroups = model.groups.filter { it.id in d.groups.keys }.map { it.title }
+            if (inGroups.isNotEmpty()) item { ValueRow(inGroups.joinToString(", "), stringResource(R.string.kind_groups)) }
+
+            // The calls with them, as Phone's Recents draws them; asked for the first time from
+            // a row that says so, since the call log is not the contacts' to read.
+            if (numbers.isNotEmpty()) {
+                if (!callsAllowed) {
+                    item(key = "calls-ask") {
+                        PlainRow(stringResource(R.string.calls_show), note = stringResource(R.string.calls_show_note), onPress = {
+                            askCalls.launch(Manifest.permission.READ_CALL_LOG)
+                        })
+                    }
+                } else if (calls.isNotEmpty()) {
+                    item(key = "calls-heading") { Heading(stringResource(R.string.calls_recent)) }
+                    // Which of their numbers, by its kind, only when they have more than one.
+                    val kinds = numbers.associate { numberKey(it.value) to Labels.phone(context, it.type, it.label) }
+                    calls.take(RECENT_CALLS).forEachIndexed { i, call ->
+                        item(key = "call-$i") { CallLine(call, kinds[numberKey(call.number)].takeIf { kinds.size > 1 }) }
+                    }
+                    if (calls.size > RECENT_CALLS) item(key = "calls-all") { PlainRow(stringResource(R.string.calls_all), onPress = onCalls) }
+                }
+            }
+
+            item(key = "kept") {
+                ValueRow(
+                    c.parts.map { Labels.account(context, it.account) }.distinct().joinToString(", "),
+                    stringResource(R.string.kept_in_label),
+                )
+            }
+            item(key = "share") {
+                PlainRow(stringResource(R.string.share), onPress = {
+                    scope.launch {
+                        val shared = model.io { book -> shareFile(context, c.name, c.lookup, book) }.getOrNull()
+                        if (shared == null) notice = context.getString(R.string.share_failed) else open(shared)
+                    }
+                })
+            }
+            // Medicine and Field Kit, when they are on the phone: each wants a number.
+            if (numbers.isNotEmpty()) {
+                elsewhere.forEach { app ->
+                    item(key = "elsewhere-${app.name}") {
+                        PlainRow(stringResource(app.label), onPress = {
+                            if (numbers.size == 1) open(app.intent(c.id, c.lookup, c.name, numbers[0].value))
+                            else handing = app
+                        })
+                    }
+                }
+            }
+            item(key = "delete") {
+                val (armed, press) = rememberArmed(c.id) {
+                    scope.launch {
+                        // Gone only if it went: a store that refused says so here.
+                        if (model.io { it.delete(c.id, c.lookup) }.isSuccess) onGone()
+                        else notice = context.getString(R.string.delete_failed)
+                    }
+                }
+                PlainRow(
+                    stringResource(if (armed) R.string.delete_contact_armed else R.string.delete_contact),
+                    bold = armed,
+                    onPress = press,
+                )
+            }
+        } }
     }
 
-    // Which number, when a person has more than one.
-    choosing?.let { (calling, numbers) ->
-        EInkDialog(onDismiss = { choosing = null }) {
+    // Which number goes to Medicine or Field Kit, when a person has more than one.
+    val c = card
+    handing?.let { app ->
+        if (c == null) return@let
+        EInkDialog(onDismiss = { handing = null }) {
             numbers.forEach { p ->
                 NameRow(
                     AnnotatedString(p.value),
                     note = Labels.phone(context, p.type, p.label),
                     onPress = {
-                        choosing = null
-                        if (calling) dial(p.value) else text(p.value)
+                        handing = null
+                        open(app.intent(c.id, c.lookup, c.name, p.value))
                     },
                 )
             }
@@ -226,63 +312,85 @@ fun DetailScreen(
 }
 
 /**
- * A wide outlined button along the foot of a page, as the phone's own Details page shows
- * "Call history": 49dp tall, 20dp in from the sides, a 2dp line with soft corners.
+ * One thing a person has: the value, and under it what kind it is — "Mobile", "Email · Work",
+ * "Birthday". A press uses it where it has a use; a long press copies it. [trailing] is a button
+ * at the row's end, as a number's speech bubble.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal fun FootOutlined(label: String, onPress: () -> Unit) {
-    Box(
-        contentAlignment = Alignment.Center,
+private fun ValueRow(
+    value: String,
+    kind: String,
+    lines: Int = 2,
+    trailing: (@Composable () -> Unit)? = null,
+    onPress: (() -> Unit)? = null,
+) {
+    val copy = LocalCopy.current
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp)
-            .height(49.dp)
-            .border(BorderStroke(2.25.dp, MaterialTheme.colorScheme.onSurface), RoundedCornerShape(9.dp))
-            .clip(RoundedCornerShape(9.dp))
-            .clickable(onClick = onPress),
+            .heightIn(min = 65.dp)
+            .combinedClickable(onClick = onPress ?: {}, onLongClick = copy?.let { c -> { c(value) } })
+            .padding(start = 16.dp, end = if (trailing != null) 4.dp else 16.dp, top = 10.dp, bottom = 10.dp),
     ) {
-        TextMMD(text = label, style = MaterialTheme.typography.bodyLarge.copy(fontSize = rowText), fontWeight = FontWeight.Bold, maxLines = 1)
+        Column(Modifier.weight(1f)) {
+            TextMMD(text = value, style = MaterialTheme.typography.bodyLarge.copy(fontSize = rowText), maxLines = lines, overflow = TextOverflow.Ellipsis)
+            TextMMD(text = kind, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        trailing?.invoke()
     }
-}
-
-private fun kindAndValue(kind: String, value: String): AnnotatedString = buildAnnotatedString {
-    append(kind)
-    append("  ")
-    withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(value) }
+    DottedRule()
 }
 
 /**
- * A big outlined square with an icon and its word under it — Call, Message, More — as the
- * phone's own Details page draws them: 81dp square, a 17dp corner, a 2dp line, the glyph 37dp
- * across; More is the four squares alone, with no frame.
+ * One call with them, as Phone's Recents draws a row: the arrow for the way it went, when it was,
+ * and under that what kind of call and how long — and which number by its kind, "Mobile", when
+ * they have more than one. A missed call is the one in bold. A press does nothing: the number's
+ * row above calls.
  */
 @Composable
-private fun ActionTile(icon: ImageVector, label: String, outlined: Boolean = true, onPress: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.width(81.dp).clickable(onClick = onPress),
+private fun CallLine(call: Call, numberKind: String?) {
+    val context = LocalContext.current
+    val kind = stringResource(
+        when (call.kind) {
+            Call.Kind.IN -> R.string.calls_in
+            Call.Kind.OUT -> R.string.calls_out
+            Call.Kind.MISSED -> R.string.calls_missed
+            Call.Kind.DECLINED -> R.string.calls_declined
+        },
+    )
+    val now = System.currentTimeMillis()
+    val hours24 = android.text.format.DateFormat.is24HourFormat(context)
+    val title = whenSaid(call.at, now, stringResource(R.string.calls_today), stringResource(R.string.calls_yesterday), hours24)
+    val note = listOfNotNull(kind, howLong(call.seconds), numberKind).joinToString(" · ")
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().padding(start = 17.5.dp, end = 16.dp, top = 12.dp, bottom = 12.dp),
     ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(81.dp)
-                .let {
-                    if (outlined) it.border(BorderStroke(2.25.dp, MaterialTheme.colorScheme.onSurface), RoundedCornerShape(17.dp)) else it
-                },
-        ) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(if (outlined) 47.dp else 50.dp))
-        }
-        Spacer(Modifier.height(8.dp))
-        // The word may be wider than the tile; it is centred under it all the same.
-        TextMMD(
-            text = label,
-            style = MaterialTheme.typography.bodyLarge.copy(fontSize = rowText),
-            textAlign = TextAlign.Center,
-            softWrap = false,
-            maxLines = 1,
-            modifier = Modifier.requiredWidth(120.dp),
+        Icon(
+            when (call.kind) {
+                Call.Kind.IN -> Icons.CallIn
+                Call.Kind.OUT -> Icons.CallOut
+                else -> Icons.CallMissed
+            },
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.size(26.dp),
         )
+        Spacer(Modifier.width(15.5.dp))
+        Column(Modifier.weight(1f)) {
+            TextMMD(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge.copy(fontSize = rowText),
+                fontWeight = if (call.kind == Call.Kind.MISSED) FontWeight.Bold else null,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            TextMMD(text = note, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
     }
+    DottedRule(start = 59.dp, end = 0.dp)
 }
 
 /**
@@ -308,188 +416,6 @@ internal fun rememberDialer(onNothing: () -> Unit): (String) -> Unit {
     }
 }
 
-/**
- * Everything a person has, a bold label over each value, as the phone's own app lists it.
- * A press on a number calls it, on an address opens it. Sharing, where they are kept, handing
- * them to Medicine or Field Kit when those are on the phone, and delete — which asks in its
- * own face — come last.
- */
-@Composable
-fun MoreScreen(
-    model: BookModel,
-    contactId: Long,
-    onBack: () -> Unit,
-    onEdit: (Card) -> Unit,
-    onGone: () -> Unit,
-) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val (card, missing) = rememberCard(model, contactId)
-    var notice by remember { mutableStateOf<String?>(null) }
-    fun open(intent: Intent) {
-        if (!start(context, intent)) notice = context.getString(R.string.nothing_opens)
-    }
-    // Looked at again on every return, so an app added or removed meanwhile shows or goes.
-    var elsewhere by remember { mutableStateOf(Elsewhere.installed(context)) }
-    androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
-        elsewhere = Elsewhere.installed(context)
-        onPauseOrDispose { }
-    }
-    var handing by remember { mutableStateOf<Elsewhere?>(null) }
-    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
-    fun copy(value: String) {
-        clipboard.setText(AnnotatedString(value))
-        notice = context.getString(R.string.copied)
-    }
-
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.surface,
-        topBar = {
-            Bar(
-                title = { BarTitle(stringResource(R.string.more)) },
-                navigationIcon = { BarButton(Icons.Back, stringResource(R.string.cd_back), onBack) },
-                actions = { card?.takeIf { !it.readOnly }?.let { c -> BarButton(Icons.Edit, stringResource(R.string.edit)) { onEdit(c) } } },
-            )
-        },
-        bottomBar = { notice?.let { NoticeStrip(it) { notice = null } } },
-    ) { padding ->
-        val body = Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.surface)
-        val c = card
-        if (c == null) {
-            if (missing) Quiet(stringResource(R.string.contact_gone), body)
-            return@Scaffold
-        }
-        val d = c.draft
-        val numbers = distinctNumbers(d.phones)
-        androidx.compose.runtime.CompositionLocalProvider(LocalCopy provides ::copy) { PagedColumn(body) {
-            numbers.forEach { p ->
-                item {
-                    // A number here only shows; a long press copies it. Calling is the Call
-                    // button on the person's page, so a stray touch on a list cannot dial.
-                    KindRow(Labels.phone(context, p.type, p.label), p.value, ::copy, onPress = null)
-                }
-            }
-            d.emails.forEach { e ->
-                item {
-                    KindRow(Labels.email(context, e.type, e.label), e.value, ::copy) {
-                        open(Intent(Intent.ACTION_SENDTO, Uri.fromParts("mailto", e.value, null)))
-                    }
-                }
-            }
-            listOf(
-                R.string.field_given to d.given, R.string.field_family to d.family,
-                R.string.field_prefix to d.prefix, R.string.field_middle to d.middle,
-                R.string.field_suffix to d.suffix, R.string.field_nickname to d.nickname,
-            ).filter { it.second.isNotBlank() }.forEach { (label, value) ->
-                item { LabelValue(stringResource(label), value) }
-            }
-            if (listOf(d.given, d.family, d.prefix, d.middle, d.suffix).all { it.isBlank() } && d.wholeName.isNotBlank()) {
-                item { LabelValue(stringResource(R.string.field_name), d.wholeName) }
-            }
-            d.addresses.forEach { a ->
-                item {
-                    LabelValue(stringResource(R.string.kind_address, Labels.address(context, a.type, a.label)), a.value) {
-                        val map = onMap(context, a.value)
-                        if (map == null) notice = context.getString(R.string.nothing_opens) else open(map)
-                    }
-                }
-            }
-            d.events.forEach { ev -> item { LabelValue(Labels.event(context, ev.type, ev.label), Labels.day(ev.value)) } }
-            if (d.company.isNotBlank()) item { LabelValue(stringResource(R.string.field_company), d.company) }
-            if (d.jobTitle.isNotBlank()) item { LabelValue(stringResource(R.string.field_job), d.jobTitle) }
-            d.websites.forEach { w ->
-                item {
-                    LabelValue(stringResource(R.string.kind_website), w.value) {
-                        val url = if (w.value.contains("://")) w.value else "https://${w.value}"
-                        open(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                    }
-                }
-            }
-            if (d.note.isNotBlank()) item { LabelValue(stringResource(R.string.kind_note), d.note, lines = 30) }
-            val inGroups = model.groups.filter { it.id in d.groups.keys }.map { it.title }
-            if (inGroups.isNotEmpty()) item { LabelValue(stringResource(R.string.kind_groups), inGroups.joinToString(", ")) }
-            item {
-                LabelValue(
-                    stringResource(R.string.kept_in_label),
-                    c.parts.map { Labels.account(context, it.account) }.distinct().joinToString(", "),
-                )
-            }
-            item {
-                PlainRow(stringResource(R.string.share), onPress = {
-                    scope.launch {
-                        val shared = model.io { book -> shareFile(context, c.name, c.lookup, book) }.getOrNull()
-                        if (shared == null) notice = context.getString(R.string.share_failed) else open(shared)
-                    }
-                })
-            }
-            // Medicine and Field Kit, when they are on the phone: each wants a number.
-            if (numbers.isNotEmpty()) {
-                elsewhere.forEach { app ->
-                    item {
-                        PlainRow(stringResource(app.label), onPress = {
-                            if (numbers.size == 1) open(app.intent(c.id, c.lookup, c.name, numbers[0].value))
-                            else handing = app
-                        })
-                    }
-                }
-            }
-            item {
-                val (armed, press) = rememberArmed(c.id) {
-                    scope.launch {
-                        // Gone only if it went: a store that refused says so here.
-                        if (model.io { it.delete(c.id, c.lookup) }.isSuccess) onGone()
-                        else notice = context.getString(R.string.delete_failed)
-                    }
-                }
-                PlainRow(
-                    stringResource(if (armed) R.string.delete_contact_armed else R.string.delete_contact),
-                    bold = armed,
-                    onPress = press,
-                )
-            }
-        } }
-    }
-
-    // Which number goes, when a person has more than one.
-    val c = card
-    handing?.let { app ->
-        if (c == null) return@let
-        EInkDialog(onDismiss = { handing = null }) {
-            distinctNumbers(c.draft.phones).forEach { p ->
-                NameRow(
-                    AnnotatedString(p.value),
-                    note = Labels.phone(context, p.type, p.label),
-                    onPress = {
-                        handing = null
-                        open(app.intent(c.id, c.lookup, c.name, p.value))
-                    },
-                )
-            }
-        }
-    }
-}
-
-/**
- * "Mobile  ·  +1 555 010 1001", one line, as the phone's own More page lists a number. A press
- * uses it, where it has a use that cannot surprise anyone (a number has none: it is never
- * dialled from here); a long press copies it.
- */
-@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
-@Composable
-private fun KindRow(kind: String, value: String, onCopy: (String) -> Unit, onPress: (() -> Unit)?) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .combinedClickable(onClick = onPress ?: {}, onLongClick = { onCopy(value) })
-            .padding(horizontal = 16.dp, vertical = 22.dp),
-    ) {
-        TextMMD(text = kind, style = MaterialTheme.typography.bodyLarge)
-        TextMMD(text = "  ·  ", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
-        TextMMD(text = value, style = MaterialTheme.typography.bodyLarge, maxLines = 2, modifier = Modifier.weight(1f))
-    }
-    DottedRule()
-}
 
 /** Calls straight away, or hands the number to the dialer when calling was not allowed. */
 private fun place(context: Context, number: String, direct: Boolean): Boolean {

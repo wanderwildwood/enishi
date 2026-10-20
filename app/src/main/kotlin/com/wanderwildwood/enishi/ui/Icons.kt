@@ -10,9 +10,10 @@ import androidx.compose.ui.unit.dp
 
 /**
  * The icons this app draws, cut like the phone's own contacts app draws its: a line two
- * units wide with round ends on a 28-unit grid, so a glyph at the bar's 28dp has a 2dp line and
- * the big tiles under a name a little more. Nothing is filled but a dot and the starred star.
- * Everything else on the screen is a word.
+ * units wide with round ends on a 28-unit grid, so a glyph at the bar's 28dp has a 2dp line.
+ * Nothing is filled but a dot, the starred star, and the cog, which is Phone's and Messaging's
+ * so that all three open their settings behind the same mark. Everything else on the screen is
+ * a word.
  *
  * Each is drawn here from measurements of the phone's own — the arrow's reach, where the
  * handset's ears sit, how far apart the four squares are — not copied from it.
@@ -20,14 +21,6 @@ import androidx.compose.ui.unit.dp
 object Icons {
 
     private const val GRID = 28f
-
-    /**
-     * The glyph in a Call or Message tile is drawn at 49dp, with the line still 2.5dp as the
-     * phone's own is; More's four squares at 56dp, their line 2.2dp. Thinner here, so the
-     * larger drawing comes out right.
-     */
-    private const val TILE = 1.45f
-    private const val MORE = 1.1f
 
     private class Stroke(val d: String, val width: Float = 2f)
 
@@ -49,6 +42,14 @@ object Icons {
             .build()
 
     private fun lined(name: String, d: String, filled: String? = null) = lined(name, Stroke(d), filled = filled)
+
+    /** A filled glyph drawn on Material's 24-unit grid, centred in this one. */
+    private fun filledIn24(name: String, d: String): ImageVector =
+        ImageVector.Builder(name = name, defaultWidth = 28.dp, defaultHeight = 28.dp, viewportWidth = GRID, viewportHeight = GRID)
+            .addGroup(translationX = 2f, translationY = 2f)
+            .addPath(pathData = PathParser().parsePathString(d).toNodes(), fill = SolidColor(Color.Black))
+            .clearGroup()
+            .build()
 
     /** A five-pointed star about (14, 15), outer reach 13, inner 5.4, point up. */
     private val starPath: String = buildString {
@@ -75,11 +76,22 @@ object Icons {
 
     val Search: ImageVector = lined("Search", "M11.5,20.25A8.75,8.75 0 1 1 11.5,2.75A8.75,8.75 0 1 1 11.5,20.25ZM17.8,17.8L25,25")
 
-    /** Three sliders, as the phone's own Phone app marks its settings. */
-    val Settings: ImageVector = lined(
+    /**
+     * The cog, as Messaging marks its settings: the two are a pair, and open the same door the
+     * same way. Material's `settings` (Apache-2.0), the same outline Messaging draws, filled, and
+     * set 24 units wide in the middle of this grid so it stands as large as Messaging's does.
+     */
+    val Settings: ImageVector = filledIn24(
         "Settings",
-        Stroke("M3,7H14.5M21.5,7H25M3,14H5.5M12.5,14H25M3,21H16.5M23.5,21H25"),
-        Stroke("M18,7m-3.5,0a3.5,3.5 0 1 1 7,0a3.5,3.5 0 1 1 -7,0M9,14m-3.5,0a3.5,3.5 0 1 1 7,0a3.5,3.5 0 1 1 -7,0M20,21m-3.5,0a3.5,3.5 0 1 1 7,0a3.5,3.5 0 1 1 -7,0"),
+        "M19.14,12.94c0.04,-0.31 0.06,-0.63 0.06,-0.94c0,-0.31 -0.02,-0.63 -0.06,-0.94l2.03,-1.58c0.18,-0.14 0.23,-0.41 0.12,-0.61" +
+            "l-1.92,-3.32c-0.12,-0.22 -0.37,-0.29 -0.59,-0.22l-2.39,0.96c-0.5,-0.38 -1.03,-0.7 -1.62,-0.94L14.4,2.81" +
+            "c-0.04,-0.24 -0.24,-0.41 -0.48,-0.41h-3.84c-0.24,0 -0.43,0.17 -0.47,0.41L9.25,5.35C8.66,5.59 8.12,5.92 7.63,6.29" +
+            "L5.24,5.33c-0.22,-0.08 -0.47,0 -0.59,0.22L2.74,8.87C2.62,9.08 2.66,9.34 2.86,9.48l2.03,1.58" +
+            "C4.84,11.37 4.8,11.69 4.8,12s0.02,0.63 0.06,0.94l-2.03,1.58c-0.18,0.14 -0.23,0.41 -0.12,0.61l1.92,3.32" +
+            "c0.12,0.22 0.37,0.29 0.59,0.22l2.39,-0.96c0.5,0.38 1.03,0.7 1.62,0.94l0.36,2.54c0.05,0.24 0.24,0.41 0.48,0.41" +
+            "h3.84c0.24,0 0.44,-0.17 0.47,-0.41l0.36,-2.54c0.59,-0.24 1.13,-0.56 1.62,-0.94l2.39,0.96c0.22,0.08 0.47,0 0.59,-0.22" +
+            "l1.92,-3.32c0.12,-0.22 0.07,-0.47 -0.12,-0.61L19.14,12.94z" +
+            "M12,15.6c-1.98,0 -3.6,-1.62 -3.6,-3.6s1.62,-3.6 3.6,-3.6s3.6,1.62 3.6,3.6S13.98,15.6 12,15.6z",
     )
 
     val Edit: ImageVector = lined("Edit", "M1.5,26.5L2.9,20L20.6,2.3A2.7,2.7 0 0 1 24.4,2.3L25.7,3.6A2.7,2.7 0 0 1 25.7,7.4L8,25.1ZM18.3,4.6L23.4,9.7")
@@ -94,40 +106,13 @@ object Icons {
     val ChevronDown: ImageVector = lined("ChevronDown", "M7,11L14,18L21,11")
 
     /**
-     * The handset, its two ears joined by the curve of the grip: the outline of Material
-     * Symbols' `call` (Apache-2.0), brought onto this grid and drawn as a line instead of filled.
+     * The round speech bubble with three dots: write to this number. It sits at the end of a
+     * number's row on a person's page, where the row itself calls.
      */
-    val Call: ImageVector = lined(
-        "Call",
-        Stroke(
-            "M23.3,24.5Q19.7,24.5 16.1,22.9T9.6,18.4Q6.7,15.5 5.1,11.9T3.5,4.7Q3.5,4.2 3.85,3.85T4.7,3.5H9.45" +
-            "Q9.86,3.5 10.2,3.78T10.56,4.43L11.3,8.5Q11.36,8.97 11.27,9.29T10.97,9.86L8.1,12.7" +
-            "Q8.68,13.8 9.49,14.8T11.3,16.7Q12.2,17.6 13.2,18.4T15.3,19.8L18,17.1Q18.3,16.8 18.7,16.7T19.5,16.6" +
-                "L23.6,17.4Q24,17.5 24.3,17.8T24.5,18.6V23.3Q24.5,23.8 24.15,24.15T23.3,24.5Z",
-            TILE,
-        ),
-    )
-
-    /** The round speech bubble with three dots — a message. */
     val Sms: ImageVector = lined(
         "Sms",
-        Stroke("M6,18.5A10.1,10.1 0 1 1 10.5,22.3L3.5,25Z", TILE),
+        Stroke("M6,18.5A10.1,10.1 0 1 1 10.5,22.3L3.5,25Z"),
         filled = "M9.5,13m-1.3,0a1.3,1.3 0 1 1 2.6,0a1.3,1.3 0 1 1 -2.6,0M14.5,13m-1.3,0a1.3,1.3 0 1 1 2.6,0a1.3,1.3 0 1 1 -2.6,0M19.5,13m-1.3,0a1.3,1.3 0 1 1 2.6,0a1.3,1.3 0 1 1 -2.6,0",
-    )
-
-    /** The envelope, for a person with only an email address. */
-    val Mail: ImageVector = lined("Mail", Stroke("M5,6H23A2,2 0 0 1 25,8V20A2,2 0 0 1 23,22H5A2,2 0 0 1 3,20V8A2,2 0 0 1 5,6ZM3,8.5L14,16L25,8.5", TILE))
-
-    /** Four rounded squares — More. */
-    val GridView: ImageVector = lined(
-        "GridView",
-        Stroke(
-            "M3.75,1.75H9.75A2,2 0 0 1 11.75,3.75V9.75A2,2 0 0 1 9.75,11.75H3.75A2,2 0 0 1 1.75,9.75V3.75A2,2 0 0 1 3.75,1.75Z" +
-                "M18.25,1.75H24.25A2,2 0 0 1 26.25,3.75V9.75A2,2 0 0 1 24.25,11.75H18.25A2,2 0 0 1 16.25,9.75V3.75A2,2 0 0 1 18.25,1.75Z" +
-                "M3.75,16.25H9.75A2,2 0 0 1 11.75,18.25V24.25A2,2 0 0 1 9.75,26.25H3.75A2,2 0 0 1 1.75,24.25V18.25A2,2 0 0 1 3.75,16.25Z" +
-                "M18.25,16.25H24.25A2,2 0 0 1 26.25,18.25V24.25A2,2 0 0 1 24.25,26.25H18.25A2,2 0 0 1 16.25,24.25V18.25A2,2 0 0 1 18.25,16.25Z",
-            MORE,
-        ),
     )
 
     // The three ways a call went, as the phone's own call log marks them: an arrow that came

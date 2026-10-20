@@ -218,10 +218,10 @@ internal fun BareField(
 
 // ---------------------------------------------------------------- the phone's own look
 //
-// Contacts is drawn to sit beside the Kompakt's own contacts app: the same bold title, the
-// same plain list with the surname in bold, the same dotted rule between rows. Measured off
-// that app on the phone, not guessed: a rule of 3px dashes and 2px gaps, inset to the text,
-// rows 85px apart, names at 22sp.
+// The rows keep what was measured off the Kompakt's own contacts app: the dotted rule between
+// rows, 3px dashes and 2px gaps inset to the text, rows 85px apart, names at 22sp. The bar, the
+// tabs and the person's page are the house's, as Phone and Messaging have them, and a name in a
+// list is regular weight rather than the surname in bold.
 
 /** A name in a list, a number on a page: 22sp there, on a 20sp body. */
 internal val rowText: androidx.compose.ui.unit.TextUnit = 22.sp
@@ -248,24 +248,19 @@ internal fun DottedRule(modifier: Modifier = Modifier, start: androidx.compose.u
     }
 }
 
-/** A top bar's title, in the bar's own type: never bold or resized, as in every app here. */
+/**
+ * A top bar's title, in the bar's own type: never bold or resized, as in every app here.
+ * [onCut] hears whether the text had to be cut short to fit, for a page that then says it in full.
+ */
 @Composable
-internal fun BarTitle(text: String) {
-    TextMMD(text = text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+internal fun BarTitle(text: String, onCut: ((Boolean) -> Unit)? = null) {
+    TextMMD(
+        text = text,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        onTextLayout = { layout -> onCut?.invoke(layout.hasVisualOverflow) },
+    )
 }
-
-/** A name with the surname in bold: "Ada **Whitlock**", or "**Whitlock**, Ada" turned round. */
-internal fun boldSurname(name: String, family: String): androidx.compose.ui.text.AnnotatedString =
-    androidx.compose.ui.text.buildAnnotatedString {
-        val at = if (family.isNotBlank()) name.lastIndexOf(family) else -1
-        if (at < 0) {
-            append(name)
-            return@buildAnnotatedString
-        }
-        append(name.substring(0, at))
-        withStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Bold)) { append(family) }
-        append(name.substring(at + family.length))
-    }
 
 /** One row of the list, as the phone's own contacts app draws it. */
 @OptIn(ExperimentalFoundationApi::class)
