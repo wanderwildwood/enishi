@@ -56,6 +56,7 @@
     <string name="edit">Edit</string>
     <string name="kept_in_label">Kept in</string>
     <!-- The speech bubble at the end of a number's row, read aloud: "Message +1 555 010 1001" -->
+    <string name="cd_call_number">Call %1$s</string>
     <string name="cd_message_number">Message %1$s</string>
     <!-- The word beside a number; it opens Messaging to write to it -->
     <string name="text">Text</string>

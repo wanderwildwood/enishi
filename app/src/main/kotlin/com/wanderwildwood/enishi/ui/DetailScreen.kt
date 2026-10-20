@@ -88,9 +88,10 @@ private const val RECENT_CALLS = 5
  *
  * A press on a number calls it, through the phone app; the speech bubble at its end writes to
  * it. A press on an email address writes to it, on an address opens it in a map, on a website
- * opens it, and a long press on any of them copies it. Under those, the last few calls with
- * them, drawn as Phone's Recents are, and All calls when there are more. Sharing, handing them
- * to Field Kit when it is on the phone, and delete — which asks in its own face — come last.
+ * opens it, and a long press on any of them copies it. Under those, where they are kept,
+ * sharing, handing them to Field Kit when it is on the phone, and delete — which asks in its own
+ * face. Last of all, the last few calls with them, drawn as Phone's Recents are, and All calls
+ * when there are more.
  */
 @Composable
 fun DetailScreen(
@@ -196,7 +197,13 @@ fun DetailScreen(
                         value = p.value,
                         kind = Labels.phone(context, p.type, p.label),
                         onPress = { dial(p.value) },
-                        trailing = { BarButton(Icons.Sms, stringResource(R.string.cd_message_number, p.value)) { text(p.value) } },
+                        // The row calls too; the handset says so where a reader looks for it.
+                        trailing = {
+                            Row {
+                                BarButton(Icons.Call, stringResource(R.string.cd_call_number, p.value)) { dial(p.value) }
+                                BarButton(Icons.Sms, stringResource(R.string.cd_message_number, p.value)) { text(p.value) }
+                            }
+                        },
                     )
                 }
             }
@@ -229,26 +236,6 @@ fun DetailScreen(
             val inGroups = model.groups.filter { it.id in d.groups.keys }.map { it.title }
             if (inGroups.isNotEmpty()) item { ValueRow(inGroups.joinToString(", "), stringResource(R.string.kind_groups)) }
 
-            // The calls with them, as Phone's Recents draws them; asked for the first time from
-            // a row that says so, since the call log is not the contacts' to read.
-            if (numbers.isNotEmpty()) {
-                if (!callsAllowed) {
-                    item(key = "calls-ask") {
-                        PlainRow(stringResource(R.string.calls_show), note = stringResource(R.string.calls_show_note), onPress = {
-                            askCalls.launch(Manifest.permission.READ_CALL_LOG)
-                        })
-                    }
-                } else if (calls.isNotEmpty()) {
-                    item(key = "calls-heading") { Heading(stringResource(R.string.calls_recent)) }
-                    // Which of their numbers, by its kind, only when they have more than one.
-                    val kinds = numbers.associate { numberKey(it.value) to Labels.phone(context, it.type, it.label) }
-                    calls.take(RECENT_CALLS).forEachIndexed { i, call ->
-                        item(key = "call-$i") { CallLine(call, kinds[numberKey(call.number)].takeIf { kinds.size > 1 }) }
-                    }
-                    if (calls.size > RECENT_CALLS) item(key = "calls-all") { PlainRow(stringResource(R.string.calls_all), onPress = onCalls) }
-                }
-            }
-
             item(key = "kept") {
                 ValueRow(
                     c.parts.map { Labels.account(context, it.account) }.distinct().joinToString(", "),
@@ -263,7 +250,7 @@ fun DetailScreen(
                     }
                 })
             }
-            // Medicine and Field Kit, when they are on the phone: each wants a number.
+            // Field Kit, when it is on the phone: it wants a number.
             if (numbers.isNotEmpty()) {
                 elsewhere.forEach { app ->
                     item(key = "elsewhere-${app.name}") {
@@ -288,10 +275,31 @@ fun DetailScreen(
                     onPress = press,
                 )
             }
+
+            // The calls with them, as Phone's Recents draws them, at the very foot of the page, under
+            // Delete, where David wanted them (2026-10-20); asked for the first time from a row that says
+            // so, since the call log is not the contacts' to read.
+            if (numbers.isNotEmpty()) {
+                if (!callsAllowed) {
+                    item(key = "calls-ask") {
+                        PlainRow(stringResource(R.string.calls_show), note = stringResource(R.string.calls_show_note), onPress = {
+                            askCalls.launch(Manifest.permission.READ_CALL_LOG)
+                        })
+                    }
+                } else if (calls.isNotEmpty()) {
+                    item(key = "calls-heading") { Heading(stringResource(R.string.calls_recent)) }
+                    // Which of their numbers, by its kind, only when they have more than one.
+                    val kinds = numbers.associate { numberKey(it.value) to Labels.phone(context, it.type, it.label) }
+                    calls.take(RECENT_CALLS).forEachIndexed { i, call ->
+                        item(key = "call-$i") { CallLine(call, kinds[numberKey(call.number)].takeIf { kinds.size > 1 }) }
+                    }
+                    if (calls.size > RECENT_CALLS) item(key = "calls-all") { PlainRow(stringResource(R.string.calls_all), onPress = onCalls) }
+                }
+            }
         } }
     }
 
-    // Which number goes to Medicine or Field Kit, when a person has more than one.
+    // Which number goes to Field Kit, when a person has more than one.
     val c = card
     handing?.let { app ->
         if (c == null) return@let

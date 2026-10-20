@@ -37,10 +37,10 @@ at a time.
 - **Merge duplicates by hand**: choose whose name stays, and every number, address, note and
   photo the others have is added to that person, nothing written twice. A copy a messenger keeps
   is joined rather than deleted.
-- **A person's page of plain rows**: a press on a number calls it through the phone app, and
-  the speech bubble at its end writes to it; a press on an email address writes to it, on an
+- **A person's page of plain rows**: a press on a number, or the handset at its end, calls it
+  through the phone app, and the speech bubble beside the handset writes to it; a press on an email address writes to it, on an
   address opens it in a map app, on a website opens it. A long press on any of them copies it.
-- **Recent calls** on a person's page, drawn as Phone's Recents are: the last five with them, an
+- **Recent calls** on a person's page, drawn as Phone's Recents are, at the foot of the page: the last five with them, an
   arrow for the way each went, when and how long, and All calls for the rest. The call log is
   asked for the first time, from a row that says so, and read on the phone only.
 - **Field Kit**, when it is on the phone: a person's page can add them to its emergency card.
@@ -74,7 +74,7 @@ the app has no internet permission at all.
 
 ## Where this is up to
 
-Version 0.2.1. What it writes is worked out by plain code that is unit tested on its own: which
+Version 0.2.2. What it writes is worked out by plain code that is unit tested on its own: which
 rows a save adds, changes and deletes; how vCards from 2.1 to 4.0 read, including old phones'
 quoted-printable in other character sets; dates without a year; search; who in a file is
 already here; what a merge adds and what it leaves.

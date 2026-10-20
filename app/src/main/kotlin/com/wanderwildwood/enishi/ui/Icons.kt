@@ -106,6 +106,18 @@ object Icons {
     val ChevronDown: ImageVector = lined("ChevronDown", "M7,11L14,18L21,11")
 
     /**
+     * The handset, Phone's own (the outline of Material Symbols' `call`, Apache-2.0, drawn as a
+     * line): call this number. It sits before the speech bubble at the end of a number's row.
+     */
+    val Call: ImageVector = lined(
+        "Call",
+        "M23.3,24.5Q19.7,24.5 16.1,22.9T9.6,18.4Q6.7,15.5 5.1,11.9T3.5,4.7Q3.5,4.2 3.85,3.85T4.7,3.5H9.45" +
+            "Q9.86,3.5 10.2,3.78T10.56,4.43L11.3,8.5Q11.36,8.97 11.27,9.29T10.97,9.86L8.1,12.7" +
+            "Q8.68,13.8 9.49,14.8T11.3,16.7Q12.2,17.6 13.2,18.4T15.3,19.8L18,17.1Q18.3,16.8 18.7,16.7T19.5,16.6" +
+            "L23.6,17.4Q24,17.5 24.3,17.8T24.5,18.6V23.3Q24.5,23.8 24.15,24.15T23.3,24.5Z",
+    )
+
+    /**
      * The round speech bubble with three dots: write to this number. It sits at the end of a
      * number's row on a person's page, where the row itself calls.
      */
