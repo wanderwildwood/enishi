@@ -27,14 +27,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mudita.mmd.components.checkbox.CheckboxMMD
 import com.mudita.mmd.components.divider.HorizontalDividerMMD
 import com.mudita.mmd.components.text.TextMMD
 import com.mudita.mmd.components.top_app_bar.TopAppBarMMD
 import com.wanderwildwood.enishi.R
+import com.wanderwildwood.enishi.data.ContactsSync
 import com.wanderwildwood.enishi.data.Group
 import com.wanderwildwood.enishi.data.Person
+import kotlinx.coroutines.delay
 
 /** The list's tabs, in the order they stand. Groups is there only while there are groups. */
 const val TAB_ALL = 0
@@ -116,15 +119,33 @@ fun HomeScreen(
                 FootButton(stringResource(R.string.all_empty_import), Modifier.fillMaxWidth(), onClick = onImport)
             }
             else -> Column(body) {
+                // A swipe down on the first page of any tab asks DAVx5 and its kind to sync; the
+                // line under the tabs says so in words for a few seconds, and the rows change
+                // when the contacts store does.
+                var asked by remember { mutableStateOf(0) }
+                LaunchedEffect(asked) { if (asked > 0) { delay(3000); asked = 0 } }
+                val pull: () -> Unit = {
+                    ContactsSync.requestNow()
+                    asked++
+                }
                 val labels = listOfNotNull(
                     stringResource(R.string.tab_all),
                     stringResource(R.string.tab_favourites),
                     if (hasGroups) stringResource(R.string.tab_groups) else null,
                 )
                 StoneTabs(labels = labels, selected = shown, onSelect = onTab)
+                if (asked > 0) {
+                    TextMMD(
+                        text = stringResource(R.string.sync_asked),
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+                    )
+                }
                 val rest = Modifier.weight(1f).fillMaxWidth()
                 when (shown) {
-                    TAB_GROUPS -> GroupList(model.groups, listStates[TAB_GROUPS], rest, onGroup)
+                    TAB_GROUPS -> GroupList(model.groups, listStates[TAB_GROUPS], rest, onGroup, onPullAtTop = pull)
                     else -> {
                         val people = if (shown == TAB_FAVOURITES) model.people.filter { it.starred } else model.people
                         if (people.isEmpty()) {
@@ -137,6 +158,7 @@ fun HomeScreen(
                                 chosen = if (choosing) chosen else null,
                                 onLongPress = onChoose,
                                 onOpen = { if (choosing) onChoose(it) else onOpen(it) },
+                                onPullAtTop = pull,
                             )
                         }
                     }
@@ -151,11 +173,17 @@ fun HomeScreen(
  * accounts are two rows, each saying where it is kept, since they are two lists.
  */
 @Composable
-private fun GroupList(groups: List<Group>, state: LazyListState, modifier: Modifier, onGroup: (Group) -> Unit) {
+private fun GroupList(
+    groups: List<Group>,
+    state: LazyListState,
+    modifier: Modifier,
+    onGroup: (Group) -> Unit,
+    onPullAtTop: (() -> Unit)? = null,
+) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val twice = remember(groups) { groups.groupingBy { it.title }.eachCount().filterValues { it > 1 }.keys }
     ListJumpBox(state, ListJump.Pages, modifier) {
-        PagedColumn(Modifier.fillMaxSize(), state = state) {
+        PagedColumn(Modifier.fillMaxSize(), state = state, onPullAtTop = onPullAtTop) {
             items(groups, key = { it.id }) { g ->
                 val count = pluralStringResource(R.plurals.group_size, g.size, g.size)
                 NameRow(
@@ -178,13 +206,15 @@ internal fun PeopleList(
     /** While several are being chosen: who is, and a box beside every row. */
     chosen: Set<Long>? = null,
     onLongPress: ((Person) -> Unit)? = null,
+    /** A swipe down on the first page: asks for the contacts again, where the list wants that. */
+    onPullAtTop: (() -> Unit)? = null,
     onOpen: (Person) -> Unit,
 ) {
     // The letters are the store's own index letters, the ones it sorted by: by surname when the
     // list is sorted by surname, whatever the names show.
     val jump = remember(people, above != null) { ListJump.Letters(people.map { it.section }, firstIndex = if (above != null) 1 else 0) }
     ListJumpBox(state, jump, modifier) {
-        PagedColumn(Modifier.fillMaxSize(), state = state) {
+        PagedColumn(Modifier.fillMaxSize(), state = state, onPullAtTop = onPullAtTop) {
             if (above != null) item(key = "above") { Column { above() } }
             items(people, key = { it.id }) { p ->
                 PersonRow(p, note(p), chosen = chosen?.let { p.id in it }, onLongPress = onLongPress?.let { { it(p) } }) { onOpen(p) }

@@ -16,6 +16,8 @@
     <string name="tab_all">All</string>
     <string name="tab_favourites">Favourites</string>
     <string name="tab_groups">Groups</string>
+    <!-- One line under the tabs for a few seconds after a swipe down on the first page of All, Favourites or Groups -->
+    <string name="sync_asked">Asked DAVx5 to sync</string>
     <string name="favourites_none">No favourites yet. The star on a person\'s page puts them here.</string>
     <!-- Under a group on the Groups tab -->
     <plurals name="group_size">

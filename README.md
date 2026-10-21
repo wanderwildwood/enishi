@@ -31,6 +31,7 @@ at a time.
 - **Everyone in one plain list**, in the phone's own language and order, under three tabs:
   All, Favourites, and Groups when the address book has any. A group opens to the people in it.
   The tab last chosen is the one the app opens on.
+- **A swipe down at the top of a tab asks DAVx5 to sync** the contacts now.
 - **Favourites as the phone keeps them**: a star on a person's page puts them under Favourites
   here and in the Phone app's Favourites.
 - **Choose several at once** with a long press, then merge, share or delete them together.
