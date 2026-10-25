@@ -34,6 +34,9 @@
              on the phone (ui/Elsewhere.kt). -->
         <package android:name="com.wanderwildwood.fukuyaku" />
         <package android:name="com.wanderwildwood.zatsuno" />
+        <!-- The phone's own Contacts app, which answers Messaging's new-message request
+             (MessagingPick in Asked.kt). -->
+        <package android:name="com.mudita.contacts" />
         <!-- The map apps, so an address can be opened in one other than Topo (onMap in
              ui/DetailScreen.kt). -->
         <intent>

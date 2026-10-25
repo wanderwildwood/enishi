@@ -17,6 +17,24 @@ import org.json.JSONObject
 enum class PickKind { CONTACT, PHONE, EMAIL, ADDRESS }
 
 /**
+ * Mudita Messaging's "New message" is not a plain pick. It asks for a contact with
+ * [EXTRA] set, and the phone's own Contacts app answers with its own screen: a box to type a
+ * number, a "Create Group" row that ticks several people and opens one group conversation, and a
+ * single person's number. None of that is in a standard pick, so when this app took the request
+ * a group could not be started at all. A request carrying [EXTRA] goes to that screen, with the
+ * answer going straight back to Messaging, whenever it is on the phone.
+ */
+object MessagingPick {
+    const val EXTRA = "_is_msg_app_request_"
+    const val STOCK_PACKAGE = "com.mudita.contacts"
+    const val STOCK_PICKER = "com.android.contacts.activities.ContactSelectionActivity"
+
+    /** Whether this request is to be handed over rather than answered here. */
+    fun handOver(action: String?, flagged: Boolean, stockPresent: Boolean): Boolean =
+        flagged && stockPresent && (action == Intent.ACTION_PICK || action == Intent.ACTION_GET_CONTENT)
+}
+
+/**
  * What the app was opened to do. Messaging, Email and every other app reach a contacts app
  * through a handful of standard requests; each is one of these, read once from its intent.
  */
