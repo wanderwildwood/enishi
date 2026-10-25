@@ -57,6 +57,7 @@ import com.wanderwildwood.enishi.ui.MergeScreen
 import com.wanderwildwood.enishi.ui.shareMany
 import com.wanderwildwood.enishi.ui.start
 import com.wanderwildwood.enishi.data.Backups
+import com.wanderwildwood.enishi.ui.MessagePickScreen
 import com.wanderwildwood.enishi.ui.PickScreen
 import com.wanderwildwood.enishi.ui.SearchScreen
 import com.wanderwildwood.enishi.ui.SettingsScreen
@@ -83,6 +84,8 @@ sealed interface Route {
     data class Cards(val uri: Uri) : Route
     data class Pick(val kind: PickKind) : Route
     data class PickSearch(val kind: PickKind) : Route
+    /** Messaging's new-message request, answered here: type a number, tick a group, or one person. */
+    data object MessagePick : Route
     /** Choosing who to add something to, from Messaging's or Email's "add to contacts". */
     data class AddTo(val seed: Draft, val searching: Boolean = false) : Route
     data object Gone : Route
@@ -306,6 +309,32 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
             onCancel = { finish() },
             onPicked = { finish(it) },
         )
+        Route.MessagePick -> MessagePickScreen(
+            model,
+            onCancel = { finish() },
+            onOne = { p, number ->
+                activity.setResult(
+                    Activity.RESULT_OK,
+                    Intent().setData(model.book.lookupUri(p.id, p.lookup))
+                        .putExtra(MessagingPick.RESULT_NUMBER, number)
+                        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION),
+                )
+                activity.finish()
+            },
+            onTyped = { number ->
+                activity.setResult(
+                    Activity.RESULT_OK,
+                    Intent().putExtra(MessagingPick.RESULT_HAS_PLAIN, true).putExtra(MessagingPick.RESULT_PLAIN, number)
+                        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION),
+                )
+                activity.finish()
+            },
+            onWrite = { numbers ->
+                val started = writeTo(activity, numbers)
+                if (started) finish()
+                started
+            },
+        )
         is Route.PickSearch -> PickScreen(
             model, top.kind,
             searching = true,
@@ -345,7 +374,7 @@ private suspend fun open(model: BookModel, asked: Asked): Route? = when (asked) 
         val id = model.io { b -> asked.number?.let(b::findByNumber) ?: asked.email?.let(b::findByEmail) }.getOrNull()
         if (id != null) Route.Detail(id) else Route.Edit(null, asked.seed, model.newContactAccount())
     }
-    is Asked.Pick -> Route.Pick(asked.kind)
+    is Asked.Pick -> if (asked.messaging) Route.MessagePick else Route.Pick(asked.kind)
     is Asked.Cards -> Route.Cards(asked.uri)
 }
 

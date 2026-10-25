@@ -37,6 +37,13 @@
         <!-- The phone's own Contacts app, which answers Messaging's new-message request
              (MessagingPick in Asked.kt). -->
         <package android:name="com.mudita.contacts" />
+        <!-- And Messaging, which a group text is handed to (Writing.kt); any app that takes a
+             text to a number, for a phone that uses another. -->
+        <package android:name="com.mudita.messages" />
+        <intent>
+            <action android:name="android.intent.action.SENDTO" />
+            <data android:scheme="smsto" />
+        </intent>
         <!-- The map apps, so an address can be opened in one other than Topo (onMap in
              ui/DetailScreen.kt). -->
         <intent>

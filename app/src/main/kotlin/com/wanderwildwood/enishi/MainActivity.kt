@@ -51,7 +51,7 @@ class AskActivity : ComponentActivity() {
         val stock = ComponentName(MessagingPick.STOCK_PACKAGE, MessagingPick.STOCK_PICKER)
         val present = try {
             val info = packageManager.getActivityInfo(stock, 0)
-            info.exported && info.isEnabled
+            MessagingPick.usable(info.exported, info.enabled, info.applicationInfo?.enabled != false)
         } catch (_: PackageManager.NameNotFoundException) {
             false
         }

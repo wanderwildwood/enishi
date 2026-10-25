@@ -615,6 +615,23 @@ class Book(context: Context) {
     /** Every number of everyone in a group — the mobile where a person has one. */
     fun numbersFor(contactIds: Collection<Long>): List<String> = bestOf(contactIds, Phone.CONTENT_ITEM_TYPE, Phone.TYPE_MOBILE)
 
+    /** Every number one person has, with whether it is a mobile and whether it is their main one. */
+    fun dialablesOf(contactId: Long): List<Dialable> {
+        val out = mutableListOf<Dialable>()
+        resolver.query(
+            Data.CONTENT_URI,
+            arrayOf(Data.DATA1, Data.DATA2, Data.IS_SUPER_PRIMARY),
+            "${Data.MIMETYPE}=? AND ${Data.CONTACT_ID}=?",
+            arrayOf(Phone.CONTENT_ITEM_TYPE, contactId.toString()), null,
+        )?.use { c ->
+            while (c.moveToNext()) {
+                val value = c.getString(0)?.takeIf { it.isNotBlank() } ?: continue
+                out += Dialable(value, mobile = c.getInt(1) == Phone.TYPE_MOBILE, primary = c.getInt(2) != 0)
+            }
+        }
+        return out
+    }
+
     fun emailsFor(contactIds: Collection<Long>): List<String> = bestOf(contactIds, Email.CONTENT_ITEM_TYPE, null)
 
     private fun bestOf(contactIds: Collection<Long>, mime: String, preferType: Int?): List<String> {

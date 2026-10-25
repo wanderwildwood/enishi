@@ -157,6 +157,17 @@
     <string name="pick_address">Choose an address</string>
     <string name="pick_add_to">Add to whom?</string>
     <string name="pick_new_contact">Someone new</string>
+    <string name="msg_title">New message</string>
+    <string name="msg_type_number">Type a number</string>
+    <string name="msg_to_number">Message %1$s</string>
+    <string name="msg_group">Create Group</string>
+    <string name="msg_nobody">Nobody here has a number.</string>
+    <string name="msg_mobile">Mobile</string>
+    <string name="msg_failed">No messaging app could be started.</string>
+    <plurals name="msg_write">
+        <item quantity="one">Write message (%d)</item>
+        <item quantity="other">Write message (%d)</item>
+    </plurals>
     <string name="pick_none">Nobody here has one.</string>
     <string name="pick_has_none">%1$s has none.</string>
 

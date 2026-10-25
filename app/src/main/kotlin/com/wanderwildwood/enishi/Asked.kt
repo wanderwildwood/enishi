@@ -32,6 +32,24 @@ object MessagingPick {
     /** Whether this request is to be handed over rather than answered here. */
     fun handOver(action: String?, flagged: Boolean, stockPresent: Boolean): Boolean =
         flagged && stockPresent && (action == Intent.ACTION_PICK || action == Intent.ACTION_GET_CONTENT)
+
+    /**
+     * Whether the phone's own Contacts screen can be handed the request right now: the screen
+     * exists, may be started from outside, and neither it nor its app has been switched off.
+     * Asked afresh for every request, because a person who replaces that app switches it off.
+     */
+    fun usable(exported: Boolean, componentEnabled: Boolean, appEnabled: Boolean): Boolean =
+        exported && componentEnabled && appEnabled
+
+    /** Whether this request is one for this app's own new-message screen. */
+    fun answeredHere(action: String?, flagged: Boolean): Boolean =
+        flagged && (action == Intent.ACTION_PICK || action == Intent.ACTION_GET_CONTENT)
+
+    /** Result extras Messaging reads back (ConversationActivity, request code 60). */
+    const val RESULT_NUMBER = "contact_picker_selected_number"
+    const val RESULT_HAS_PLAIN = "_has_plain_number_"
+    const val RESULT_PLAIN = "_plain_number_"
+    const val MESSAGES_PACKAGE = "com.mudita.messages"
 }
 
 /**
@@ -49,7 +67,8 @@ sealed interface Asked {
     data class AddTo(val seed: Draft) : Asked
     /** Show the person with this number or address, or offer to add them. */
     data class ShowOrCreate(val number: String?, val email: String?, val seed: Draft) : Asked
-    data class Pick(val kind: PickKind) : Asked
+    /** [messaging]: Messaging's new-message request, answered with a number rather than a person. */
+    data class Pick(val kind: PickKind, val messaging: Boolean = false) : Asked
     /** A .vcf to read — a card received in a message, or a file of a whole address book. */
     data class Cards(val uri: Uri) : Asked
 
@@ -83,7 +102,8 @@ sealed interface Asked {
                     }
                     ShowOrCreate(value.takeIf { scheme == "tel" }, value.takeIf { scheme == "mailto" }, s)
                 }
-                Intent.ACTION_PICK, Intent.ACTION_GET_CONTENT -> Pick(kindOf(type, data))
+                Intent.ACTION_PICK, Intent.ACTION_GET_CONTENT ->
+                    Pick(kindOf(type, data), MessagingPick.answeredHere(intent.action, intent.getBooleanExtra(MessagingPick.EXTRA, false)))
                 else -> Browse
             }
         }

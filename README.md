@@ -64,6 +64,9 @@ at a time.
 - **Answers every standard request other apps make**: show a person, add someone, add a number
   or an address to someone, show or add the sender of an email, pick a person, a number, an
   email address or a postal address. Done, it goes back to the app that asked.
+- **Messaging's New message works without the phone's own Contacts app**: a box to type a
+  number, Create Group to tick several people and write to all of them, or one tap for one
+  person. Where the phone's own Contacts app is still on, Messaging is sent to its screen.
 - **Accounts.** Where a phone syncs contacts to an account, new people go where most already
   are, or wherever you choose.
 
@@ -75,7 +78,7 @@ the app has no internet permission at all.
 
 ## Where this is up to
 
-Version 0.2.6. What it writes is worked out by plain code that is unit tested on its own: which
+Version 0.2.7. What it writes is worked out by plain code that is unit tested on its own: which
 rows a save adds, changes and deletes; how vCards from 2.1 to 4.0 read, including old phones'
 quoted-printable in other character sets; dates without a year; search; who in a file is
 already here; what a merge adds and what it leaves.
