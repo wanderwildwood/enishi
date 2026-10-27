@@ -277,7 +277,7 @@ fun DetailScreen(
             }
 
             // The calls with them, as Phone's Recents draws them, at the very foot of the page, under
-            // Delete, where David wanted them (2026-10-20); asked for the first time from a row that says
+            // Delete, where they were asked for (2026-10-20); asked for the first time from a row that says
             // so, since the call log is not the contacts' to read.
             if (numbers.isNotEmpty()) {
                 if (!callsAllowed) {
