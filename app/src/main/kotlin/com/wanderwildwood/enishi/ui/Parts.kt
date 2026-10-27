@@ -136,7 +136,7 @@ internal fun PlainRow(
                 TextMMD(text = note, style = MaterialTheme.typography.labelSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
         }
-        trailing?.invoke()
+        trailing?.let { Box(Modifier.padding(start = 16.dp)) { it() } }
     }
     DottedRule()
 }

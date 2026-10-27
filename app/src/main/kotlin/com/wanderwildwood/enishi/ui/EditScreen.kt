@@ -592,6 +592,7 @@ private fun SwitchLine(text: String, on: Boolean, onPress: () -> Unit) {
             .padding(horizontal = 16.dp, vertical = 16.dp),
     ) {
         TextMMD(text = text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        Spacer(Modifier.width(16.dp))
         SwitchMMD(checked = on, onCheckedChange = null)
     }
     DottedRule()
