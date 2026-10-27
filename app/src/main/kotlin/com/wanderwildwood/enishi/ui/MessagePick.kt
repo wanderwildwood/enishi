@@ -31,6 +31,7 @@ import com.wanderwildwood.enishi.data.Choice
 import com.wanderwildwood.enishi.data.Dialable
 import com.wanderwildwood.enishi.data.Person
 import com.wanderwildwood.enishi.data.chooseNumber
+import com.wanderwildwood.enishi.data.recipients
 import com.wanderwildwood.enishi.data.typedNumber
 import kotlinx.coroutines.launch
 
@@ -118,8 +119,11 @@ fun MessagePickScreen(
                 notice?.let { NoticeStrip(it) { notice = null } }
                 if (grouping) {
                     HorizontalDividerMMD()
+                    // The count of who the text goes to: two people who share a number are one
+                    // address, and the conversation has one participant for it.
+                    val going = recipients(ticked.map { it.second }).size
                     FootButton(
-                        pluralStringResource(R.plurals.msg_write, ticked.size, ticked.size),
+                        pluralStringResource(R.plurals.msg_write, going, going),
                         Modifier.fillMaxWidth().padding(10.dp),
                         enabled = ticked.isNotEmpty(),
                     ) {

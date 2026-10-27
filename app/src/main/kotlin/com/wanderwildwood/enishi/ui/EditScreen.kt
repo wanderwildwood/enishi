@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -21,7 +22,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -37,6 +41,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
@@ -151,6 +157,13 @@ fun EditScreen(
 
     LaunchedEffect(draft, events) { problem = null }
 
+    // The line the reader is typing in. The empty line that waits after a number or an address
+    // is added only once they leave it, so the form does not shift under the cursor.
+    var typingIn by remember { mutableStateOf<String?>(null) }
+    val onTyping: (String, Boolean) -> Unit = { line, has ->
+        if (has) typingIn = line else if (typingIn == line) typingIn = null
+    }
+
     // Measured against what is stored, not against the form as it opened: "add this address to
     // someone" opens with the address already in, and that is something to save.
     val dirty = if (card == null) !draft.isEmpty else draft.copy(events = emptyList()) != card.draft.copy(events = emptyList()) || events != startBoxes || calendar != startCalendar
@@ -169,6 +182,10 @@ fun EditScreen(
                 }
                 is Typed.Ok -> days += Field(t.day.stored(), e.type, e.label, e.dataId)
             }
+        }
+        if (draft.emails.any { it.value.isNotBlank() && !android.util.Patterns.EMAIL_ADDRESS.matcher(it.value.trim()).matches() }) {
+            problem = context.getString(R.string.edit_bad_email)
+            return
         }
         val after = draft.copy(events = days + unreadable)
         if (after.isEmpty) {
@@ -211,7 +228,7 @@ fun EditScreen(
             isScrollbarVisible = false,
         ) {
             problem?.let {
-                item {
+                item(key = "problem") {
                     TextMMD(
                         text = it,
                         style = MaterialTheme.typography.bodyMedium,
@@ -225,34 +242,37 @@ fun EditScreen(
             kindLines(
                 key = "phone", fields = draft.phones, types = Labels.PHONE_TYPES, keyboard = KeyboardType.Phone,
                 label = { t, l -> Labels.phone(context, t, l) }, hint = context.getString(R.string.hint_phone),
+                typingIn = typingIn, onTyping = onTyping,
             ) { draft = draft.copy(phones = it) }
 
             // A name that came in whole, with no parts — from another app, or a vCard with only
             // a full name — is shown as it is; Android splits it into parts on saving.
             if (draft.wholeName.isNotBlank() && listOf(draft.given, draft.family, draft.middle, draft.prefix, draft.suffix).all { it.isBlank() }) {
-                item { LabelledLine(stringResource(R.string.field_name), draft.wholeName, { draft = draft.copy(wholeName = it) }) }
+                item(key = "name") { LabelledLine(stringResource(R.string.field_name), draft.wholeName, { draft = draft.copy(wholeName = it) }) }
             } else {
-                item { LabelledLine(stringResource(R.string.field_given), draft.given, { draft = draft.copy(given = it) }) }
-                item { LabelledLine(stringResource(R.string.field_family), draft.family, { draft = draft.copy(family = it) }) }
+                item(key = "given") { LabelledLine(stringResource(R.string.field_given), draft.given, { draft = draft.copy(given = it) }) }
+                item(key = "family") { LabelledLine(stringResource(R.string.field_family), draft.family, { draft = draft.copy(family = it) }) }
                 if (moreNames) {
-                    item { LabelledLine(stringResource(R.string.field_prefix), draft.prefix, { draft = draft.copy(prefix = it) }) }
-                    item { LabelledLine(stringResource(R.string.field_middle), draft.middle, { draft = draft.copy(middle = it) }) }
-                    item { LabelledLine(stringResource(R.string.field_suffix), draft.suffix, { draft = draft.copy(suffix = it) }) }
+                    item(key = "prefix") { LabelledLine(stringResource(R.string.field_prefix), draft.prefix, { draft = draft.copy(prefix = it) }) }
+                    item(key = "middle") { LabelledLine(stringResource(R.string.field_middle), draft.middle, { draft = draft.copy(middle = it) }) }
+                    item(key = "suffix") { LabelledLine(stringResource(R.string.field_suffix), draft.suffix, { draft = draft.copy(suffix = it) }) }
                 }
             }
             if (moreNames) {
-                item { LabelledLine(stringResource(R.string.field_nickname), draft.nickname, { draft = draft.copy(nickname = it) }) }
+                item(key = "nickname") { LabelledLine(stringResource(R.string.field_nickname), draft.nickname, { draft = draft.copy(nickname = it) }) }
             } else {
-                item { AddRow(stringResource(R.string.edit_more_names)) { moreNames = true } }
+                item(key = "more-names") { AddRow(stringResource(R.string.edit_more_names)) { moreNames = true } }
             }
 
             kindLines(
                 key = "email", fields = draft.emails, types = Labels.EMAIL_TYPES, keyboard = KeyboardType.Email,
                 label = { t, l -> Labels.email(context, t, l) }, hint = context.getString(R.string.hint_email),
+                typingIn = typingIn, onTyping = onTyping,
             ) { draft = draft.copy(emails = it) }
             kindLines(
                 key = "address", fields = draft.addresses, types = Labels.ADDRESS_TYPES, keyboard = KeyboardType.Text,
                 label = { t, l -> Labels.address(context, t, l) }, hint = context.getString(R.string.hint_address), multiLine = true,
+                typingIn = typingIn, onTyping = onTyping,
             ) { draft = draft.copy(addresses = it) }
 
             events.forEachIndexed { i, e ->
@@ -291,7 +311,7 @@ fun EditScreen(
                     }
                 }
             }
-            item {
+            item(key = "add-date") {
                 val birthday = android.provider.ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY
                 val noBirthday = events.none { it.type == birthday }
                 AddRow(stringResource(if (noBirthday) R.string.edit_add_birthday else R.string.edit_add_date)) {
@@ -301,19 +321,20 @@ fun EditScreen(
                 }
             }
 
-            item { LabelledLine(stringResource(R.string.field_company), draft.company, { draft = draft.copy(company = it) }) }
-            item { LabelledLine(stringResource(R.string.field_job), draft.jobTitle, { draft = draft.copy(jobTitle = it) }) }
+            item(key = "company") { LabelledLine(stringResource(R.string.field_company), draft.company, { draft = draft.copy(company = it) }) }
+            item(key = "job") { LabelledLine(stringResource(R.string.field_job), draft.jobTitle, { draft = draft.copy(jobTitle = it) }) }
 
             kindLines(
                 key = "web", fields = draft.websites, types = emptyList(), keyboard = KeyboardType.Uri,
                 label = { _, _ -> context.getString(R.string.kind_website) }, hint = context.getString(R.string.hint_website),
                 newType = android.provider.ContactsContract.CommonDataKinds.Website.TYPE_HOMEPAGE,
+                typingIn = typingIn, onTyping = onTyping,
             ) { draft = draft.copy(websites = it) }
 
-            item { LabelledLine(stringResource(R.string.field_note), draft.note, { draft = draft.copy(note = it) }, singleLine = false, words = false) }
+            item(key = "note") { LabelledLine(stringResource(R.string.field_note), draft.note, { draft = draft.copy(note = it) }, singleLine = false, words = false) }
 
             if (groups.isNotEmpty()) {
-                item {
+                item(key = "groups") {
                     TextMMD(
                         text = stringResource(R.string.kind_groups),
                         style = MaterialTheme.typography.bodyMedium,
@@ -340,16 +361,16 @@ fun EditScreen(
                         }
                     }
                 }
-                item { DottedRule() }
+                item(key = "groups-end") { DottedRule() }
             }
 
-            item {
+            item(key = "favourite") {
                 SwitchLine(stringResource(R.string.field_favourite), draft.starred) { draft = draft.copy(starred = !draft.starred) }
             }
 
             // Only a new contact chooses; an existing one stays where it is.
             if (card == null && model.accounts.size > 1) {
-                item {
+                item(key = "save-to") {
                     LabelValue(stringResource(R.string.edit_save_to), Labels.account(context, account)) {
                         val all = model.accounts
                         account = all[(all.indexOf(account) + 1) % all.size]
@@ -369,11 +390,13 @@ private fun SaveButton(ready: Boolean, onClick: () -> Unit) {
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.onSurface,
             contentColor = MaterialTheme.colorScheme.surface,
-            disabledContainerColor = Color(0xFFE8E8E8),
-            disabledContentColor = Color(0xFF9A9A9A),
+            // Not ready is white with black words and a black edge; ready is filled black.
+            disabledContainerColor = MaterialTheme.colorScheme.surface,
+            disabledContentColor = MaterialTheme.colorScheme.onSurface,
         ),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface),
         contentPadding = PaddingValues(horizontal = 18.dp, vertical = 6.dp),
-        modifier = Modifier.padding(end = 10.dp).height(44.dp),
+        modifier = Modifier.padding(end = 10.dp).height(48.dp),
     ) {
         TextMMD(text = stringResource(R.string.save), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
     }
@@ -393,10 +416,16 @@ private fun LazyListScope.kindLines(
     hint: String,
     multiLine: Boolean = false,
     newType: Int = types.firstOrNull() ?: 0,
+    typingIn: String?,
+    onTyping: (String, Boolean) -> Unit,
     onChange: (List<Field>) -> Unit,
 ) {
     // The empty line waiting at the end is not one of the fields until something is typed in it.
-    val shown = fields + Field("", newType)
+    // It is put there when the last line has something in it and the reader has left that line,
+    // never while they are still typing in it; and not after a last line that is empty itself.
+    val last = fields.lastOrNull()
+    val waiting = last == null || (last.value.isNotBlank() && typingIn != "$key-${fields.size - 1}")
+    val shown = if (waiting) fields + Field("", newType) else fields
     shown.forEachIndexed { i, f ->
         val isNew = i == fields.size
         item(key = "$key-$i") {
@@ -422,6 +451,7 @@ private fun LazyListScope.kindLines(
                     keyboard = keyboard,
                     singleLine = !multiLine,
                     words = multiLine,
+                    onFocus = { onTyping("$key-$i", it) },
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -437,7 +467,7 @@ private fun KindMenu(current: String, choices: List<Pair<Int, String>>, onPick: 
     Box {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.clickable(enabled = choices.isNotEmpty()) { open = true }.padding(vertical = 2.dp),
+            modifier = Modifier.heightIn(min = 48.dp).clickable(enabled = choices.isNotEmpty()) { open = true }.padding(vertical = 2.dp),
         ) {
             TextMMD(text = current, style = MaterialTheme.typography.bodyLarge)
             if (choices.isNotEmpty()) {
@@ -482,10 +512,12 @@ private fun PlainField(
     singleLine: Boolean = true,
     words: Boolean = true,
     focusNow: Boolean = false,
+    onFocus: ((Boolean) -> Unit)? = null,
 ) {
     val focus = remember { FocusRequester() }
     LaunchedEffect(focusNow) { if (focusNow) runCatching { focus.requestFocus() } }
     val style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface)
+    val focusManager = LocalFocusManager.current
     BasicTextField(
         value = value,
         onValueChange = onChange,
@@ -497,12 +529,19 @@ private fun PlainField(
             keyboardType = keyboard,
             capitalization = if (words && keyboard == KeyboardType.Text) KeyboardCapitalization.Words else KeyboardCapitalization.None,
             autoCorrectEnabled = false,
+            // Enter goes on to the next field; a box that takes several lines keeps it for a new line.
+            imeAction = if (singleLine) ImeAction.Next else ImeAction.Default,
         ),
-        modifier = modifier.focusRequester(focus).padding(vertical = 4.dp),
+        // Enter goes to the field below, by where it is on the page: the order the list keeps its
+        // rows in skips from the first line to the bar.
+        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
+        modifier = modifier.focusRequester(focus)
+            .let { if (onFocus != null) it.onFocusChanged { f -> onFocus(f.isFocused) } else it }
+            .padding(vertical = 4.dp),
         decorationBox = { inner ->
             Box {
                 if (value.isEmpty() && hint != null) {
-                    TextMMD(text = hint, style = MaterialTheme.typography.bodyLarge, color = Color(0xFF8A8A8A))
+                    TextMMD(text = hint, style = MaterialTheme.typography.bodyLarge, color = Color.Black)
                 }
                 inner()
             }

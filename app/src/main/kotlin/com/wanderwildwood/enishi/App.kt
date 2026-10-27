@@ -129,8 +129,21 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
     // One place in the list for each tab — All, Favourites, Groups — and the tab last chosen.
     val listStates = remember { List(3) { LazyListState() } }
     var tab by remember { mutableStateOf(model.prefs.homeTab) }
+    // The people lists open at the top again when the app is brought back after being left,
+    // not wherever they were scrolled to.
+    DisposableEffect(owner) {
+        var left = false
+        val o = LifecycleEventObserver { _, e ->
+            if (e == Lifecycle.Event.ON_STOP) left = true
+            if (e == Lifecycle.Event.ON_RESUME && left) {
+                left = false
+                if (stack.lastOrNull() == Route.Home) listStates.forEach { st -> scope.launch { st.scrollToItem(0) } }
+            }
+        }
+        owner.lifecycle.addObserver(o)
+        onDispose { owner.lifecycle.removeObserver(o) }
+    }
     var about by remember { mutableStateOf(false) }
-    var settingsNotice by remember { mutableStateOf<String?>(null) }
     var homeNotice by remember { mutableStateOf<String?>(null) }
     /** Everyone chosen on the list, while several are being chosen; empty the rest of the time. */
     var chosen by remember { mutableStateOf<Set<Long>>(emptySet()) }
@@ -138,6 +151,19 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
     var backupsSeen by remember { mutableStateOf(0) }
     /** A schedule asked for before there was a folder: set once one is chosen. */
     var everyOnceChosen by remember { mutableStateOf(0) }
+    /** "Save a backup now" asked for before there was a folder: made as soon as one is chosen. */
+    var nowOnceChosen by remember { mutableStateOf(false) }
+    var settingsNotice by remember { mutableStateOf<String?>(null) }
+    fun backupNow() {
+        scope.launch {
+            val saved = model.io { backups.run().getOrThrow() }
+            backupsSeen++
+            settingsNotice = saved.fold(
+                { context.resources.getQuantityString(R.plurals.export_done, it, it) },
+                { context.getString(R.string.export_failed) },
+            )
+        }
+    }
 
     fun push(r: Route) { stack.add(r) }
     fun replace(r: Route) { stack.removeAt(stack.lastIndex); stack.add(r) }
@@ -178,11 +204,19 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
         }
     }
     val pickFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
-        if (uri == null) return@rememberLauncherForActivityResult
+        if (uri == null) {
+            everyOnceChosen = 0
+            nowOnceChosen = false
+            return@rememberLauncherForActivityResult
+        }
         backups.choose(uri)
         if (everyOnceChosen > 0) backups.every = everyOnceChosen
         everyOnceChosen = 0
         backupsSeen++
+        if (nowOnceChosen) {
+            nowOnceChosen = false
+            backupNow()
+        }
     }
     val importTypes = arrayOf("text/x-vcard", "text/vcard", "text/directory", "application/octet-stream", "text/plain")
     fun newContact(seed: Draft = Draft()) {
@@ -287,15 +321,10 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
             },
             onBackupFolder = { pickFolder.launch(backups.folder) },
             onBackupNow = {
-                if (backups.folder == null) pickFolder.launch(null)
-                else scope.launch {
-                    val saved = model.io { backups.run().getOrThrow() }
-                    backupsSeen++
-                    settingsNotice = saved.fold(
-                        { context.resources.getQuantityString(R.plurals.export_done, it, it) },
-                        { context.getString(R.string.export_failed) },
-                    )
-                }
+                if (backups.folder == null) {
+                    nowOnceChosen = true
+                    pickFolder.launch(null)
+                } else backupNow()
             },
         )
         is Route.Cards -> CardsScreen(

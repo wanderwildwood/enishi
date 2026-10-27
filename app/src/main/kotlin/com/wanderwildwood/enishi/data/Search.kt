@@ -45,11 +45,23 @@ fun search(query: String, people: List<Person>, findable: Map<Long, Findable>): 
 
 private val MARKS = Regex("\\p{Mn}+")
 
+/**
+ * Letters that are no accent on another letter, so decomposing leaves them whole: Ł, Ø, Đ and
+ * the like. Each is typed as the plain letter, "lodz" for Łódź.
+ */
+private val PLAIN = mapOf(
+    'ł' to "l", 'ø' to "o", 'đ' to "d", 'ð' to "d", 'ħ' to "h", 'ı' to "i",
+    'ß' to "ss", 'æ' to "ae", 'œ' to "oe", 'þ' to "th",
+)
+
 /** Lower case, accents off, so the reader need not type either. */
-internal fun fold(text: String): String =
-    Normalizer.normalize(text, Normalizer.Form.NFD)
+internal fun fold(text: String): String {
+    val plain = Normalizer.normalize(text, Normalizer.Form.NFD)
         .replace(MARKS, "")
         .lowercase()
+    return if (plain.none { it in PLAIN }) plain
+    else buildString { for (c in plain) append(PLAIN[c] ?: c) }
+}
 
 /**
  * Who in the book this card already is, if anyone: the same name, and — when the card has

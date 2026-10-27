@@ -7,7 +7,7 @@ policy that cannot be checked is just a promise.
 
 ## What it asks for, and why
 
-`app/src/main/AndroidManifest.xml` declares five permissions, and `INTERNET` is not one of them.
+`app/src/main/AndroidManifest.xml` declares eight permissions, and `INTERNET` is not one of them.
 
 - **Contacts** (`READ_CONTACTS`, `WRITE_CONTACTS`) — to show and change the phone's own address
   book, which is the whole of what the app does. Android asks you for this; you can take it back
@@ -16,6 +16,11 @@ policy that cannot be checked is just a promise.
   person can be saved to one. The app never signs in to anything.
 - **Phone calls** (`CALL_PHONE`) — so a press on a number calls it. Android asks the first time
   a number is pressed. Refuse, and the number goes to the dialer instead, for you to call there.
+- **Call log** (`READ_CALL_LOG`) — only to list the calls with one person on their page. Android asks
+  the first time that list is opened. The log is read on the phone and never copied anywhere.
+- **Calendar** (`READ_CALENDAR`, `WRITE_CALENDAR`) — only for the birthday switch in the editor. It
+  puts a person's birthday in a calendar of its own, called Birthdays, and reads your calendars to
+  see whether a synced one already holds birthdays. Android asks the first time the switch is used.
 - **Start-up** (`RECEIVE_BOOT_COMPLETED`) — only so automatic backups, if you turn them on, are
   still scheduled after the phone restarts. Nothing of the app's runs at start-up; Android's
   own job scheduler keeps the schedule.

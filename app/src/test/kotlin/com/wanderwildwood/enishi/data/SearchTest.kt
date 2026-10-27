@@ -24,6 +24,13 @@ class SearchTest {
         assertEquals(listOf(jose), search("pepe", people, findable).map { it.person })
     }
 
+    @Test fun foldsLetterThatIsNoAccent() {
+        val lodz = Person(4, "d", "Łukasz Łódź", "Ł", false)
+        assertEquals(listOf(lodz), search("lodz", listOf(lodz), emptyMap()).map { it.person })
+        assertEquals(listOf(lodz), search("luk", listOf(lodz), emptyMap()).map { it.person })
+        assertEquals(listOf(lodz), search("ŁÓD", listOf(lodz), emptyMap()).map { it.person })
+    }
+
     @Test fun findsByDigitsAndSaysWhichNumber() {
         val found = search("0101", people, findable).single()
         assertEquals(ada, found.person)

@@ -182,15 +182,13 @@ private fun GroupList(
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val twice = remember(groups) { groups.groupingBy { it.title }.eachCount().filterValues { it > 1 }.keys }
-    ListJumpBox(state, ListJump.Pages, modifier) {
-        PagedColumn(Modifier.fillMaxSize(), state = state, onPullAtTop = onPullAtTop) {
-            items(groups, key = { it.id }) { g ->
-                val count = pluralStringResource(R.plurals.group_size, g.size, g.size)
-                NameRow(
-                    AnnotatedString(g.title),
-                    note = if (g.title in twice) "$count · ${Labels.account(context, g.account)}" else count,
-                ) { onGroup(g) }
-            }
+    PagedColumn(modifier, state = state, onPullAtTop = onPullAtTop) {
+        items(groups, key = { it.id }) { g ->
+            val count = pluralStringResource(R.plurals.group_size, g.size, g.size)
+            NameRow(
+                AnnotatedString(g.title),
+                note = if (g.title in twice) "$count · ${Labels.account(context, g.account)}" else count,
+            ) { onGroup(g) }
         }
     }
 }
@@ -210,15 +208,10 @@ internal fun PeopleList(
     onPullAtTop: (() -> Unit)? = null,
     onOpen: (Person) -> Unit,
 ) {
-    // The letters are the store's own index letters, the ones it sorted by: by surname when the
-    // list is sorted by surname, whatever the names show.
-    val jump = remember(people, above != null) { ListJump.Letters(people.map { it.section }, firstIndex = if (above != null) 1 else 0) }
-    ListJumpBox(state, jump, modifier) {
-        PagedColumn(Modifier.fillMaxSize(), state = state, onPullAtTop = onPullAtTop) {
-            if (above != null) item(key = "above") { Column { above() } }
-            items(people, key = { it.id }) { p ->
-                PersonRow(p, note(p), chosen = chosen?.let { p.id in it }, onLongPress = onLongPress?.let { { it(p) } }) { onOpen(p) }
-            }
+    PagedColumn(modifier, state = state, onPullAtTop = onPullAtTop) {
+        if (above != null) item(key = "above") { Column { above() } }
+        items(people, key = { it.id }) { p ->
+            PersonRow(p, note(p), chosen = chosen?.let { p.id in it }, onLongPress = onLongPress?.let { { it(p) } }) { onOpen(p) }
         }
     }
 }

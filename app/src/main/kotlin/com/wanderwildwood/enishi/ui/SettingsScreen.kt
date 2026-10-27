@@ -66,14 +66,6 @@ fun SettingsScreen(
                     onPress = { model.chooseLastNameFirst(!model.lastNameFirst) },
                 )
             }
-            item {
-                val jumpShown by rememberListJumpShown()
-                PlainRow(
-                    title = stringResource(R.string.list_jump_setting),
-                    note = stringResource(if (jumpShown) R.string.list_jump_shown else R.string.list_jump_hidden),
-                    onPress = { ListJumpPrefs.setShown(context, !jumpShown) },
-                )
-            }
             if (model.accounts.size > 1) {
                 item {
                     PlainRow(

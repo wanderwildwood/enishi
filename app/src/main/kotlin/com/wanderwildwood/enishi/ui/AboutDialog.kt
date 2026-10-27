@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -46,17 +47,27 @@ fun AboutDialog(onDismiss: () -> Unit) {
         )
 
         Spacer(Modifier.height(14.dp))
-        TextMMD(
-            text = stringResource(R.string.about_body),
-            style = MaterialTheme.typography.labelSmall,
-        )
-
-        Spacer(Modifier.height(14.dp))
         TextMMD(text = stringResource(R.string.about_licence), style = MaterialTheme.typography.labelSmall)
         TextMMD(
             text = stringResource(R.string.about_bundled),
             style = MaterialTheme.typography.labelSmall,
         )
+
+        Spacer(Modifier.height(14.dp))
+        TextMMD(
+            text = stringResource(R.string.about_privacy_head),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+        )
+        TextMMD(text = stringResource(R.string.about_privacy), style = MaterialTheme.typography.labelSmall)
+
+        Spacer(Modifier.height(14.dp))
+        TextMMD(
+            text = stringResource(R.string.about_terms_head),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+        )
+        TextMMD(text = stringResource(R.string.about_terms), style = MaterialTheme.typography.labelSmall)
 
         Spacer(Modifier.height(14.dp))
         Llama()
@@ -104,6 +115,7 @@ private fun Llama() {
                     }.isSuccess
                     dead = if (opened) null else "wanderthe.dev"
                 }
+                .heightIn(min = 48.dp)
                 .padding(vertical = 4.dp),
         )
         Spacer(Modifier.width(6.dp))
@@ -118,6 +130,7 @@ private fun Llama() {
                     }.isSuccess
                     dead = if (opened) null else "square.link/u/AGu8oT10"
                 }
+                .heightIn(min = 48.dp)
                 .padding(vertical = 4.dp),
         ) {
             Image(

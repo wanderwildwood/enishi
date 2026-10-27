@@ -104,7 +104,7 @@ fun CallsScreen(model: BookModel, contactId: Long, onBack: () -> Unit) {
         val today = stringResource(R.string.calls_today)
         val yesterday = stringResource(R.string.calls_yesterday)
         val state = rememberLazyListState()
-        ListJumpBox(state, ListJump.Pages, body) { PagedColumn(Modifier.fillMaxSize(), state = state) {
+        PagedColumn(body, state = state) {
             items(list.size) { i ->
                 val call = list[i]
                 val kind = stringResource(
@@ -128,7 +128,7 @@ fun CallsScreen(model: BookModel, contactId: Long, onBack: () -> Unit) {
                     missed = call.kind == Call.Kind.MISSED,
                 )
             }
-        } }
+        }
     }
 }
 

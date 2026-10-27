@@ -139,6 +139,7 @@
     <string name="date_day">Day</string>
     <string name="date_month">Month</string>
     <string name="date_year">Year</string>
+    <string name="edit_bad_email">One of the email addresses is not an address. Fix it or empty the line.</string>
     <string name="edit_bad_date">A date is not one the calendar has. The year can be left out.</string>
     <string name="edit_empty">There is nothing to save yet.</string>
     <string name="edit_failed">The phone’s contacts would not take this. Nothing was changed.</string>
@@ -283,13 +284,13 @@
     <!-- About -->
 
     <string name="about_title">Contacts %1$s</string>
-    <string name="about_body">Everyone here lives in Android’s own address book, not in this app, so nothing is lost if it goes. It has no way onto the internet.</string>
     <string name="about_licence">GNU General Public License v3</string>
     <string name="about_bundled">Icons from Material Symbols (Apache-2.0).</string>
     <string name="about_feed_the_llamas">feed the llamas</string>
     <string name="about_no_browser">Nothing here opens web pages — %1$s</string>
+    <string name="about_privacy_head">Privacy</string>
+    <string name="about_privacy">Your contacts stay in this phone’s own address book; the app keeps no copy of its own. It has no internet access, so nothing is sent anywhere, and nothing is collected about you. It asks for contacts and accounts, phone calls (to call a number you press), the call log (to list calls with one person) and the calendar (only if you switch a birthday into it). There are no ads, no analytics and no tracking. Backups and exports go only where you choose to save them.</string>
+    <string name="about_terms_head">Terms</string>
+    <string name="about_terms">This app is free software under the GNU General Public License v3. It comes with no warranty: use it at your own risk.</string>
     <string name="about_close">Close</string>
-    <string name="list_jump_setting">Letters and page dots</string>
-    <string name="list_jump_shown">Shown</string>
-    <string name="list_jump_hidden">Hidden</string>
 </resources>

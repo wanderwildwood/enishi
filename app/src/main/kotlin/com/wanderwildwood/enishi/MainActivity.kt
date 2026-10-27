@@ -6,6 +6,8 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalCursorBlinkEnabled
 import com.mudita.mmd.ThemeMMD
 import com.wanderwildwood.enishi.ui.monochrome
 
@@ -14,8 +16,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            ThemeMMD(colorScheme = monochrome) {
-                App(this, Asked.Browse, fromElsewhere = false)
+            CompositionLocalProvider(LocalCursorBlinkEnabled provides false) {
+                ThemeMMD(colorScheme = monochrome) {
+                    App(this, Asked.Browse, fromElsewhere = false)
+                }
             }
         }
     }
@@ -36,8 +40,10 @@ class AskActivity : ComponentActivity() {
         }
         val asked = Asked.of(intent)
         setContent {
-            ThemeMMD(colorScheme = monochrome) {
-                App(this, asked, fromElsewhere = true)
+            CompositionLocalProvider(LocalCursorBlinkEnabled provides false) {
+                ThemeMMD(colorScheme = monochrome) {
+                    App(this, asked, fromElsewhere = true)
+                }
             }
         }
     }

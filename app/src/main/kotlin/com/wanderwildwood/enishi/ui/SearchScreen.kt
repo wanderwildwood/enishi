@@ -67,7 +67,7 @@ fun SearchScreen(
                         decorationBox = { inner ->
                             Box {
                                 if (query.isEmpty()) {
-                                    TextMMD(text = stringResource(R.string.search_hint_short), style = MaterialTheme.typography.titleLarge, color = Color(0xFF8A8A8A))
+                                    TextMMD(text = stringResource(R.string.search_hint_short), style = MaterialTheme.typography.titleLarge, color = Color.Black)
                                 }
                                 inner()
                             }
@@ -83,7 +83,7 @@ fun SearchScreen(
     ) { padding ->
         val body = Modifier.fillMaxSize().padding(padding).imePadding().background(MaterialTheme.colorScheme.surface)
         when {
-            query.isBlank() -> Unit
+            query.isBlank() -> Quiet(stringResource(R.string.search_hint), body)
             found.isEmpty() -> Quiet(stringResource(R.string.search_none), body)
             else -> PagedColumn(body) {
                 items(found, key = { it.person.id }) { f -> PersonRow(f.person, f.by) { onOpen(f.person) } }

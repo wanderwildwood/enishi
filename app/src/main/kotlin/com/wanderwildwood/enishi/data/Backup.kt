@@ -83,17 +83,17 @@ class Backups(context: Context) {
         )
     }
 
-    /** Writes today's file now, then clears the old ones. Returns how many people it holds. */
+    /** Writes a file now, named for the day and the minute, then clears the old ones. Returns how many people it holds. */
     fun run(): Result<Int> = runCatching {
         val tree = folder ?: error("no folder chosen")
         val resolver = app.contentResolver
         val parent = DocumentsContract.buildDocumentUriUsingTree(tree, DocumentsContract.getTreeDocumentId(tree))
-        val name = "contacts-" + SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).format(Date()) + ".vcf"
+        val name = "contacts-" + SimpleDateFormat("yyyy-MM-dd-HHmm", Locale.ROOT).format(Date()) + ".vcf"
 
         val book = Book(app)
         val lookups = book.people(lastNameFirst = false, sortByLast = false).map { it.lookup }
-        // Today's goes in under a new name first, and only then does an earlier one of today's go:
-        // a failure half way leaves yesterday's backup, and today's old one, as they were.
+        // The new file goes in under its own name first, and only then does one of the same minute
+        // go: a failure half way leaves the earlier backups as they were.
         val existing = files(tree)
         // Made as plain bytes: a folder told "vcard" may add its own .vcf on the end of a name
         // that does not already end in one.
@@ -109,7 +109,7 @@ class Backups(context: Context) {
         DocumentsContract.renameDocument(resolver, made, name)
 
         // The newest few stay; anything older of ours goes. Files of any other name are not ours.
-        files(tree).filter { it.second.matches(OURS) }.sortedByDescending { it.second }.drop(KEEP)
+        files(tree).filter { it.second.matches(OURS) }.sortedByDescending { stamp(it.second) }.drop(KEEP)
             .forEach { runCatching { DocumentsContract.deleteDocument(resolver, it.first) } }
         lookups.size
     }.also { result ->
@@ -142,7 +142,17 @@ class Backups(context: Context) {
     companion object {
         private const val JOB = 1
         const val KEEP = 10
-        private val OURS = Regex("contacts-\\d{4}-\\d{2}-\\d{2}\\.vcf")
+        private val OURS = Regex("contacts-\\d{4}-\\d{2}-\\d{2}(-\\d{4})?\\.vcf")
+
+        /**
+         * When a backup of ours was made, as text that sorts: a name from before the time was
+         * added ("contacts-2026-10-27.vcf") counts as the start of its day, so it sorts under the
+         * day's later ones rather than above them.
+         */
+        internal fun stamp(name: String): String {
+            val body = name.removePrefix("contacts-").removeSuffix(".vcf")
+            return if (body.length == 10) "$body-0000" else body
+        }
     }
 }
 
