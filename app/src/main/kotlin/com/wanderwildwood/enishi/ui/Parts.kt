@@ -42,7 +42,11 @@ import kotlinx.coroutines.delay
 
 /** A glyph in the top bar: 28dp in a 48dp box, as the phone's own contacts app sets its. */
 @Composable
-internal fun BarButton(icon: ImageVector, description: String, onClick: () -> Unit) {
+internal fun BarButton(icon: ImageVector, description: String, onClick: () -> Unit) = BarButton(icon, description, 28.dp, onClick)
+
+/** The same with the glyph's own size: the cog is 22dp. */
+@Composable
+internal fun BarButton(icon: ImageVector, description: String, size: androidx.compose.ui.unit.Dp, onClick: () -> Unit) {
     Box(
         modifier = Modifier.size(48.dp).clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
@@ -51,7 +55,7 @@ internal fun BarButton(icon: ImageVector, description: String, onClick: () -> Un
             imageVector = icon,
             contentDescription = description,
             tint = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.size(28.dp),
+            modifier = Modifier.size(size),
         )
     }
 }
@@ -92,7 +96,8 @@ internal fun rememberArmed(key: Any?, onConfirmed: () -> Unit): Pair<Boolean, ()
 }
 
 @Composable
-internal fun Heading(text: String, onClick: (() -> Unit)? = null) {
+internal fun Heading(text: String, onClick: (() -> Unit)? = null, ruled: Boolean = true) {
+    if (!ruled) androidx.compose.foundation.layout.Spacer(Modifier.height(12.dp))
     TextMMD(
         text = text,
         style = MaterialTheme.typography.labelSmall,
@@ -102,7 +107,7 @@ internal fun Heading(text: String, onClick: (() -> Unit)? = null) {
             .let { if (onClick != null) it.clickable(onClick = onClick) else it }
             .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 4.dp),
     )
-    HorizontalDividerMMD()
+    if (ruled) HorizontalDividerMMD()
 }
 
 /** A row: what it is, and a line under it only when that line says something. */
@@ -115,6 +120,8 @@ internal fun PlainRow(
     titleLines: Int = 1,
     onLongPress: (() -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
+    /** False in Settings, where rows are set apart by space and carry no rule. */
+    ruled: Boolean = true,
     onPress: (() -> Unit)?,
 ) {
     Row(
@@ -138,7 +145,7 @@ internal fun PlainRow(
         }
         trailing?.let { Box(Modifier.padding(start = 16.dp)) { it() } }
     }
-    DottedRule()
+    if (ruled) DottedRule()
 }
 
 @Composable

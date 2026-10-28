@@ -54,6 +54,7 @@ fun SettingsScreen(
         PagedColumn(Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.surface)) {
             item {
                 PlainRow(
+                    ruled = false,
                     title = stringResource(R.string.settings_sort),
                     note = stringResource(if (model.sortByLast) R.string.settings_last_name else R.string.settings_first_name),
                     onPress = { model.chooseSortByLast(!model.sortByLast) },
@@ -61,6 +62,7 @@ fun SettingsScreen(
             }
             item {
                 PlainRow(
+                    ruled = false,
                     title = stringResource(R.string.settings_show),
                     note = stringResource(if (model.lastNameFirst) R.string.settings_last_first else R.string.settings_first_first),
                     onPress = { model.chooseLastNameFirst(!model.lastNameFirst) },
@@ -69,6 +71,7 @@ fun SettingsScreen(
             if (model.accounts.size > 1) {
                 item {
                     PlainRow(
+                    ruled = false,
                         title = stringResource(R.string.settings_save_to),
                         note = saveTo?.let { Labels.account(context, it) },
                         onPress = {
@@ -79,19 +82,21 @@ fun SettingsScreen(
                     )
                 }
             }
-            item { Heading(stringResource(R.string.settings_files)) }
-            item { PlainRow(stringResource(R.string.settings_import), onPress = onImport) }
+            item { Heading(stringResource(R.string.settings_files), ruled = false) }
+            item { PlainRow(stringResource(R.string.settings_import), ruled = false, onPress = onImport) }
             item {
                 PlainRow(
+                    ruled = false,
                     title = stringResource(R.string.settings_export),
                     note = pluralStringResource(R.plurals.settings_export_note, model.people.size, model.people.size),
                     onPress = onExport,
                 )
             }
-            item { Heading(stringResource(R.string.settings_backups)) }
+            item { Heading(stringResource(R.string.settings_backups), ruled = false) }
             item {
                 val every = remember(backupsSeen) { backups.every }
                 PlainRow(
+                    ruled = false,
                     title = stringResource(R.string.backup_every),
                     note = stringResource(
                         when (every) {
@@ -107,6 +112,7 @@ fun SettingsScreen(
             item {
                 val name = remember(backupsSeen) { backups.folderName() }
                 PlainRow(
+                    ruled = false,
                     title = stringResource(R.string.backup_folder),
                     note = name ?: stringResource(R.string.backup_folder_none),
                     onPress = onBackupFolder,
@@ -121,7 +127,7 @@ fun SettingsScreen(
                         }
                         ?: context.getString(R.string.backup_never)
                 }
-                PlainRow(title = stringResource(R.string.backup_now), note = note, onPress = onBackupNow)
+                PlainRow(title = stringResource(R.string.backup_now), note = note, ruled = false, onPress = onBackupNow)
             }
         }
     }
