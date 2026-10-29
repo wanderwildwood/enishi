@@ -45,6 +45,7 @@ import com.mudita.mmd.components.text.TextMMD
 import com.wanderwildwood.enishi.data.Account
 import com.wanderwildwood.enishi.data.Card
 import com.wanderwildwood.enishi.data.Draft
+import com.wanderwildwood.enishi.ui.helperStyle
 import com.wanderwildwood.enishi.ui.AboutDialog
 import com.wanderwildwood.enishi.ui.BookModel
 import com.wanderwildwood.enishi.ui.CardsScreen
@@ -144,6 +145,8 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
         onDispose { owner.lifecycle.removeObserver(o) }
     }
     var about by remember { mutableStateOf(false) }
+    /** People just deleted, while Undo is on offer: gone for good as soon as the user moves on. */
+    var removed by remember { mutableStateOf<List<com.wanderwildwood.enishi.data.Removed>>(emptyList()) }
     var homeNotice by remember { mutableStateOf<String?>(null) }
     /** Everyone chosen on the list, while several are being chosen; empty the rest of the time. */
     var chosen by remember { mutableStateOf<Set<Long>>(emptySet()) }
@@ -165,7 +168,7 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
         }
     }
 
-    fun push(r: Route) { stack.add(r) }
+    fun push(r: Route) { removed = emptyList(); stack.add(r) }
     fun replace(r: Route) { stack.removeAt(stack.lastIndex); stack.add(r) }
     fun finish(result: Uri? = null) {
         if (result != null) {
@@ -241,6 +244,7 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
                 tab = it
                 model.prefs.homeTab = it
                 chosen = emptySet()
+                removed = emptyList()
             },
             listStates = listStates,
             onOpen = { push(Route.Detail(it.id)) },
@@ -251,7 +255,7 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
             onAbout = { about = true },
             onImport = { pickFile.launch(importTypes) },
             chosen = chosen,
-            onChoose = { p -> chosen = if (p.id in chosen) chosen - p.id else chosen + p.id },
+            onChoose = { p -> removed = emptyList(); chosen = if (p.id in chosen) chosen - p.id else chosen + p.id },
             onChosenDone = { chosen = emptySet() },
             onMerge = { push(Route.Merge(model.people.filter { it.id in chosen }.map { it.id })) },
             onShareChosen = {
@@ -264,13 +268,26 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
             onDeleteChosen = {
                 scope.launch {
                     val going = model.people.filter { it.id in chosen }
+                    val kept = going.mapNotNull { p -> model.io { it.snapshot(p.id, p.lookup, p.name, null) }.getOrNull() }
                     val failed = going.count { p -> model.io { it.delete(p.id, p.lookup) }.isFailure }
                     chosen = emptySet()
+                    removed = if (failed == 0) kept else emptyList()
                     if (failed > 0) homeNotice = context.resources.getQuantityString(R.plurals.chosen_deleted_some, failed, failed)
                 }
             },
             notice = homeNotice,
             onNoticeSeen = { homeNotice = null },
+            removed = removed,
+            onUndo = {
+                val back = removed
+                removed = emptyList()
+                scope.launch {
+                    val account = model.newContactAccount()
+                    val failed = back.count { r -> model.io { it.restore(r, account) }.getOrNull() == null }
+                    model.refresh()
+                    if (failed > 0) homeNotice = context.getString(R.string.undo_failed)
+                }
+            },
         )
         is Route.Merge -> MergeScreen(model, top.ids, ::back) { id ->
             chosen = emptySet()
@@ -282,8 +299,13 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
             onBack = ::back,
             onEdit = { card -> scope.launch { push(Route.Edit(card, Draft(), model.newContactAccount())) } },
             onCalls = { push(Route.Calls(top.id)) },
-            // Deleted: off their page, back to where they were found.
-            onGone = ::back,
+            // Deleted: off their page and back to the list, where Undo is on offer.
+            onGone = { gone ->
+                if (gone != null && stack.contains(Route.Home)) {
+                    while (stack.last() != Route.Home) stack.removeAt(stack.lastIndex)
+                    removed = listOf(gone)
+                } else back()
+            },
         )
         is Route.Calls -> CallsScreen(model, top.id, ::back)
         is Route.Group -> GroupScreen(model, top.id, ::back) { push(Route.Detail(it.id)) }
@@ -430,7 +452,7 @@ private fun AccessScreen(activity: Activity, onAnswered: () -> Unit) {
         Spacer(Modifier.height(40.dp))
         TextMMD(text = stringResource(R.string.access_title), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
         Spacer(Modifier.height(12.dp))
-        TextMMD(text = stringResource(R.string.access_body), style = MaterialTheme.typography.labelSmall)
+        TextMMD(text = stringResource(R.string.access_body), style = helperStyle())
         Spacer(Modifier.height(20.dp))
         OutlinedButtonMMD(
             onClick = {

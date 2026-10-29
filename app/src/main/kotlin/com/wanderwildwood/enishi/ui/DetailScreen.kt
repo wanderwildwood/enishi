@@ -100,7 +100,7 @@ fun DetailScreen(
     onBack: () -> Unit,
     onEdit: (Card) -> Unit,
     onCalls: () -> Unit,
-    onGone: () -> Unit,
+    onGone: (com.wanderwildwood.enishi.data.Removed?) -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -265,7 +265,8 @@ fun DetailScreen(
                 val (armed, press) = rememberArmed(c.id) {
                     scope.launch {
                         // Gone only if it went: a store that refused says so here.
-                        if (model.io { it.delete(c.id, c.lookup) }.isSuccess) onGone()
+                        val kept = model.io { it.snapshot(c.id, c.lookup, c.name, c.parts.firstOrNull()?.account) }.getOrNull()
+                        if (model.io { it.delete(c.id, c.lookup) }.isSuccess) onGone(kept)
                         else notice = context.getString(R.string.delete_failed)
                     }
                 }
@@ -343,7 +344,7 @@ private fun ValueRow(
     ) {
         Column(Modifier.weight(1f)) {
             TextMMD(text = value, style = MaterialTheme.typography.bodyLarge.copy(fontSize = rowText), maxLines = lines, overflow = TextOverflow.Ellipsis)
-            TextMMD(text = kind, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            TextMMD(text = kind, style = helperStyle(), maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         trailing?.invoke()
     }
@@ -394,7 +395,7 @@ private fun CallLine(call: Call, numberKind: String?) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            TextMMD(text = note, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            TextMMD(text = note, style = helperStyle(), maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
     DottedRule(start = 59.dp, end = 0.dp)

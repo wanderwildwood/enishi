@@ -76,6 +76,8 @@ fun HomeScreen(
     onDeleteChosen: () -> Unit,
     notice: String?,
     onNoticeSeen: () -> Unit,
+    removed: List<com.wanderwildwood.enishi.data.Removed> = emptyList(),
+    onUndo: () -> Unit = {},
 ) {
     val choosing = chosen.isNotEmpty()
     // A tab chosen while there were groups, and there are none now, falls back to All.
@@ -104,6 +106,7 @@ fun HomeScreen(
         bottomBar = {
             Column {
                 notice?.let { NoticeStrip(it, onNoticeSeen) }
+                if (removed.isNotEmpty() && !choosing) UndoStrip(removed, onUndo)
                 if (choosing) ChosenBar(chosen.size, onMerge, onShareChosen, onDeleteChosen)
             }
         },
@@ -137,7 +140,7 @@ fun HomeScreen(
                 if (asked > 0) {
                     TextMMD(
                         text = stringResource(R.string.sync_asked),
-                        style = MaterialTheme.typography.labelSmall,
+                        style = helperStyle(),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),

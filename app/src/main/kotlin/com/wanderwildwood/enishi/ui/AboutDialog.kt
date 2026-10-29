@@ -6,6 +6,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -46,31 +49,35 @@ fun AboutDialog(onDismiss: () -> Unit) {
             fontWeight = FontWeight.Medium,
         )
 
+        // The words scroll and Close stays put, so a long About never pushes it off the panel.
+        Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
         Spacer(Modifier.height(14.dp))
-        TextMMD(text = stringResource(R.string.about_licence), style = MaterialTheme.typography.labelSmall)
+        TextMMD(text = stringResource(R.string.about_licence), style = helperStyle())
         TextMMD(
             text = stringResource(R.string.about_bundled),
-            style = MaterialTheme.typography.labelSmall,
+            style = helperStyle(),
         )
 
         Spacer(Modifier.height(14.dp))
         TextMMD(
             text = stringResource(R.string.about_privacy_head),
-            style = MaterialTheme.typography.labelSmall,
+            style = helperStyle(),
             fontWeight = FontWeight.Bold,
         )
-        TextMMD(text = stringResource(R.string.about_privacy), style = MaterialTheme.typography.labelSmall)
+        TextMMD(text = stringResource(R.string.about_privacy), style = helperStyle())
 
         Spacer(Modifier.height(14.dp))
         TextMMD(
             text = stringResource(R.string.about_terms_head),
-            style = MaterialTheme.typography.labelSmall,
+            style = helperStyle(),
             fontWeight = FontWeight.Bold,
         )
-        TextMMD(text = stringResource(R.string.about_terms), style = MaterialTheme.typography.labelSmall)
+        TextMMD(text = stringResource(R.string.about_terms), style = helperStyle())
+        LicencesLink()
 
         Spacer(Modifier.height(14.dp))
         Llama()
+        }
 
         Spacer(Modifier.height(18.dp))
         OutlinedButtonMMD(
@@ -104,7 +111,7 @@ private fun Llama() {
     ) {
         TextMMD(
             text = "wanderthe.dev",
-            style = MaterialTheme.typography.labelSmall,
+            style = helperStyle(),
             // The site's address opens the site, the way the llama beside it opens its page.
             modifier = Modifier
                 .clickable {
@@ -145,7 +152,7 @@ private fun Llama() {
                 } else {
                     stringResource(R.string.about_feed_the_llamas)
                 },
-                style = MaterialTheme.typography.labelSmall,
+                style = helperStyle(),
             )
         }
     }

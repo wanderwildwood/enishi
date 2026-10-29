@@ -413,6 +413,42 @@ class Book(context: Context) {
         resolver.delete(Contacts.getLookupUri(contactId, lookup) ?: ContentUris.withAppendedId(Contacts.CONTENT_URI, contactId), null, null)
     }
 
+    /**
+     * Everything needed to put this person back after [delete]: read before it, since afterwards
+     * there is nothing to read. Null when the store would not give the card.
+     */
+    fun snapshot(contactId: Long, lookup: String, name: String, account: Account?): Removed? = runCatching {
+        val bytes = java.io.ByteArrayOutputStream().also { vcardOf(lookup, it) }.toByteArray()
+        if (bytes.isEmpty()) return@runCatching null
+        val photo = Contacts.openContactPhotoInputStream(resolver, ContentUris.withAppendedId(Contacts.CONTENT_URI, contactId), true)
+            ?.use { it.readBytes() }
+        Removed(name, bytes, photo, account)
+    }.getOrNull()
+
+    /** Writes a deleted person again, as a new contact in the account they were kept in. */
+    fun restore(removed: Removed, fallback: Account): Long? {
+        val draft = removed.draft() ?: return null
+        val id = create(draft, removed.account ?: fallback) ?: return null
+        val photo = removed.photo
+        if (photo != null) runCatching {
+            val raw = resolver.query(
+                RawContacts.CONTENT_URI, arrayOf(RawContacts._ID),
+                "${RawContacts.CONTACT_ID}=?", arrayOf(id.toString()), null,
+            )?.use { if (it.moveToFirst()) it.getLong(0) else null }
+            if (raw != null) {
+                resolver.insert(
+                    Data.CONTENT_URI,
+                    android.content.ContentValues().apply {
+                        put(Data.RAW_CONTACT_ID, raw)
+                        put(Data.MIMETYPE, ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE)
+                        put(ContactsContract.CommonDataKinds.Photo.PHOTO, photo)
+                    },
+                )
+            }
+        }
+        return id
+    }
+
     /** Every row of these raw contacts, every column, as the store keeps them. */
     private fun storeRows(rawIds: Collection<Long>): List<StoreRow> {
         if (rawIds.isEmpty()) return emptyList()

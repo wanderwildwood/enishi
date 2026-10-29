@@ -86,7 +86,7 @@ fun MergeScreen(model: BookModel, ids: List<Long>, onBack: () -> Unit, onMerged:
             item {
                 TextMMD(
                     text = stringResource(R.string.merge_body),
-                    style = MaterialTheme.typography.labelSmall,
+                    style = helperStyle(),
                     modifier = Modifier.padding(16.dp),
                 )
                 HorizontalDividerMMD()
@@ -111,7 +111,7 @@ fun MergeScreen(model: BookModel, ids: List<Long>, onBack: () -> Unit, onMerged:
                         )
                         TextMMD(
                             text = if (c.readOnly) stringResource(R.string.merge_messenger) else describe(c),
-                            style = MaterialTheme.typography.labelSmall,
+                            style = helperStyle(),
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )

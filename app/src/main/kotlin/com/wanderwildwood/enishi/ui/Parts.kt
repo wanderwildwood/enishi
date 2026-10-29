@@ -32,8 +32,11 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.wanderwildwood.enishi.R
 import com.mudita.mmd.components.buttons.OutlinedButtonMMD
 import com.mudita.mmd.components.divider.HorizontalDividerMMD
 import com.mudita.mmd.components.text.TextMMD
@@ -100,7 +103,7 @@ internal fun Heading(text: String, onClick: (() -> Unit)? = null, ruled: Boolean
     if (!ruled) androidx.compose.foundation.layout.Spacer(Modifier.height(12.dp))
     TextMMD(
         text = text,
-        style = MaterialTheme.typography.labelSmall,
+        style = helperStyle(),
         fontWeight = FontWeight.Bold,
         modifier = Modifier
             .fillMaxWidth()
@@ -140,7 +143,7 @@ internal fun PlainRow(
                 overflow = TextOverflow.Ellipsis,
             )
             if (!note.isNullOrEmpty()) {
-                TextMMD(text = note, style = MaterialTheme.typography.labelSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                TextMMD(text = note, style = helperStyle(), maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
         }
         trailing?.let { Box(Modifier.padding(start = 16.dp)) { it() } }
@@ -160,6 +163,11 @@ internal fun FootButton(label: String, modifier: Modifier, enabled: Boolean = tr
     }
 }
 
+/** The small print: notes under rows, hints, the About lines. 14sp, the floor. */
+@Composable
+internal fun helperStyle(): androidx.compose.ui.text.TextStyle =
+    MaterialTheme.typography.labelSmall.copy(fontSize = 14.sp, lineHeight = 20.sp)
+
 /** A short thing to say, along the foot, gone after a few seconds. */
 @Composable
 internal fun NoticeStrip(text: String, onSeen: () -> Unit) {
@@ -170,9 +178,25 @@ internal fun NoticeStrip(text: String, onSeen: () -> Unit) {
     HorizontalDividerMMD()
     TextMMD(
         text = text,
-        style = MaterialTheme.typography.labelSmall,
+        style = helperStyle(),
         modifier = Modifier.fillMaxWidth().clickable(onClick = onSeen).padding(horizontal = 16.dp, vertical = 12.dp),
     )
+}
+
+/** "was deleted" and an Undo button; final as soon as the user moves on. */
+@Composable
+internal fun UndoStrip(removed: List<com.wanderwildwood.enishi.data.Removed>, onUndo: () -> Unit) {
+    HorizontalDividerMMD()
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+        TextMMD(
+            text = if (removed.size == 1) stringResource(R.string.deleted_one, removed[0].name)
+            else pluralStringResource(R.plurals.deleted_many, removed.size, removed.size),
+            style = helperStyle(),
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        FootButton(stringResource(R.string.deleted_undo), Modifier.fillMaxWidth().padding(top = 4.dp), onClick = onUndo)
+    }
 }
 
 /** A label over a text box, the way MMD draws a field: white, one rule beneath. */
@@ -188,7 +212,7 @@ internal fun LabelledField(
     hint: String? = null,
 ) {
     Column(modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
-        if (label.isNotEmpty()) TextMMD(text = label, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+        if (label.isNotEmpty()) TextMMD(text = label, style = helperStyle(), fontWeight = FontWeight.Bold)
         BareField(value, onChange, Modifier.fillMaxWidth(), keyboard, words, singleLine, hint)
     }
 }
@@ -213,7 +237,7 @@ internal fun BareField(
         modifier = modifier.focusRequester(focus),
         singleLine = singleLine,
         minLines = if (singleLine) 1 else 2,
-        placeholder = hint?.let { { TextMMD(text = it, style = MaterialTheme.typography.labelSmall) } },
+        placeholder = hint?.let { { TextMMD(text = it, style = helperStyle()) } },
         keyboardOptions = KeyboardOptions(
             keyboardType = keyboard,
             capitalization = if (words && keyboard == KeyboardType.Text) KeyboardCapitalization.Words else KeyboardCapitalization.None,
@@ -294,7 +318,7 @@ internal fun NameRow(
         Column(Modifier.weight(1f)) {
             TextMMD(text = name, style = MaterialTheme.typography.bodyLarge.copy(fontSize = rowText), maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (!note.isNullOrEmpty()) {
-                TextMMD(text = note, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                TextMMD(text = note, style = helperStyle(), maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
     }
