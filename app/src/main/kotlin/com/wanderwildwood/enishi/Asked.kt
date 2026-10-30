@@ -79,7 +79,7 @@ sealed interface Asked {
             val data = intent.data
             return when (intent.action) {
                 Intent.ACTION_VIEW -> when {
-                    type in VCARD_TYPES || data?.lastPathSegment?.endsWith(".vcf", true) == true ->
+                    type in VCARD_TYPES || (data != null && namesAVcfFile(data)) ->
                         data?.let(::Cards) ?: Browse
                     data != null && isEncoded(data) -> stranger(data)
                     data != null -> Show(data)
@@ -107,6 +107,16 @@ sealed interface Asked {
                 else -> Browse
             }
         }
+
+        /**
+         * A link that ends in ".vcf" is a card file, unless it points into the contacts database:
+         * a contact synced from Nextcloud has a lookup key ending in ".vcf" (its source id), and
+         * that link is a person to show, not a file to read.
+         */
+        private fun namesAVcfFile(uri: Uri): Boolean = namesAVcfFile(uri.authority, uri.lastPathSegment)
+
+        fun namesAVcfFile(authority: String?, lastSegment: String?): Boolean =
+            authority != ContactsContract.AUTHORITY && lastSegment?.endsWith(".vcf", true) == true
 
         /**
          * A Phone app's link for someone who is not in the book, such as a caller from an unsaved
