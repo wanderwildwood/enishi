@@ -227,8 +227,8 @@ fun DetailScreen(
             d.websites.forEach { w ->
                 item {
                     ValueRow(w.value, stringResource(R.string.kind_website)) {
-                        val url = if (w.value.contains("://")) w.value else "https://${w.value}"
-                        open(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                        val url = webAddress(w.value)
+                        if (url != null) openLink(context, url, context.getString(R.string.about_no_browser_address, w.value))
                     }
                 }
             }

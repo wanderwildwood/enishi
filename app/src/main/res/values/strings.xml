@@ -287,6 +287,8 @@
     <string name="about_licence">GNU General Public License v3</string>
     <string name="about_bundled">Icons from Material Symbols (Apache-2.0).</string>
     <string name="about_feed_the_llamas">feed the llamas</string>
+    <string name="about_no_browser_address">No browser is installed. The address is %1$s.</string>
+    <string name="access_about">About</string>
     <string name="about_no_browser">Nothing here opens web pages — %1$s</string>
     <string name="about_privacy_head">Privacy</string>
     <string name="about_privacy">Your contacts stay in this phone’s own address book; the app keeps no copy of its own. It has no internet access, so nothing is sent anywhere, and nothing is collected about you. It asks for contacts and accounts, phone calls (to call a number you press), the call log (to list calls with one person) and the calendar (only if you switch a birthday into it). There are no ads, no analytics and no tracking. Backups and exports go only where you choose to save them.</string>

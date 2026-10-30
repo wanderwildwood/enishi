@@ -444,6 +444,7 @@ private fun hasAccess(activity: Activity): Boolean =
 @Composable
 private fun AccessScreen(activity: Activity, onAnswered: () -> Unit) {
     var refused by remember { mutableStateOf(false) }
+    var aboutOpen by remember { mutableStateOf(false) }
     val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         refused = !hasAccess(activity) && !activity.shouldShowRequestPermissionRationale(Manifest.permission.READ_CONTACTS)
         onAnswered()
@@ -468,5 +469,11 @@ private fun AccessScreen(activity: Activity, onAnswered: () -> Unit) {
         ) {
             TextMMD(text = stringResource(if (refused) R.string.access_settings else R.string.access_allow), style = MaterialTheme.typography.bodySmall)
         }
+        Spacer(Modifier.height(12.dp))
+        // Privacy, Terms and Licences can be read before anything is allowed.
+        OutlinedButtonMMD(onClick = { aboutOpen = true }, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+            TextMMD(text = stringResource(R.string.access_about), style = MaterialTheme.typography.bodySmall)
+        }
     }
+    if (aboutOpen) AboutDialog(onDismiss = { aboutOpen = false })
 }
