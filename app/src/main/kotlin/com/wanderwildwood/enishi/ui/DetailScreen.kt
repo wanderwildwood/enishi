@@ -124,6 +124,18 @@ fun DetailScreen(
     // Looked at again on every return, so an app added or removed meanwhile shows or goes.
     var elsewhere by remember { mutableStateOf(Elsewhere.installed(context)) }
     var handing by remember { mutableStateOf<Elsewhere?>(null) }
+    // Started for a result, so the app handed to can name us as the one asking; what comes back
+    // (OK or cancelled, no data) changes nothing here.
+    val handOver = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { }
+    fun hand(intent: Intent) {
+        try {
+            handOver.launch(intent)
+        } catch (_: ActivityNotFoundException) {
+            notice = context.getString(R.string.nothing_opens)
+        } catch (_: SecurityException) {
+            notice = context.getString(R.string.nothing_opens)
+        }
+    }
 
     // The calls with them, read once the call log may be: one more than are shown, which is how
     // the page knows whether All calls has anything to add.
@@ -255,7 +267,7 @@ fun DetailScreen(
                 elsewhere.forEach { app ->
                     item(key = "elsewhere-${app.name}") {
                         PlainRow(stringResource(app.label), onPress = {
-                            if (numbers.size == 1) open(app.intent(c.id, c.lookup, c.name, numbers[0].value))
+                            if (numbers.size == 1) hand(app.intent(c.id, c.lookup, c.name, numbers[0].value))
                             else handing = app
                         })
                     }
@@ -311,7 +323,7 @@ fun DetailScreen(
                     note = Labels.phone(context, p.type, p.label),
                     onPress = {
                         handing = null
-                        open(app.intent(c.id, c.lookup, c.name, p.value))
+                        hand(app.intent(c.id, c.lookup, c.name, p.value))
                     },
                 )
             }
