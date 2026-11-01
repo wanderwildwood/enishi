@@ -252,7 +252,6 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
             onNew = { newContact() },
             onSearch = { push(Route.Search) },
             onSettings = { push(Route.Settings) },
-            onAbout = { about = true },
             onImport = { pickFile.launch(importTypes) },
             chosen = chosen,
             onChoose = { p -> removed = emptyList(); chosen = if (p.id in chosen) chosen - p.id else chosen + p.id },
@@ -348,6 +347,7 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
                     pickFolder.launch(null)
                 } else backupNow()
             },
+            onAbout = { about = true },
         )
         is Route.Cards -> CardsScreen(
             model, top.uri, ::back,

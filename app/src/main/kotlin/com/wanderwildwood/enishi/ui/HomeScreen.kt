@@ -66,7 +66,6 @@ fun HomeScreen(
     onNew: () -> Unit,
     onSearch: () -> Unit,
     onSettings: () -> Unit,
-    onAbout: () -> Unit,
     onImport: () -> Unit,
     chosen: Set<Long>,
     onChoose: (Person) -> Unit,
@@ -98,7 +97,6 @@ fun HomeScreen(
                         BarButton(Icons.Search, stringResource(R.string.cd_search), onSearch)
                         BarButton(Icons.Add, stringResource(R.string.cd_new_contact), onNew)
                         BarButton(Icons.Settings, stringResource(R.string.cd_settings), 22.dp, onSettings)
-                        BarButton(Icons.Info, stringResource(R.string.cd_about), 22.dp, onAbout)
                     },
                 )
             }

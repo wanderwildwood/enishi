@@ -36,6 +36,7 @@ fun SettingsScreen(
     onBackupEvery: (Int) -> Unit,
     onBackupFolder: () -> Unit,
     onBackupNow: () -> Unit,
+    onAbout: () -> Unit,
 ) {
     val context = LocalContext.current
     var saveTo by remember { mutableStateOf<Account?>(null) }
@@ -47,6 +48,7 @@ fun SettingsScreen(
             Bar(
                 title = { BarTitle(stringResource(R.string.settings_title)) },
                 navigationIcon = { BarButton(Icons.Back, stringResource(R.string.cd_back), onBack) },
+                actions = { BarButton(Icons.Info, stringResource(R.string.cd_about), onAbout) },
             )
         },
         bottomBar = { notice?.let { NoticeStrip(it, onNoticeSeen) } },
