@@ -67,6 +67,7 @@ import com.wanderwildwood.enishi.data.Day
 import com.wanderwildwood.enishi.data.Draft
 import com.wanderwildwood.enishi.data.Field
 import com.wanderwildwood.enishi.data.Typed
+import com.wanderwildwood.enishi.data.validPhone
 import com.wanderwildwood.enishi.with
 import kotlinx.coroutines.launch
 
@@ -185,6 +186,10 @@ fun EditScreen(
         }
         if (draft.emails.any { it.value.isNotBlank() && !android.util.Patterns.EMAIL_ADDRESS.matcher(it.value.trim()).matches() }) {
             problem = context.getString(R.string.edit_bad_email)
+            return
+        }
+        if (!draft.phones.all { validPhone(it.value) }) {
+            problem = context.getString(R.string.edit_bad_phone)
             return
         }
         val after = draft.copy(events = days + unreadable)

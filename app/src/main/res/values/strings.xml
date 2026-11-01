@@ -140,6 +140,7 @@
     <string name="date_month">Month</string>
     <string name="date_year">Year</string>
     <string name="edit_bad_email">One of the email addresses is not an address. Fix it or empty the line.</string>
+    <string name="edit_bad_phone">One of the phone numbers is not a number. Fix it or empty the line.</string>
     <string name="edit_bad_date">A date is not one the calendar has. The year can be left out.</string>
     <string name="edit_empty">There is nothing to save yet.</string>
     <string name="edit_failed">The phone’s contacts would not take this. Nothing was changed.</string>
