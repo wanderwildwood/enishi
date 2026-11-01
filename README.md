@@ -1,4 +1,4 @@
-# 縁 enishi — Contacts
+# 縁 enishi — Connections
 
 An address book for an E Ink phone. Built for the
 [Mudita Kompakt](https://mudita.com/products/kompakt/), and it will install on any Android 12
@@ -8,7 +8,7 @@ device.
 another, not a list of names.
 
 Not a fork. Written from scratch in Kotlin and Jetpack Compose, using Mudita's own
-[MMD](https://github.com/mudita/MMD) design system, and drawn in the same hand as Phone and
+[MMD](https://github.com/mudita/MMD) design system, and drawn in the same hand as Handset and
 Messaging: a plain list under All / Favourites / Groups tabs, a cog for settings, and a person's
 page of plain rows, a press on a number to call it. What it does is modelled on
 [Fossify Contacts](https://github.com/FossifyOrg/Contacts), which sets the bar for a contacts
@@ -22,7 +22,7 @@ app that is free software.
 ## Why it exists
 
 A contacts app is the one every other app leans on. Messaging asks it to show a person, add a
-number or pick someone for a card; Email asks it to add a sender or find a recipient. This is
+number or pick someone for a card; Mailbox asks it to add a sender or find a recipient. This is
 the address book those apps can count on, drawn for sixteen greys and a list that moves a page
 at a time.
 
@@ -33,7 +33,7 @@ at a time.
   The tab last chosen is the one the app opens on.
 - **A swipe down at the top of a tab asks DAVx5 to sync** the contacts now.
 - **Favourites as the phone keeps them**: a star on a person's page puts them under Favourites
-  here and in the Phone app's Favourites.
+  here and in the Handset app's Favourites.
 - **Choose several at once** with a long press, then merge, share or delete them together.
 - **Merge duplicates by hand**: choose whose name stays, and every number, address, note and
   photo the others have is added to that person, nothing written twice. A copy a messenger keeps
@@ -41,7 +41,7 @@ at a time.
 - **A person's page of plain rows**: a press on a number, or the handset at its end, calls it
   through the phone app, and the speech bubble beside the handset writes to it; a press on an email address writes to it, on an
   address opens it in a map app, on a website opens it. A long press on any of them copies it.
-- **Recent calls** on a person's page, drawn as Phone's Recents are, at the foot of the page: the last five with them, an
+- **Recent calls** on a person's page, drawn as Handset's Recents are, at the foot of the page: the last five with them, an
   arrow for the way each went, when and how long, and All calls for the rest. The call log is
   asked for the first time, from a row that says so, and read on the phone only.
 - **Field Kit**, when it is on the phone: a person's page can add them to its emergency card.
@@ -84,7 +84,7 @@ quoted-printable in other character sets; dates without a year; search; who in a
 already here; what a merge adds and what it leaves.
 
 Every screen has been driven on an Android 12 emulator the size of a Kompakt, and so has every
-request Messaging and Email make of it: Messaging's real "Attach a contact" came back as the
+request Messaging and Mailbox make of it: Messaging's real "Attach a contact" came back as the
 right contact card, and its "Add to contacts" saved the number it handed over.
 
 ## Building

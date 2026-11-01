@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Contacts</string>
+    <string name="app_name">Connections</string>
 
     <!-- ============================================================ -->
     <!-- Asking for access, on first launch -->
 
-    <string name="access_title">Contacts needs to see the phone’s contacts.</string>
+    <string name="access_title">Connections needs to see the phone’s contacts.</string>
     <string name="access_body">They stay where they are, in Android’s own address book, which Messaging, the dialer and every other app already read. This app keeps no copy of its own and cannot reach the internet.</string>
     <string name="access_allow">Allow</string>
     <string name="access_settings">Open the setting</string>
@@ -283,7 +283,7 @@
     <!-- ============================================================ -->
     <!-- About -->
 
-    <string name="about_title">Contacts %1$s</string>
+    <string name="about_title">Connections %1$s</string>
     <string name="about_licence">GNU General Public License v3</string>
     <string name="about_bundled">Icons from Material Symbols (Apache-2.0).</string>
     <string name="about_feed_the_llamas">feed the llamas</string>
@@ -304,20 +304,14 @@
     <string name="undo_failed">Could not put them back.</string>
     <!-- Licences page, reached from About -->
     <string name="licences_title">Licences</string>
-    <string name="licences_source_heading">Source code</string>
+    <string name="licences_source_head">Source code</string>
     <string name="licences_source">Source: %1$s</string>
-    <string name="licences_licence_heading">Licence</string>
-    <string name="licences_licence">Contacts is free software under the GNU General Public License, version 3 only. Copyright wander wildwood. The full text is below.</string>
-    <string name="licences_built_heading">Built with</string>
-    <string name="licences_gpl">GNU General Public License, version 3</string>
-    <string name="licences_apache">Apache License, version 2.0</string>
-    <string name="licences_ofl">SIL Open Font License, version 1.1</string>
-    <string name="licences_no_browser">No browser is installed.</string>
-    <string name="licences_close">Close</string>
-    <!-- The folio at the foot of a paged list, "2 / 6"; a tap on it asks for a page -->
-    <string name="folio_of">%1$d / %2$d</string>
-    <string name="folio_go_title">Go to page</string>
-    <string name="folio_page">Page %1$d of %2$d</string>
-    <string name="folio_go">Go</string>
-    <string name="folio_cancel">Cancel</string>
+    <string name="licences_licence_head">Licence</string>
+    <string name="licences_licence">Connections is free software under the GNU General Public License, version 3 only. Copyright wander wildwood.</string>
+    <string name="licences_built_head">Built with</string>
+    <string name="licences_back">Back</string>
+    <string name="licences_full_head">Full texts</string>
+    <string name="licences_full_gpl">GNU General Public License v3 (full text)</string>
+    <string name="licences_full_apache">Apache License 2.0 (full text)</string>
+    <string name="licences_full_ofl">SIL Open Font Licence 1.1 (full text)</string>
 </resources>

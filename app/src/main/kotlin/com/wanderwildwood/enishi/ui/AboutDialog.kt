@@ -1,5 +1,6 @@
 package com.wanderwildwood.enishi.ui
 
+import androidx.compose.foundation.layout.wrapContentHeight
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.Image
@@ -118,6 +119,7 @@ private fun Llama() {
                     openLink(context, "https://wanderthe.dev", context.getString(R.string.about_no_browser_address, "wanderthe.dev"))
                 }
                 .heightIn(min = 48.dp)
+                .wrapContentHeight(Alignment.CenterVertically)
                 .padding(vertical = 4.dp),
         )
         Spacer(Modifier.width(6.dp))
