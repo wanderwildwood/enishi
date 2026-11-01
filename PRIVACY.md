@@ -1,6 +1,6 @@
 # Privacy
 
-Contacts sends nothing anywhere. It cannot: it has no permission to use the internet.
+Connections sends nothing anywhere. It cannot: it has no permission to use the internet.
 
 That is the whole policy. The rest of this page is the evidence for it, because a privacy
 policy that cannot be checked is just a promise.

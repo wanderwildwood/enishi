@@ -46,7 +46,7 @@ at a time.
   asked for the first time, from a row that says so, and read on the phone only.
 - **Field Kit**, when it is on the phone: a person's page can add them to its emergency card.
   Field Kit shows the name and number and asks before it keeps them. (Medicine chooses a
-  medicine's pharmacy and doctor from Contacts on its own page.)
+  medicine's pharmacy and doctor from Connections on its own page.)
 - **Search** by any part of a name, a run of digits from any number, or part of an email
   address or a company. Accents and capitals do not count.
 - **Edits only what changed.** A photo, a ringtone or a messenger handle written by another app
