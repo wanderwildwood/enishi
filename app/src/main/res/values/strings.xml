@@ -287,7 +287,7 @@
     <string name="about_title">Connections %1$s</string>
     <string name="about_licence">GNU General Public License v3</string>
     <string name="about_bundled">Icons from Material Symbols (Apache-2.0).</string>
-    <string name="about_feed_the_llamas">feed the llamas</string>
+    <string name="about_feed_the_llamas">Feed the llamas</string>
     <string name="about_no_browser_address">No browser is installed. The address is %1$s.</string>
     <string name="access_about">About</string>
     <string name="about_no_browser">Nothing here opens web pages — %1$s</string>
