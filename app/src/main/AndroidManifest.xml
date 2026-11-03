@@ -20,6 +20,8 @@
     <!-- Only so a scheduled backup is still scheduled after the phone restarts. Nothing runs
          at start-up: Android's job scheduler keeps the schedule. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Calling asks for a phone line, but everything else works on a device without one. -->
+    <uses-feature android:name="android.hardware.telephony" android:required="false" />
 
     <!-- INTERNET: only once the person signs in to their own contacts server (Settings,
          Contacts server), to sync with that server, in the background as well. Nothing goes
