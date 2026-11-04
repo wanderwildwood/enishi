@@ -10,6 +10,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalCursorBlinkEnabled
 import com.mudita.mmd.ThemeMMD
 import com.wanderwildwood.enishi.ui.monochrome
+import com.wanderwildwood.enishi.ui.ArmedScope
 
 /** The address book, from the launcher. One of it at a time. */
 class MainActivity : ComponentActivity() {
@@ -18,7 +19,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             CompositionLocalProvider(LocalCursorBlinkEnabled provides false) {
                 ThemeMMD(colorScheme = monochrome) {
-                    App(this, Asked.Browse, fromElsewhere = false)
+                    ArmedScope { App(this, Asked.Browse, fromElsewhere = false) }
                 }
             }
         }
@@ -42,7 +43,7 @@ class AskActivity : ComponentActivity() {
         setContent {
             CompositionLocalProvider(LocalCursorBlinkEnabled provides false) {
                 ThemeMMD(colorScheme = monochrome) {
-                    App(this, asked, fromElsewhere = true)
+                    ArmedScope { App(this, asked, fromElsewhere = true) }
                 }
             }
         }

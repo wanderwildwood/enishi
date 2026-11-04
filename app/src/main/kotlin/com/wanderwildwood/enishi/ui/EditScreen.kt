@@ -168,7 +168,7 @@ fun EditScreen(
     // Measured against what is stored, not against the form as it opened: "add this address to
     // someone" opens with the address already in, and that is something to save.
     val dirty = if (card == null) !draft.isEmpty else draft.copy(events = emptyList()) != card.draft.copy(events = emptyList()) || events != startBoxes || calendar != startCalendar
-    val (leaving, pressLeave) = rememberArmed(dirty) { onCancel() }
+    val (leaving, pressLeave) = rememberArmed(dirty, disarmOnBack = false) { onCancel() }
     val close = { if (dirty) pressLeave() else onCancel() }
     BackHandler(onBack = close)
 

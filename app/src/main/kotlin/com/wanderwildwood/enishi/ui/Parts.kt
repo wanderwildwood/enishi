@@ -18,7 +18,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -76,18 +75,13 @@ internal fun BarWord(text: String, ready: Boolean = true, onClick: () -> Unit) {
 
 /**
  * A row that asks before it acts: the first press arms it and changes what it says, a second
- * press does it, and it disarms itself after six seconds so nothing is left live for whoever
- * picks the phone up next. Returns whether it is armed, and the press to hand the row.
+ * press does it. It stays armed, with no timer, until the next other touch, Back or leaving the
+ * screen (shared Armed.kt). [disarmOnBack] false is for a question that Back itself arms, such as
+ * "Back again to discard". Returns whether it is armed, and the press to hand the row.
  */
 @Composable
-internal fun rememberArmed(key: Any?, onConfirmed: () -> Unit): Pair<Boolean, () -> Unit> {
-    var armed by remember(key) { mutableStateOf(false) }
-    LaunchedEffect(armed) {
-        if (armed) {
-            delay(6000)
-            armed = false
-        }
-    }
+internal fun rememberArmed(key: Any?, disarmOnBack: Boolean = true, onConfirmed: () -> Unit): Pair<Boolean, () -> Unit> {
+    var armed by rememberArmedFlag(key, disarmOnBack = disarmOnBack)
     return armed to {
         if (armed) {
             armed = false

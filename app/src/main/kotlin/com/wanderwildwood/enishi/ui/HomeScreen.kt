@@ -242,7 +242,7 @@ internal fun PersonRow(
  */
 @Composable
 private fun ChosenBar(count: Int, onMerge: () -> Unit, onShare: () -> Unit, onDelete: () -> Unit) {
-    val (armed, press) = rememberArmed(count, onDelete)
+    val (armed, press) = rememberArmed(count, onConfirmed = onDelete)
     Column {
         HorizontalDividerMMD()
         if (armed) {
