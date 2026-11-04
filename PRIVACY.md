@@ -69,7 +69,7 @@ is for, and the only network code is in `davsync/` and the two modules it uses.
 <!-- shared-about privacy section -->
 ## Who we are
 
-Connections is made by wander wildwood, an independent developer: one person, not a company. wander wildwood is the data controller for anything the app itself handles, and that is very little. Connections keeps what you put in it on your phone and sends nothing to the developer, so the developer holds no data about you.
+Connections is made by wander wildwood, an independent developer: one person, not a company. wander wildwood is the data controller for anything the app itself handles, and that is very little. What you put in Connections stays on your phone. The only thing that goes out is the sync described above, if you sign in to your own contacts server: your sign-in and the people in the address books you chose, sent to and fetched from that server and no other. Nothing is sent to the developer, so the developer holds no data about you.
 
 ## How to contact us
 
