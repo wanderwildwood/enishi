@@ -42,6 +42,8 @@ import com.mudita.mmd.components.buttons.OutlinedButtonMMD
 import com.mudita.mmd.components.text.TextMMD
 import com.mudita.mmd.components.text_field.TextFieldMMD
 import com.wanderwildwood.davsync.DavSync
+import com.wanderwildwood.davsync.R as DavR
+import com.wanderwildwood.davsync.accounts.Elsewhere
 import com.wanderwildwood.davsync.accounts.StatusText
 import com.wanderwildwood.davsync.signin.Provider
 import com.wanderwildwood.davsync.model.Collection
@@ -51,6 +53,7 @@ import com.wanderwildwood.davsync.signin.SignIn
 import com.wanderwildwood.davsync.signin.SignInResult
 import com.wanderwildwood.davsync.sync.SyncNow
 import com.wanderwildwood.enishi.R
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
@@ -70,6 +73,13 @@ fun ServerScreen(onBack: () -> Unit) {
     val accounts = remember(version) { davSync.accounts.accounts() }
     var adding by remember { mutableStateOf(false) }
     var syncing by remember { mutableStateOf(false) }
+    var changing by remember { mutableStateOf<String?>(null) }
+    // Held here, not in the row: a row scrolled off the page is thrown away, and with it a
+    // check still asking the server.
+    val passwordForm = remember { PasswordForm() }
+    val screenScope = rememberCoroutineScope()
+    // DAVx5's address books on this phone, by name (their addresses are not readable).
+    val davx5Books = remember(version) { Elsewhere.addressBooks(context) }
 
     // Syncs the system starts (hourly, after a change) redraw the "last synced" line too.
     DisposableEffect(Unit) {
@@ -109,18 +119,22 @@ fun ServerScreen(onBack: () -> Unit) {
                         val active = syncing || davSync.accounts.addressBookAccounts(account).any { ContentResolver.isSyncActive(it, ContactsContract.AUTHORITY) }
                         TextMMD(
                             text = StatusText.of(context, davSync.accounts.status(account), active) +
-                                (if (books.none { it.sync }) "\n" + stringResource(com.wanderwildwood.davsync.R.string.davsync_pick) else ""),
+                                (if (books.none { it.sync }) "\n" + stringResource(com.wanderwildwood.davsync.R.string.davsync_pick) else "") +
+                                (if (books.any { Elsewhere.match(it, davx5Books) != Elsewhere.Match.NONE })
+                                    "\n" + stringResource(com.wanderwildwood.davsync.R.string.davsync_moving_contacts) else ""),
                             style = helperStyle(),
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                         )
                     }
                     for (c in books) {
                         item {
+                            val twice = Elsewhere.match(c, davx5Books) != Elsewhere.Match.NONE
                             PlainRow(
                                 ruled = false,
                                 title = c.title(),
                                 note = stringResource(if (c.sync) R.string.server_on else R.string.server_off) +
-                                    (if (c.readOnly()) " · " + stringResource(R.string.server_read_only) else ""),
+                                    (if (c.readOnly()) " · " + stringResource(R.string.server_read_only) else "") +
+                                    (if (twice) "\n" + stringResource(com.wanderwildwood.davsync.R.string.davsync_elsewhere_book) else ""),
                                 onPress = {
                                     davSync.accounts.setSync(account, c.id, !c.sync)
                                     version++
@@ -136,6 +150,22 @@ fun ServerScreen(onBack: () -> Unit) {
                             note = stringResource(R.string.server_sync_now_note),
                             onPress = { if (!syncing) syncNow(account) },
                         )
+                    }
+                    item {
+                        if (changing == account.name)
+                            ChangePassword(davSync, account, passwordForm, screenScope) { saved ->
+                                passwordForm.reset()
+                                changing = null
+                                version++
+                                if (saved) syncNow(account)
+                            }
+                        else
+                            PlainRow(
+                                ruled = false,
+                                title = stringResource(com.wanderwildwood.davsync.R.string.davsync_change_password),
+                                note = stringResource(com.wanderwildwood.davsync.R.string.davsync_change_password_note),
+                                onPress = { changing = account.name },
+                            )
                     }
                     item {
                         val (armed, press) = rememberArmed(account.name) {
@@ -166,6 +196,7 @@ private fun SignInForm(davSync: DavSync, modifier: Modifier, onSignedIn: (Accoun
     var shown by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf<Int?>(null) }
+    var said by remember { mutableStateOf("") }
     var provider by remember { mutableStateOf(Provider.NEXTCLOUD) }
     var region by remember { mutableStateOf(Provider.ZOHO_REGIONS.first()) }
 
@@ -184,6 +215,7 @@ private fun SignInForm(davSync: DavSync, modifier: Modifier, onSignedIn: (Accoun
         scope.launch {
             val result = SignIn.check(davSync, address, user, password, DavResourceFinder.Service.CARDDAV)
             busy = false
+            said = (result as? SignInResult.Bad)?.detail.orEmpty()
             status = when (result) {
                 is SignInResult.Good -> if (keep) {
                     val account = SignIn.keep(davSync, result)
@@ -282,7 +314,10 @@ private fun SignInForm(davSync: DavSync, modifier: Modifier, onSignedIn: (Accoun
         }
         status?.let { s ->
             item {
-                TextMMD(text = stringResource(s), modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
+                TextMMD(
+                    text = stringResource(s) + if (said.isNotBlank()) "\n" + stringResource(com.wanderwildwood.davsync.R.string.davsync_said, said.take(300)) else "",
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                )
             }
         }
         item {
@@ -318,4 +353,50 @@ private fun ChoiceRow(label: String, choices: List<String>, chosen: Int, enabled
             }
         }
     }
+}
+
+/** A new app password for a signed-in account, kept only once the server has taken it. */
+@Composable
+private fun ChangePassword(davSync: DavSync, account: Account, form: PasswordForm, scope: CoroutineScope, onDone: (Boolean) -> Unit) {
+    var password by form::password
+    var busy by form::busy
+    var status by form::status
+    Column(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+        TextMMD(text = stringResource(DavR.string.davsync_new_password), style = helperStyle(), fontWeight = FontWeight.Bold)
+        TextFieldMMD(
+            value = password,
+            onValueChange = { password = it.replace("\n", ""); status = null },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            enabled = !busy,
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false),
+        )
+        status?.let { TextMMD(text = stringResource(it), style = helperStyle(), modifier = Modifier.padding(top = 6.dp)) }
+        Row(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+            FootButton(stringResource(DavR.string.davsync_cancel), Modifier.weight(1f), enabled = !busy) { onDone(false) }
+            Spacer(Modifier.width(8.dp))
+            FootButton(stringResource(DavR.string.davsync_save), Modifier.weight(1f), enabled = !busy && password.isNotEmpty()) {
+                busy = true
+                status = DavR.string.davsync_checking
+                scope.launch {
+                    val result = SignIn.changePassword(davSync, account, password, DavResourceFinder.Service.CARDDAV)
+                    busy = false
+                    when {
+                        result is SignInResult.Good -> onDone(true)
+                        (result as SignInResult.Bad).problem == Problem.WRONG_PASSWORD -> status = DavR.string.davsync_password_refused
+                        else -> status = DavR.string.davsync_password_unchecked
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** What the Change password row holds while it is open. */
+private class PasswordForm {
+    var password by mutableStateOf("")
+    var busy by mutableStateOf(false)
+    var status by mutableStateOf<Int?>(null)
+    fun reset() { password = ""; busy = false; status = null }
 }
