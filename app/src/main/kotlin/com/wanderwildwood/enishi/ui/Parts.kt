@@ -157,10 +157,10 @@ internal fun FootButton(label: String, modifier: Modifier, enabled: Boolean = tr
     }
 }
 
-/** The small print: notes under rows, hints, the About lines. 14sp, the floor. */
+/** The small print: notes under rows, hints, the About lines. labelSmall of houseTypography: 16 sp, the floor. */
 @Composable
 internal fun helperStyle(): androidx.compose.ui.text.TextStyle =
-    MaterialTheme.typography.labelSmall.copy(fontSize = 14.sp, lineHeight = 20.sp)
+    MaterialTheme.typography.labelSmall
 
 /** A short thing to say, along the foot, gone after a few seconds. */
 @Composable

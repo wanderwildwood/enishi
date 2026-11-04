@@ -9,6 +9,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalCursorBlinkEnabled
 import com.mudita.mmd.ThemeMMD
+import com.wanderwildwood.enishi.ui.houseTypography
 import com.wanderwildwood.enishi.ui.monochrome
 import com.wanderwildwood.enishi.ui.ArmedScope
 
@@ -18,7 +19,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             CompositionLocalProvider(LocalCursorBlinkEnabled provides false) {
-                ThemeMMD(colorScheme = monochrome) {
+                ThemeMMD(colorScheme = monochrome, typography = houseTypography) {
                     ArmedScope { App(this, Asked.Browse, fromElsewhere = false) }
                 }
             }
@@ -42,7 +43,7 @@ class AskActivity : ComponentActivity() {
         val asked = Asked.of(intent)
         setContent {
             CompositionLocalProvider(LocalCursorBlinkEnabled provides false) {
-                ThemeMMD(colorScheme = monochrome) {
+                ThemeMMD(colorScheme = monochrome, typography = houseTypography) {
                     ArmedScope { App(this, asked, fromElsewhere = true) }
                 }
             }
