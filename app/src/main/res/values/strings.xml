@@ -14,11 +14,11 @@
     <!-- The list -->
 
     <string name="tab_all">All</string>
-    <string name="tab_favourites">Favourites</string>
+    <string name="tab_favourites">Favorites</string>
     <string name="tab_groups">Groups</string>
     <!-- One line under the tabs for a few seconds after a swipe down on the first page of All, Favourites or Groups -->
     <string name="sync_asked">Asked DAVx5 to sync</string>
-    <string name="favourites_none">No favourites yet. The star on a person\'s page puts them here.</string>
+    <string name="favourites_none">No favorites yet. The star on a person\'s page puts them here.</string>
     <!-- Under a group on the Groups tab -->
     <plurals name="group_size">
         <item quantity="one">%1$d person</item>
@@ -40,8 +40,8 @@
     <string name="cd_back">Back</string>
     <string name="cd_close">Close</string>
     <string name="cd_remove">Remove</string>
-    <string name="cd_star">Add to favourites</string>
-    <string name="cd_unstar">Take out of favourites</string>
+    <string name="cd_star">Add to favorites</string>
+    <string name="cd_unstar">Take out of favorites</string>
 
     <!-- ============================================================ -->
     <!-- Search -->
@@ -114,7 +114,7 @@
     <string name="field_job">Job title</string>
     <string name="field_website">Website</string>
     <string name="field_note">Note</string>
-    <string name="field_favourite">Favourite</string>
+    <string name="field_favourite">Favorite</string>
     <string name="edit_more_names">More name fields</string>
     <string name="edit_add_phone">Add a number</string>
     <string name="edit_add_email">Add an email address</string>
@@ -304,14 +304,14 @@
     <string name="deleted_undo">Undo</string>
     <string name="undo_failed">Could not put them back.</string>
     <!-- Licences page, reached from About -->
-    <string name="licences_title">Licences</string>
+    <string name="licences_title">Licenses</string>
     <string name="licences_source_head">Source code</string>
-    <string name="licences_no_text">%s needs no licence text here.</string>
+    <string name="licences_no_text">%s needs no license text here.</string>
     <string name="licences_source">Source: %1$s</string>
     <string name="licences_licence">Connections is free software under the GNU General Public License, version 3 only. Copyright wander wildwood.</string>
     <string name="licences_back">Back</string>
     <string name="licences_full_head">Full texts</string>
     <string name="licences_full_gpl">GNU General Public License v3 (full text)</string>
     <string name="licences_full_apache">Apache License 2.0 (full text)</string>
-    <string name="licences_full_ofl">SIL Open Font Licence 1.1 (full text)</string>
+    <string name="licences_full_ofl">SIL Open Font License 1.1 (full text)</string>
 </resources>
