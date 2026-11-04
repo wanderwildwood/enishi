@@ -61,6 +61,7 @@ import com.wanderwildwood.enishi.data.Backups
 import com.wanderwildwood.enishi.ui.MessagePickScreen
 import com.wanderwildwood.enishi.ui.PickScreen
 import com.wanderwildwood.enishi.ui.SearchScreen
+import com.wanderwildwood.enishi.ui.ServerScreen
 import com.wanderwildwood.enishi.ui.SettingsScreen
 import com.wanderwildwood.enishi.ui.has
 import kotlinx.coroutines.launch
@@ -80,6 +81,8 @@ sealed interface Route {
     data class Group(val id: Long) : Route
     data class Edit(val card: Card?, val seed: Draft, val account: Account) : Route
     data object Settings : Route
+    /** Settings > Contacts server: Connections' own CardDAV sync account. */
+    data object Server : Route
     /** Choosing whose name stays when several people are made one. */
     data class Merge(val ids: List<Long>) : Route
     data class Cards(val uri: Uri) : Route
@@ -348,7 +351,9 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
                 } else backupNow()
             },
             onAbout = { about = true },
+            onServer = { push(Route.Server) },
         )
+        Route.Server -> ServerScreen(::back)
         is Route.Cards -> CardsScreen(
             model, top.uri, ::back,
             onAddOne = { newContact(it) },

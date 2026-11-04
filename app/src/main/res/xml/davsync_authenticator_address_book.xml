@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One account per synced address book, as DAVx5: the contacts store groups people by account. -->
+<account-authenticator xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accountType="@string/davsync_account_type_address_book"
+    android:icon="@drawable/ic_launcher_mudita"
+    android:label="@string/davsync_address_book_label"
+    android:smallIcon="@drawable/ic_launcher_mudita" />

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- The phone's own contacts store, which is the whole of what this app shows and changes.
          It keeps no copy of its own. -->
@@ -20,8 +21,13 @@
          at start-up: Android's job scheduler keeps the schedule. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
-    <!-- No INTERNET permission: nothing in this app can reach the network. The llama's
-         address is handed to a browser. -->
+    <!-- INTERNET: only once the person signs in to their own contacts server (Settings,
+         Contacts server), to sync with that server, in the background as well. Nothing goes
+         anywhere else; the llama's address is still handed to a browser. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
+    <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
+    <uses-permission android:name="android.permission.READ_SYNC_STATS" />
 
     <!-- Which accounts sync contacts up to a server (DAVx5, Google…): since Android 11 another
          app's sync service is hidden unless asked for, and without it every server-kept
@@ -62,6 +68,7 @@
         android:icon="@drawable/ic_launcher_mudita"
         android:roundIcon="@drawable/ic_launcher_mudita"
         android:label="@string/app_name"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:supportsRtl="false"
         android:theme="@style/Theme.App">
 
@@ -195,6 +202,41 @@
             android:exported="false"
             android:permission="android.permission.BIND_JOB_SERVICE" />
 
+        <!-- Contacts sync with a CardDAV server (davsync, after DAVx5) -->
+        <service
+            android:name="com.wanderwildwood.davsync.account.AccountAuthenticatorService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.accounts.AccountAuthenticator" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accounts.AccountAuthenticator"
+                android:resource="@xml/davsync_authenticator" />
+        </service>
+        <service
+            android:name="com.wanderwildwood.davsync.account.AddressBookAuthenticatorService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.accounts.AccountAuthenticator" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accounts.AccountAuthenticator"
+                android:resource="@xml/davsync_authenticator_address_book" />
+        </service>
+        <service
+            android:name="com.wanderwildwood.davsync.sync.adapter.ContactsSyncAdapterService"
+            android:exported="true"
+            tools:ignore="ExportedService">
+            <intent-filter>
+                <action android:name="android.content.SyncAdapter" />
+            </intent-filter>
+            <meta-data
+                android:name="android.content.SyncAdapter"
+                android:resource="@xml/davsync_sync_contacts" />
+            <meta-data
+                android:name="android.provider.CONTACTS_STRUCTURE"
+                android:resource="@xml/davsync_contacts" />
+        </service>
     </application>
 
 </manifest>

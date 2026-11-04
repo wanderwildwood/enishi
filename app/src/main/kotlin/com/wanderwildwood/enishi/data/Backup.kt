@@ -77,7 +77,8 @@ class Backups(context: Context) {
         jobs.schedule(
             JobInfo.Builder(JOB, ComponentName(app, BackupJob::class.java))
                 .setPeriodic(period)
-                .setRequiresBatteryNotLow(true)
+                // a low-battery condition exists from Android 8 only
+                .apply { if (android.os.Build.VERSION.SDK_INT >= 26) setRequiresBatteryNotLow(true) }
                 .setPersisted(true)
                 .build(),
         )

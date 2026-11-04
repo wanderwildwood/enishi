@@ -6,7 +6,7 @@
     <!-- Asking for access, on first launch -->
 
     <string name="access_title">Connections needs to see the phone’s contacts.</string>
-    <string name="access_body">They stay where they are, in Android’s own address book, which Messaging, the dialer and every other app already read. This app keeps no copy of its own and cannot reach the internet.</string>
+    <string name="access_body">They stay where they are, in Android’s own address book, which Messaging, the dialer and every other app already read. This app keeps no copy of its own, and reaches the internet only to sync with your own contacts server, if you sign in to one.</string>
     <string name="access_allow">Allow</string>
     <string name="access_settings">Open the setting</string>
 
@@ -17,7 +17,7 @@
     <string name="tab_favourites">Favorites</string>
     <string name="tab_groups">Groups</string>
     <!-- One line under the tabs for a few seconds after a swipe down on the first page of All, Favourites or Groups -->
-    <string name="sync_asked">Asked DAVx5 to sync</string>
+    <string name="sync_asked">Asked the address books to sync</string>
     <string name="favourites_none">No favorites yet. The star on a person\'s page puts them here.</string>
     <!-- Under a group on the Groups tab -->
     <plurals name="group_size">
@@ -292,7 +292,7 @@
     <string name="access_about">About</string>
     <string name="about_no_browser">Nothing here opens web pages — %1$s</string>
     <string name="about_privacy_head">Privacy</string>
-    <string name="about_privacy">Your contacts stay in this phone’s own address book; the app keeps no copy of its own. It has no internet access, so nothing is sent anywhere, and nothing is collected about you. It asks for contacts and accounts, phone calls (to call a number you press), the call log (to list calls with one person) and the calendar (only if you switch a birthday into it). There are no ads, no analytics and no tracking. Backups and exports go only where you choose to save them.</string>
+    <string name="about_privacy">Your contacts stay in this phone’s own address book; the app keeps no copy of its own. It reaches the internet only if you sign in to your own contacts server, to sync with it; nothing goes anywhere else, and nothing is collected about you. It asks for contacts and accounts, phone calls (to call a number you press), the call log (to list calls with one person) and the calendar (only if you switch a birthday into it). There are no ads, no analytics and no tracking. Backups and exports go only where you choose to save them.</string>
     <string name="about_terms_head">Terms</string>
     <string name="about_terms">This app is free software under the GNU General Public License v3. It comes with no warranty: use it at your own risk.</string>
     <string name="about_close">Close</string>
@@ -314,4 +314,43 @@
     <string name="licences_full_gpl">GNU General Public License v3 (full text)</string>
     <string name="licences_full_apache">Apache License 2.0 (full text)</string>
     <string name="licences_full_ofl">SIL Open Font License 1.1 (full text)</string>
+    <string name="licences_full_mpl">Mozilla Public License 2.0 (full text)</string>
+    <string name="licences_full_bsd">BSD License (full text)</string>
+    <string name="licences_full_mit">MIT License (full text)</string>
+
+    <!-- Settings > Contacts server: Connections' own CardDAV sync (davsync) -->
+    <string name="server_row">Sync with a server</string>
+    <string name="server_row_note">Nextcloud or another CardDAV server, without DAVx5</string>
+    <string name="server_title">Contacts server</string>
+    <string name="server_why">Your contacts stay on your own server; this phone keeps a copy and sends your changes back.</string>
+    <string name="server_address">Server address</string>
+    <string name="server_user">User name</string>
+    <string name="server_password">App password</string>
+    <string name="server_password_note">Kept on this phone only, sealed in its keystore.</string>
+    <string name="server_show">Show</string>
+    <string name="server_hide">Hide</string>
+    <string name="server_sign_in">Sign in</string>
+    <string name="server_test">Test</string>
+    <string name="server_checking">Asking the server…</string>
+    <string name="server_good">The server answered and has address books. Sign in to keep it.</string>
+    <string name="server_not_kept">The server answered, but the account could not be kept on this phone. If it is already signed in, remove it first.</string>
+    <string name="server_bad_address">That is not a server address.</string>
+    <string name="server_plain_http">An http:// address sends the password unprotected. Use https://, or a server on your own network.</string>
+    <string name="server_not_found">No server by that name was found.</string>
+    <string name="server_unreachable">The server did not answer. Check the address and the network.</string>
+    <string name="server_certificate">The server\'s certificate was not accepted.</string>
+    <string name="server_wrong_password">The server did not accept the user name or password.</string>
+    <string name="server_no_carddav">No contacts service (CardDAV) was found at that address.</string>
+    <string name="server_no_books">The server has no address books for this user.</string>
+    <string name="server_other">Something went wrong while asking the server.</string>
+    <string name="server_on">Syncs to this phone</string>
+    <string name="server_off">Not on this phone</string>
+    <string name="server_read_only">read only</string>
+    <string name="server_sync_now">Sync now</string>
+    <string name="server_sync_now_note">Also every hour, and after each change</string>
+    <string name="server_syncing">Syncing…</string>
+    <string name="server_remove">Remove account</string>
+    <string name="server_remove_armed">Tap again: removes its people from this phone (the server keeps them)</string>
+    <string name="server_add">Add another server</string>
+    <string name="davsync_address_book_label">Connections address book</string>
 </resources>

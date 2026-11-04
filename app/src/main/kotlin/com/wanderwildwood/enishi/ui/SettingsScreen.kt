@@ -37,6 +37,7 @@ fun SettingsScreen(
     onBackupFolder: () -> Unit,
     onBackupNow: () -> Unit,
     onAbout: () -> Unit,
+    onServer: () -> Unit,
 ) {
     val context = LocalContext.current
     var saveTo by remember { mutableStateOf<Account?>(null) }
@@ -84,6 +85,8 @@ fun SettingsScreen(
                     )
                 }
             }
+            item { Heading(stringResource(R.string.server_title), ruled = false) }
+            item { PlainRow(stringResource(R.string.server_row), note = stringResource(R.string.server_row_note), ruled = false, onPress = onServer) }
             item { Heading(stringResource(R.string.settings_files), ruled = false) }
             item { PlainRow(stringResource(R.string.settings_import), ruled = false, onPress = onImport) }
             item {
