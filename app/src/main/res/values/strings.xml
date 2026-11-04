@@ -315,8 +315,7 @@
     <string name="licences_full_apache">Apache License 2.0 (full text)</string>
     <string name="licences_full_ofl">SIL Open Font License 1.1 (full text)</string>
     <string name="licences_full_mpl">Mozilla Public License 2.0 (full text)</string>
-    <string name="licences_full_bsd">BSD License (full text)</string>
-    <string name="licences_full_mit">MIT License (full text)</string>
+    <string name="licences_full_lgpl">GNU Lesser General Public License 2.1 (full text)</string>
 
     <!-- Settings > Contacts server: Connections' own CardDAV sync (davsync) -->
     <string name="server_row">Sync with a server</string>
