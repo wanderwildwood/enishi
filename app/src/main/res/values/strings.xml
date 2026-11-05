@@ -285,6 +285,7 @@
     <!-- About -->
 
     <string name="about_title">Connections %1$s</string>
+    <string name="about_what">Everyone you know, under tabs for all, favorites and groups. A person’s page lists each number to call or text, then your recent calls with them.</string>
     <string name="about_licence">GNU General Public License v3</string>
     <string name="about_bundled">Icons from Material Symbols (Apache-2.0).</string>
     <string name="about_feed_the_llamas">Feed the llamas</string>
@@ -303,12 +304,12 @@
     </plurals>
     <string name="deleted_undo">Undo</string>
     <string name="undo_failed">Could not put them back.</string>
-    <!-- Licences page, reached from About -->
+    <!-- Licenses, a drawer in About -->
     <string name="licences_title">Licenses</string>
     <string name="licences_source_head">Source code</string>
     <string name="licences_no_text">%s needs no license text here.</string>
     <string name="licences_source">Source: %1$s</string>
-    <string name="licences_licence">Connections is free software under the GNU General Public License, version 3 only. Copyright wander wildwood.</string>
+    <string name="licences_licence">Connections is free software under the GNU General Public License, version 3 only. Copyright wander wildwood. What it is built on keeps its own licenses, listed below.</string>
     <string name="licences_back">Back</string>
     <string name="licences_full_head">Full texts</string>
     <string name="licences_full_gpl">GNU General Public License v3 (full text)</string>
@@ -355,6 +356,10 @@
     <!-- shared-about: contact row + privacy section (edit in /opt/projects/shared-about) -->
     <string name="about_write_to">Write to %1$s</string>
     <string name="about_no_mail_app">No email app is installed. The address is %1$s.</string>
+    <string name="about_open_drawer">Open %1$s</string>
+    <string name="about_close_drawer">Close %1$s</string>
+    <string name="about_contact_head">Contact</string>
+    <string name="about_links_head">Links</string>
     <string name="privacy_who_title">Who we are</string>
     <string name="privacy_who">This app is made by wander wildwood, an independent developer: one person, not a company. That makes wander wildwood the data controller for anything the app itself handles, and that is very little: what you put in stays on this phone. The only thing that goes out is the sync with your own contacts server, if you sign in to one: your sign-in and the people in the address books you chose, sent to and fetched from that server and no other. Nothing comes to the developer.</string>
     <string name="privacy_contact_title">How to contact us</string>
