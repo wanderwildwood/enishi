@@ -3,6 +3,7 @@ package com.wanderwildwood.enishi
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
+import android.provider.Telephony
 import androidx.activity.ComponentActivity
 import com.wanderwildwood.enishi.data.Target
 import com.wanderwildwood.enishi.data.recipients
@@ -12,8 +13,8 @@ import com.wanderwildwood.enishi.data.target
 /**
  * Starts a text to these numbers the way the phone's own Contacts app does for Messaging: a
  * `SENDTO` for one `smsto:` address holding every number, comma-separated, sent to the app that
- * asked for a contact. That app then makes one group conversation or several single ones, by
- * its own setting. Returns false if nothing could take it.
+ * asked for a contact, else to the phone's default messaging app. That app then makes one group
+ * conversation or several single ones, by its own setting. Returns false if nothing could take it.
  */
 fun writeTo(activity: ComponentActivity, numbers: List<String>): Boolean {
     if (recipients(numbers).isEmpty()) return false
@@ -22,10 +23,18 @@ fun writeTo(activity: ComponentActivity, numbers: List<String>): Boolean {
     val pm = activity.packageManager
     val caller = (activity.callingPackage ?: activity.callingActivity?.packageName)?.takeIf { it != activity.packageName }
     fun takes(pkg: String) = runCatching { pm.queryIntentActivities(send().setPackage(pkg), 0).isNotEmpty() }.getOrDefault(false)
-    val goes = target(caller != null, caller != null && takes(caller), takes(MessagingPick.MESSAGES_PACKAGE))
+    val defaultSms = runCatching { Telephony.Sms.getDefaultSmsPackage(activity) }.getOrNull()
+        ?.takeIf { it != activity.packageName }
+    val goes = target(
+        callerKnown = caller != null,
+        callerTakesIt = caller != null && takes(caller),
+        defaultSmsTakesIt = defaultSms != null && takes(defaultSms),
+        stockMessagesPresent = takes(MessagingPick.MESSAGES_PACKAGE),
+    )
     val intent = send().also {
         when (goes) {
             Target.CALLER -> it.setPackage(caller)
+            Target.DEFAULT_SMS -> it.setPackage(defaultSms)
             Target.STOCK_MESSAGES -> it.setPackage(MessagingPick.MESSAGES_PACKAGE)
             Target.ANY -> Unit
         }

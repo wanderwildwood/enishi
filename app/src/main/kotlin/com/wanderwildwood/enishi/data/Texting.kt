@@ -65,14 +65,21 @@ fun smstoPart(numbers: List<String>): String = recipients(numbers).joinToString(
 fun typedNumber(text: String): String? = cleanNumber(text).takeIf { it.isNotEmpty() }
 
 /** Who receives the new conversation. */
-enum class Target { CALLER, STOCK_MESSAGES, ANY }
+enum class Target { CALLER, DEFAULT_SMS, STOCK_MESSAGES, ANY }
 
 /**
  * Which messaging app is sent the address: the one that asked for a contact if it can take it,
- * otherwise Mudita's Messaging if it is on the phone, otherwise whichever app takes `smsto:`.
+ * otherwise the phone's default messaging app if it takes it, otherwise Mudita's Messaging if it
+ * is on the phone, otherwise whichever app takes `smsto:`.
  */
-fun target(callerKnown: Boolean, callerTakesIt: Boolean, stockMessagesPresent: Boolean): Target = when {
+fun target(
+    callerKnown: Boolean,
+    callerTakesIt: Boolean,
+    defaultSmsTakesIt: Boolean,
+    stockMessagesPresent: Boolean,
+): Target = when {
     callerKnown && callerTakesIt -> Target.CALLER
+    defaultSmsTakesIt -> Target.DEFAULT_SMS
     stockMessagesPresent -> Target.STOCK_MESSAGES
     else -> Target.ANY
 }

@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.provider.Telephony
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -114,7 +115,14 @@ fun DetailScreen(
     fun open(intent: Intent) {
         if (!start(context, intent)) notice = context.getString(R.string.nothing_opens)
     }
-    fun text(number: String) = open(Intent(Intent.ACTION_SENDTO, Uri.fromParts("smsto", number, null)))
+    // Named to the default messaging app first, so neither "Open with" nor another messaging
+    // app comes up; unnamed only if that app cannot take it.
+    fun text(number: String) {
+        val intent = Intent(Intent.ACTION_SENDTO, Uri.fromParts("smsto", number, null))
+        val pkg = runCatching { Telephony.Sms.getDefaultSmsPackage(context) }.getOrNull()
+        if (pkg != null && start(context, Intent(intent).setPackage(pkg))) return
+        open(intent)
+    }
     val clipboard = LocalClipboardManager.current
     fun copy(value: String) {
         clipboard.setText(AnnotatedString(value))

@@ -70,10 +70,13 @@ class TextingTest {
     }
 
     @Test fun whoGetsTheAddress() {
-        assertEquals(Target.CALLER, target(callerKnown = true, callerTakesIt = true, stockMessagesPresent = true))
-        assertEquals(Target.STOCK_MESSAGES, target(true, false, true))
-        assertEquals(Target.STOCK_MESSAGES, target(false, false, true))
-        assertEquals(Target.ANY, target(true, false, false))
-        assertEquals(Target.ANY, target(false, false, false))
+        assertEquals(Target.CALLER, target(callerKnown = true, callerTakesIt = true, defaultSmsTakesIt = true, stockMessagesPresent = true))
+        assertEquals(Target.DEFAULT_SMS, target(true, false, true, true))
+        assertEquals(Target.DEFAULT_SMS, target(false, false, true, true))
+        assertEquals(Target.DEFAULT_SMS, target(false, false, true, false))
+        assertEquals(Target.STOCK_MESSAGES, target(true, false, false, true))
+        assertEquals(Target.STOCK_MESSAGES, target(false, false, false, true))
+        assertEquals(Target.ANY, target(true, false, false, false))
+        assertEquals(Target.ANY, target(false, false, false, false))
     }
 }
