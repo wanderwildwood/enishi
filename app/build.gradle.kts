@@ -17,8 +17,8 @@ android {
         // The Kompakt runs Android 12 (API 31); nothing here needs anything newer.
         minSdk = 25  // below 26 so java.time is desugared, as DAVx5 builds (sync engine)
         targetSdk = 31
-        versionCode = 55
-        versionName = "0.2.27"
+        versionCode = 56
+        versionName = "0.2.28"
     }
 
     // A real keystore in signing/ signs every build type when it is present, so the
