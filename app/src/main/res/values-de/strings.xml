@@ -386,4 +386,18 @@
     <string name="davsync_channel" tools:ignore="ExtraTranslation">Probleme beim Abgleich</string>
     <string name="davsync_refused_title" tools:ignore="ExtraTranslation">Für den Abgleich neu anmelden</string>
     <string name="davsync_refused_notice" tools:ignore="ExtraTranslation">Der Server hat das Passwort für %1$s abgelehnt, also wird nichts abgeglichen, bis ein neues eingegeben ist (Einstellungen, dann die Serverseite, dann „Passwort ändern“).</string>
+    <!-- shared-about drawers and privacy sections (5 Nov 2026) -->
+    <string name="about_what">Alle, die du kennst, in den Reitern Alle, Favoriten und Gruppen. Die Seite einer Person zeigt jede Nummer zum Anrufen oder Schreiben, darunter deine letzten Anrufe mit ihr.</string>
+    <string name="about_open_drawer">%1$s öffnen</string>
+    <string name="about_close_drawer">%1$s schließen</string>
+    <string name="about_contact_head">Kontakt</string>
+    <string name="about_links_head">Links</string>
+    <string name="about_write_to">Schreib an %1$s</string>
+    <string name="about_no_mail_app">Es ist keine E-Mail-App installiert. Die Adresse ist %1$s.</string>
+    <string name="privacy_who_title">Wer wir sind</string>
+    <string name="privacy_who">Diese App stammt von wander wildwood, einem unabhängigen Entwickler: eine Person, keine Firma. Damit ist wander wildwood der Verantwortliche für alles, was die App selbst verarbeitet, und das ist sehr wenig: Was du eingibst, bleibt auf diesem Telefon. Nach draußen geht nur der Abgleich mit deinem eigenen Kontaktserver, falls du dich bei einem anmeldest: deine Anmeldung und die Personen in den Adressbüchern, die du ausgewählt hast, gesendet an diesen Server und von dort geholt, an keinen anderen. Beim Entwickler kommt nichts an.</string>
+    <string name="privacy_contact_title">So erreichst du uns</string>
+    <string name="privacy_contact">Schreib an email@wanderthe.dev, zu deinen Daten oder zu allem anderen.</string>
+    <string name="privacy_rights_title">Deine Rechte</string>
+    <string name="privacy_rights">Nach der DSGVO kannst du verlangen, die über dich gespeicherten Daten zu sehen, sie berichtigen oder löschen zu lassen, ihre Nutzung einzuschränken oder ihr zu widersprechen, eine Kopie mitzunehmen, eine Einwilligung zu widerrufen und dich bei einer Datenschutzbehörde zu beschweren. Da das, was die App speichert, auf deinem Telefon liegt (und auf deinem eigenen Server, wenn du abgleichst), kannst du das meiste selbst tun: jede Person in der App ansehen, ändern oder löschen (deine Kontakte liegen im Adressbuch von Android, das beim Deinstallieren der App unberührt bleibt), sie in eine .vcf-Datei sichern, in den Einstellungen ein Serverkonto entfernen, was seine Personen vom Telefon nimmt, die Daten der App in den Android-Einstellungen löschen oder die App deinstallieren. Ein eigener Server gehört dir: was er speichert, bestimmst du.</string>
 </resources>
