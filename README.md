@@ -9,7 +9,7 @@ another, not a list of names.
 
 Not a fork. Written from scratch in Kotlin and Jetpack Compose, using Mudita's own
 [MMD](https://github.com/mudita/MMD) design system, and drawn in the same hand as Handset and
-Messaging: a plain list under All / Favourites / Groups tabs, a cog for settings, and a person's
+Messaging: a plain list under All / Favorites / Groups tabs, a cog for settings, and a person's
 page of plain rows, a press on a number to call it. What it does is modelled on
 [Fossify Contacts](https://github.com/FossifyOrg/Contacts), which sets the bar for a contacts
 app that is free software.
@@ -29,11 +29,14 @@ at a time.
 ## What it does
 
 - **Everyone in one plain list**, in the phone's own language and order, under three tabs:
-  All, Favourites, and Groups when the address book has any. A group opens to the people in it.
+  All, Favorites, and Groups when the address book has any. A group opens to the people in it.
   The tab last chosen is the one the app opens on.
-- **A swipe down at the top of a tab asks DAVx5 to sync** the contacts now.
-- **Favourites as the phone keeps them**: a star on a person's page puts them under Favourites
-  here and in the Handset app's Favourites.
+- **Its own sync, without DAVx5.** Under Settings, Contacts server, pick Nextcloud, iCloud, Zoho
+  or another CardDAV server, sign in with an app password, and choose which address books to keep
+  here. Changes go both ways, and when a person was changed on both sides, both copies are kept.
+- **A swipe down at the top of a tab syncs** the contacts now, through the app's own sync or DAVx5.
+- **Favorites as the phone keeps them**: a star on a person's page puts them under Favorites
+  here and in the Handset app's Favorites.
 - **Choose several at once** with a long press, then merge, share or delete them together.
 - **Merge duplicates by hand**: choose whose name stays, and every number, address, note and
   photo the others have is added to that person, nothing written twice. A copy a messenger keeps
@@ -73,8 +76,8 @@ at a time.
 ## What it does not do
 
 No photographs: a face the size of a list row is a grey smudge on this screen, so none are
-shown — and none are lost, because a save leaves them where they are. Nothing is sent anywhere:
-the app has no internet permission at all.
+shown — and none are lost, because a save leaves them where they are. Nothing is sent anywhere
+unless you sign in to your own contacts server, and then only the sync with that server goes out.
 
 ## Where this is up to
 
@@ -111,7 +114,7 @@ For updates without doing this by hand, add this repository to
 It will offer each new release as it appears. **The application id is settled** — updates
 install over what you have, keeping your settings and anything the app has stored.
 
-## Licence
+## License
 
 GPL-3.0-only. See [LICENSE](LICENSE).
 
