@@ -42,6 +42,7 @@ import com.mudita.mmd.components.buttons.ButtonMMD
 import com.mudita.mmd.components.buttons.OutlinedButtonMMD
 import com.mudita.mmd.components.text.TextMMD
 import com.mudita.mmd.components.text_field.TextFieldMMD
+import com.mudita.mmd.components.switcher.SwitchMMD
 import com.wanderwildwood.davsync.DavSync
 import com.wanderwildwood.davsync.R as DavR
 import com.wanderwildwood.davsync.accounts.Elsewhere
@@ -192,8 +193,9 @@ fun ServerScreen(onBack: () -> Unit) {
                         PlainRow(
                             ruled = false,
                             title = stringResource(DavR.string.davsync_wifi_only),
-                            note = stringResource(if (on) R.string.server_on else R.string.server_off) + "\n" +
-                                stringResource(DavR.string.davsync_wifi_only_note),
+                            note = stringResource(DavR.string.davsync_wifi_only_note),
+                            noteLines = 4,
+                            trailing = { SwitchMMD(checked = on, onCheckedChange = null) },
                             onPress = {
                                 davSync.accounts.setWifiOnly(account, !on)
                                 version++

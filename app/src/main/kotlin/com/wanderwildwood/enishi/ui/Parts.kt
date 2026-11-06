@@ -115,6 +115,8 @@ internal fun PlainRow(
     note: String? = null,
     bold: Boolean = false,
     titleLines: Int = 1,
+    /** How many lines the note may take before it is cut short. */
+    noteLines: Int = 2,
     onLongPress: (() -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
     /** False in Settings, where rows are set apart by space and carry no rule. */
@@ -137,7 +139,7 @@ internal fun PlainRow(
                 overflow = TextOverflow.Ellipsis,
             )
             if (!note.isNullOrEmpty()) {
-                TextMMD(text = note, style = helperStyle(), maxLines = 2, overflow = TextOverflow.Ellipsis)
+                TextMMD(text = note, style = helperStyle(), maxLines = noteLines, overflow = TextOverflow.Ellipsis)
             }
         }
         trailing?.let { Box(Modifier.padding(start = 16.dp)) { it() } }
