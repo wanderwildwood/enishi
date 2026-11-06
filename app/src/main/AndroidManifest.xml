@@ -45,6 +45,9 @@
         <!-- And Messaging, which a group text is handed to (Writing.kt); any app that takes a
              text to a number, for a phone that uses another. -->
         <package android:name="com.mudita.messages" />
+        <!-- Cabinet, whose own screens open, save and choose folders when it is on the phone
+             (FilesPicker.kt). -->
+        <package android:name="com.wanderwildwood.tana" />
         <intent>
             <action android:name="android.intent.action.SENDTO" />
             <data android:scheme="smsto" />

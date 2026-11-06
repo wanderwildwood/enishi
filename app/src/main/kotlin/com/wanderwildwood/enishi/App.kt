@@ -195,10 +195,10 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
     // Another app is waiting for an answer while it is open for one of these.
     val answering = asked is Asked.Create || asked is Asked.AddTo || asked is Asked.Edit || asked is Asked.ShowOrCreate
 
-    val pickFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+    val pickFile = rememberLauncherForActivityResult(FilesOpenDocument(writable = false)) { uri ->
         if (uri != null) push(Route.Cards(uri))
     }
-    val saveFile = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/x-vcard")) { uri ->
+    val saveFile = rememberLauncherForActivityResult(FilesCreateDocument("text/x-vcard")) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
         scope.launch {
             val lookups = model.people.map { it.lookup }
@@ -209,7 +209,7 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
             else context.getString(R.string.export_failed)
         }
     }
-    val pickFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+    val pickFolder = rememberLauncherForActivityResult(FilesOpenTree()) { uri ->
         if (uri == null) {
             everyOnceChosen = 0
             nowOnceChosen = false
