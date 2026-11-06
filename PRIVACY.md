@@ -25,6 +25,8 @@ policy that cannot be checked is just a promise.
 - **Internet** (`INTERNET`) — only to sync with your own contacts server, once you sign in to it
   (Settings → Sync with a server). That server, the one whose address you typed, is the only one
   contacted (`davsync/`, see below). Without a sign-in, nothing uses it.
+- **Network state** (`ACCESS_NETWORK_STATE`) — only for the server's "Wi-Fi only" switch: whether
+  the phone is on Wi-Fi now, so its own syncs can wait for it. Nothing else about the network is read.
 - **Sync settings** (`READ_SYNC_SETTINGS`, `WRITE_SYNC_SETTINGS`, `READ_SYNC_STATS`) — to turn on
   and read the sync of Connections' own address-book accounts. They give no access to anything else.
 - **Start-up** (`RECEIVE_BOOT_COMPLETED`) — only so automatic backups, if you turn them on, are

@@ -400,4 +400,29 @@
     <string name="privacy_contact">Schreib an email@wanderthe.dev, zu deinen Daten oder zu allem anderen.</string>
     <string name="privacy_rights_title">Deine Rechte</string>
     <string name="privacy_rights">Nach der DSGVO kannst du verlangen, die über dich gespeicherten Daten zu sehen, sie berichtigen oder löschen zu lassen, ihre Nutzung einzuschränken oder ihr zu widersprechen, eine Kopie mitzunehmen, eine Einwilligung zu widerrufen und dich bei einer Datenschutzbehörde zu beschweren. Da das, was die App speichert, auf deinem Telefon liegt (und auf deinem eigenen Server, wenn du abgleichst), kannst du das meiste selbst tun: jede Person in der App ansehen, ändern oder löschen (deine Kontakte liegen im Adressbuch von Android, das beim Deinstallieren der App unberührt bleibt), sie in eine .vcf-Datei sichern, in den Einstellungen ein Serverkonto entfernen, was seine Personen vom Telefon nimmt, die Daten der App in den Android-Einstellungen löschen oder die App deinstallieren. Ein eigener Server gehört dir: was er speichert, bestimmst du.</string>
+    <string name="davsync_new_calendar" tools:ignore="ExtraTranslation">Neuer Kalender</string>
+    <string name="davsync_new_calendar_note" tools:ignore="ExtraTranslation">Wird auf dem Server angelegt und hier eingeschaltet</string>
+    <string name="davsync_new_address_book" tools:ignore="ExtraTranslation">Neues Adressbuch</string>
+    <string name="davsync_new_address_book_note" tools:ignore="ExtraTranslation">Wird auf dem Server angelegt und hier eingeschaltet</string>
+    <string name="davsync_new_name" tools:ignore="ExtraTranslation">Name</string>
+    <string name="davsync_color" tools:ignore="ExtraTranslation">Farbe auf dem Server und anderen Geräten</string>
+    <string name="davsync_color_blue" tools:ignore="ExtraTranslation">Blau</string>
+    <string name="davsync_color_green" tools:ignore="ExtraTranslation">Grün</string>
+    <string name="davsync_color_red" tools:ignore="ExtraTranslation">Rot</string>
+    <string name="davsync_color_orange" tools:ignore="ExtraTranslation">Orange</string>
+    <string name="davsync_color_purple" tools:ignore="ExtraTranslation">Lila</string>
+    <string name="davsync_color_gray" tools:ignore="ExtraTranslation">Grau</string>
+    <string name="davsync_create" tools:ignore="ExtraTranslation">Anlegen</string>
+    <string name="davsync_creating" tools:ignore="ExtraTranslation">Frage den Server…</string>
+    <string name="davsync_create_no_home" tools:ignore="ExtraTranslation">Der Server hat für dieses Konto keinen Ort, um eines anzulegen.</string>
+    <string name="davsync_create_refused" tools:ignore="ExtraTranslation">Der Server hat es nicht angelegt.</string>
+    <string name="davsync_create_unreachable" tools:ignore="ExtraTranslation">Der Server war nicht erreichbar; es wurde nichts angelegt.</string>
+    <string name="davsync_create_password" tools:ignore="ExtraTranslation">Der Server hat das Passwort abgelehnt; es wurde nichts angelegt.</string>
+    <string name="davsync_interval" tools:ignore="ExtraTranslation">Gleicht von selbst ab</string>
+    <string name="davsync_interval_15m" tools:ignore="ExtraTranslation">Alle 15 Min.</string>
+    <string name="davsync_interval_1h" tools:ignore="ExtraTranslation">Stündlich</string>
+    <string name="davsync_interval_4h" tools:ignore="ExtraTranslation">Alle 4 Std.</string>
+    <string name="davsync_wifi_only" tools:ignore="ExtraTranslation">Nur über WLAN</string>
+    <string name="davsync_wifi_only_note" tools:ignore="ExtraTranslation">Der Abgleich von selbst wartet auf WLAN. Herunterziehen oder Jetzt abgleichen geht auch über mobile Daten.</string>
+    <string name="davsync_waiting_wifi" tools:ignore="ExtraTranslation">Wartet auf WLAN; Änderungen bleiben bis dahin auf dem Telefon.</string>
 </resources>

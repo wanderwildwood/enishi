@@ -21,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -48,6 +49,8 @@ import com.wanderwildwood.davsync.accounts.StatusText
 import com.wanderwildwood.davsync.signin.Provider
 import com.wanderwildwood.davsync.model.Collection
 import com.wanderwildwood.davsync.servicedetection.DavResourceFinder
+import com.wanderwildwood.davsync.servicedetection.CollectionMaker
+import com.wanderwildwood.davsync.sync.SyncPolicy
 import com.wanderwildwood.davsync.signin.Problem
 import com.wanderwildwood.davsync.signin.SignIn
 import com.wanderwildwood.davsync.signin.SignInResult
@@ -77,11 +80,20 @@ fun ServerScreen(onBack: () -> Unit) {
     // Held here, not in the row: a row scrolled off the page is thrown away, and with it a
     // check still asking the server.
     val passwordForm = remember { PasswordForm() }
+    var making by remember { mutableStateOf<String?>(null) }
+    val newForm = remember { NewForm() }
     val screenScope = rememberCoroutineScope()
     // DAVx5's address books on this phone, by name (their addresses are not readable).
     val davx5Books = remember(version) { Elsewhere.addressBooks(context) }
 
-    // Syncs the system starts (hourly, after a change) redraw the "last synced" line too.
+    // Address books made or removed in Nextcloud since: read the list again each time the page opens.
+    LaunchedEffect(accounts.size) {
+        for (account in accounts)
+            CollectionMaker.refresh(davSync, account, DavResourceFinder.Service.CARDDAV)
+        version++
+    }
+
+    // Syncs the system starts (on their schedule, after a change) redraw the "last synced" line too.
     DisposableEffect(Unit) {
         val main = Handler(Looper.getMainLooper())
         val handle = ContentResolver.addStatusChangeListener(
@@ -142,6 +154,51 @@ fun ServerScreen(onBack: () -> Unit) {
                                 },
                             )
                         }
+                    }
+                    item {
+                        if (making == account.name)
+                            NewAddressBook(davSync, account, newForm, screenScope) { made ->
+                                newForm.reset()
+                                making = null
+                                version++
+                                if (made) syncNow(account)
+                            }
+                        else
+                            PlainRow(
+                                ruled = false,
+                                title = stringResource(DavR.string.davsync_new_address_book),
+                                note = stringResource(DavR.string.davsync_new_address_book_note),
+                                onPress = { newForm.reset(); making = account.name },
+                            )
+                    }
+                    item {
+                        ChoiceRow(
+                            label = stringResource(DavR.string.davsync_interval),
+                            choices = listOf(
+                                stringResource(DavR.string.davsync_interval_15m),
+                                stringResource(DavR.string.davsync_interval_1h),
+                                stringResource(DavR.string.davsync_interval_4h),
+                            ),
+                            chosen = SyncPolicy.INTERVALS.indexOf(davSync.accounts.interval(account)),
+                            enabled = true,
+                            perLine = 3,
+                        ) {
+                            davSync.accounts.setInterval(account, ContactsContract.AUTHORITY, SyncPolicy.INTERVALS[it])
+                            version++
+                        }
+                    }
+                    item {
+                        val on = davSync.accounts.wifiOnly(account)
+                        PlainRow(
+                            ruled = false,
+                            title = stringResource(DavR.string.davsync_wifi_only),
+                            note = stringResource(if (on) R.string.server_on else R.string.server_off) + "\n" +
+                                stringResource(DavR.string.davsync_wifi_only_note),
+                            onPress = {
+                                davSync.accounts.setWifiOnly(account, !on)
+                                version++
+                            },
+                        )
                     }
                     item {
                         PlainRow(
@@ -400,3 +457,51 @@ private class PasswordForm {
     var status by mutableStateOf<Int?>(null)
     fun reset() { password = ""; busy = false; status = null }
 }
+
+/** A new address book, made on the server and turned on here. [onDone] says whether one was made. */
+@Composable
+private fun NewAddressBook(davSync: DavSync, account: Account, form: NewForm, scope: CoroutineScope, onDone: (Boolean) -> Unit) {
+    var name by form::name
+    var busy by form::busy
+    var status by form::status
+    Column(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+        TextMMD(text = stringResource(DavR.string.davsync_new_name), style = helperStyle(), fontWeight = FontWeight.Bold)
+        TextFieldMMD(
+            value = name,
+            onValueChange = { name = it.replace("\n", ""); status = null },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            enabled = !busy,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+        )
+        status?.let { TextMMD(text = stringResource(it), style = helperStyle(), modifier = Modifier.padding(top = 6.dp)) }
+        Row(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+            FootButton(stringResource(DavR.string.davsync_cancel), Modifier.weight(1f), enabled = !busy) { onDone(false) }
+            Spacer(Modifier.width(8.dp))
+            FootButton(stringResource(DavR.string.davsync_create), Modifier.weight(1f), enabled = !busy && name.isNotBlank()) {
+                busy = true
+                status = DavR.string.davsync_creating
+                scope.launch {
+                    val result = CollectionMaker.create(davSync, account, DavResourceFinder.Service.CARDDAV, name.trim(), null)
+                    busy = false
+                    when (result) {
+                        is CollectionMaker.Result.Made -> onDone(true)
+                        CollectionMaker.Result.NoHome -> status = DavR.string.davsync_create_no_home
+                        CollectionMaker.Result.Password -> status = DavR.string.davsync_create_password
+                        CollectionMaker.Result.Unreachable -> status = DavR.string.davsync_create_unreachable
+                        is CollectionMaker.Result.Refused -> status = DavR.string.davsync_create_refused
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** What the New address book row holds while it is open (held above the row, as [PasswordForm]). */
+private class NewForm {
+    var name by mutableStateOf("")
+    var busy by mutableStateOf(false)
+    var status by mutableStateOf<Int?>(null)
+    fun reset() { name = ""; busy = false; status = null }
+}
+

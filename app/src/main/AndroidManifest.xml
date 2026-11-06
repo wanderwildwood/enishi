@@ -25,6 +25,8 @@
          Contacts server), to sync with that server, in the background as well. Nothing goes
          anywhere else; the llama's address is still handed to a browser. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Contacts sync's "Wi-Fi only": whether the phone is on Wi-Fi now. Nothing else is read. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
     <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
     <uses-permission android:name="android.permission.READ_SYNC_STATS" />

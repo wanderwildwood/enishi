@@ -33,7 +33,8 @@ at a time.
   The tab last chosen is the one the app opens on.
 - **Its own sync, without DAVx5.** Under Settings, Contacts server, pick Nextcloud, iCloud, Zoho
   or another CardDAV server, sign in with an app password, and choose which address books to keep
-  here. Changes go both ways, and when a person was changed on both sides, both copies are kept.
+  here, or make a new one there. Changes go both ways, every 15 minutes, hour or 4 hours as you
+  choose (on Wi-Fi only, if you like), and when a person was changed on both sides, both copies are kept.
 - **A swipe down at the top of a tab syncs** the contacts now, through the app's own sync or DAVx5.
 - **Favorites as the phone keeps them**: a star on a person's page puts them under Favorites
   here and in the Handset app's Favorites.
