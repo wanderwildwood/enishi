@@ -104,7 +104,7 @@ fun CallsScreen(model: BookModel, contactId: Long, onBack: () -> Unit) {
         val today = stringResource(R.string.calls_today)
         val yesterday = stringResource(R.string.calls_yesterday)
         val state = rememberLazyListState()
-        PagedColumn(body, state = state) {
+        PagedColumn(body, state = state, showCutRow = true) {
             items(list.size) { i ->
                 val call = list[i]
                 val kind = stringResource(

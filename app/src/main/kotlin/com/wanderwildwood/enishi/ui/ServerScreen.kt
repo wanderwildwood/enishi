@@ -124,7 +124,7 @@ fun ServerScreen(onBack: () -> Unit) {
                 syncNow(account)
             }
         } else {
-            PagedColumn(Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.surface)) {
+            PagedColumn(Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.surface), showCutRow = true) {
                 for (account in accounts) {
                     item { Heading(account.name, ruled = false) }
                     val books = davSync.accounts.collections(account, Collection.TYPE_ADDRESSBOOK)
@@ -301,7 +301,7 @@ private fun SignInForm(davSync: DavSync, modifier: Modifier, onSignedIn: (Accoun
 
     val ready = address.isNotBlank() && user.isNotBlank() && password.isNotEmpty() && !busy
 
-    PagedColumn(modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
+    PagedColumn(modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface), showCutRow = true) {
         item {
             TextMMD(
                 text = stringResource(R.string.server_why),

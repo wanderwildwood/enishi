@@ -183,7 +183,7 @@ private fun GroupList(
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val twice = remember(groups) { groups.groupingBy { it.title }.eachCount().filterValues { it > 1 }.keys }
-    PagedColumn(modifier, state = state, onPullAtTop = onPullAtTop) {
+    PagedColumn(modifier, state = state, onPullAtTop = onPullAtTop, showCutRow = true) {
         items(groups, key = { it.id }) { g ->
             val count = pluralStringResource(R.plurals.group_size, g.size, g.size)
             NameRow(
@@ -209,7 +209,7 @@ internal fun PeopleList(
     onPullAtTop: (() -> Unit)? = null,
     onOpen: (Person) -> Unit,
 ) {
-    PagedColumn(modifier, state = state, onPullAtTop = onPullAtTop) {
+    PagedColumn(modifier, state = state, onPullAtTop = onPullAtTop, showCutRow = true) {
         if (above != null) item(key = "above") { Column { above() } }
         items(people, key = { it.id }) { p ->
             PersonRow(p, note(p), chosen = chosen?.let { p.id in it }, onLongPress = onLongPress?.let { { it(p) } }) { onOpen(p) }

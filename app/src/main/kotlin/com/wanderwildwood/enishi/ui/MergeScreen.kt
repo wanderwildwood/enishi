@@ -82,7 +82,7 @@ fun MergeScreen(model: BookModel, ids: List<Long>, onBack: () -> Unit, onMerged:
             }
         },
     ) { padding ->
-        PagedColumn(Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.surface)) {
+        PagedColumn(Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.surface), showCutRow = true) {
             item {
                 TextMMD(
                     text = stringResource(R.string.merge_body),

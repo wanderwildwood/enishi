@@ -85,7 +85,7 @@ fun SearchScreen(
         when {
             query.isBlank() -> Quiet(stringResource(R.string.search_hint), body)
             found.isEmpty() -> Quiet(stringResource(R.string.search_none), body)
-            else -> PagedColumn(body) {
+            else -> PagedColumn(body, showCutRow = true) {
                 items(found, key = { it.person.id }) { f -> PersonRow(f.person, f.by) { onOpen(f.person) } }
             }
         }

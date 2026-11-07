@@ -231,6 +231,7 @@ fun EditScreen(
             Modifier.fillMaxSize().padding(padding).imePadding().background(MaterialTheme.colorScheme.surface),
             state = listState,
             isScrollbarVisible = false,
+            showCutRow = true,
         ) {
             problem?.let {
                 item(key = "problem") {

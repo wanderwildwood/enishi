@@ -196,7 +196,7 @@ fun DetailScreen(
         }
         val d = c.draft
         val organisation = listOf(d.jobTitle, d.company).filter { it.isNotBlank() }.joinToString(", ")
-        CompositionLocalProvider(LocalCopy provides ::copy) { PagedColumn(body) {
+        CompositionLocalProvider(LocalCopy provides ::copy) { PagedColumn(body, showCutRow = true) {
             // Who they are, under the bar: the name again only when the bar had to cut it.
             if (nameCut || organisation.isNotEmpty()) {
                 item(key = "who") {
