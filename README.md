@@ -10,7 +10,7 @@ another, not a list of names.
 Not a fork. Written from scratch in Kotlin and Jetpack Compose, using Mudita's own
 [MMD](https://github.com/mudita/MMD) design system, and drawn in the same hand as Handset and
 Messaging: a plain list under All / Favorites / Groups tabs, a cog for settings, and a person's
-page of plain rows, a press on a number to call it. What it does is modelled on
+page of plain rows, a press on a number to call it. What it does is modeled on
 [Fossify Contacts](https://github.com/FossifyOrg/Contacts), which sets the bar for a contacts
 app that is free software.
 
@@ -23,7 +23,7 @@ app that is free software.
 
 A contacts app is the one every other app leans on. Messaging asks it to show a person, add a
 number or pick someone for a card; Mailbox asks it to add a sender or find a recipient. This is
-the address book those apps can count on, drawn for sixteen greys and a list that moves a page
+the address book those apps can count on, drawn for sixteen grays and a list that moves a page
 at a time.
 
 ## What it does
@@ -76,7 +76,7 @@ at a time.
 
 ## What it does not do
 
-No photographs: a face the size of a list row is a grey smudge on this screen, so none are
+No photographs: a face the size of a list row is a gray smudge on this screen, so none are
 shown — and none are lost, because a save leaves them where they are. Nothing is sent anywhere
 unless you sign in to your own contacts server, and then only the sync with that server goes out.
 
