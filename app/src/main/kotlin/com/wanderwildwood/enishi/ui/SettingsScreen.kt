@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import com.mudita.mmd.components.switcher.SwitchMMD
 import com.mudita.mmd.components.text.TextMMD
 import com.mudita.mmd.components.top_app_bar.TopAppBarMMD
 import com.wanderwildwood.enishi.R
@@ -84,6 +85,16 @@ fun SettingsScreen(
                         },
                     )
                 }
+            }
+            item {
+                PlainRow(
+                    ruled = false,
+                    title = stringResource(R.string.settings_dark),
+                    note = stringResource(R.string.settings_dark_note),
+                    noteLines = 3,
+                    trailing = { SwitchMMD(checked = DarkMode.on, onCheckedChange = null) },
+                    onPress = { DarkMode.set(context, !DarkMode.on) },
+                )
             }
             item { Heading(stringResource(R.string.server_title), ruled = false) }
             item { PlainRow(stringResource(R.string.server_row), note = stringResource(R.string.server_row_note), ruled = false, onPress = onServer) }
