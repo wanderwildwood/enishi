@@ -236,6 +236,9 @@
     </plurals>
     <string name="backup_never">Noch nicht gesichert.</string>
     <string name="backup_problem">Die letzte Sicherung schlug fehl: %1$s</string>
+    <string name="backup_folder_gone">Nicht zu finden. Bitte den Ordner neu wählen.</string>
+    <string name="backup_folder_gone_notice">Der Sicherungsordner ist nicht zu finden. Bitte den Ordner neu wählen.</string>
+    <string name="backup_failed_gone">Die letzte Sicherung schlug fehl: Der Ordner ist nicht zu finden.</string>
 
     <!-- ============================================================ -->
     <!-- Choosing several -->

@@ -46,6 +46,22 @@ class Backups(context: Context) {
     /** Why the last try failed, or null when it did not. */
     val problem: String? get() = prefs.getString("backup_problem", null)
 
+    /** Whether the last try failed because the folder could not be reached. */
+    val failedOnFolder: Boolean get() = prefs.getBoolean("backup_gone", false)
+
+    /**
+     * Whether the chosen folder can still be reached: not deleted, and the phone still lets the
+     * app in. A folder that cannot is kept, with the schedule, until another is chosen.
+     */
+    fun folderReachable(): Boolean {
+        val tree = folder ?: return false
+        return runCatching {
+            val doc = DocumentsContract.buildDocumentUriUsingTree(tree, DocumentsContract.getTreeDocumentId(tree))
+            app.contentResolver.query(doc, arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID), null, null, null)
+                ?.use { it.moveToFirst() } == true
+        }.getOrDefault(false)
+    }
+
     /** The folder as a person would name it: its last part, "Backups" for ".../Documents/Backups". */
     fun folderName(): String? = folder?.let { uri ->
         runCatching { DocumentsContract.getTreeDocumentId(uri) }.getOrNull()
@@ -61,6 +77,8 @@ class Backups(context: Context) {
         folder?.takeIf { it != uri }?.let { old ->
             runCatching { app.contentResolver.releasePersistableUriPermission(old, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION) }
         }
+        // A failure because the old folder was gone is answered by choosing this one.
+        if (failedOnFolder) prefs.edit().remove("backup_gone").remove("backup_problem").apply()
         folder = uri
     }
 
@@ -87,6 +105,7 @@ class Backups(context: Context) {
     /** Writes a file now, named for the day and the minute, then clears the old ones. Returns how many people it holds. */
     fun run(): Result<Int> = runCatching {
         val tree = folder ?: error("no folder chosen")
+        if (!folderReachable()) throw FolderGone()
         val resolver = app.contentResolver
         val parent = DocumentsContract.buildDocumentUriUsingTree(tree, DocumentsContract.getTreeDocumentId(tree))
         val name = "contacts-" + SimpleDateFormat("yyyy-MM-dd-HHmm", Locale.ROOT).format(Date()) + ".vcf"
@@ -121,6 +140,7 @@ class Backups(context: Context) {
             } else {
                 putString("backup_problem", result.exceptionOrNull()?.message ?: "it did not work")
             }
+            putBoolean("backup_gone", result.exceptionOrNull() is FolderGone)
         }.apply()
     }
 
@@ -156,6 +176,9 @@ class Backups(context: Context) {
         }
     }
 }
+
+/** The chosen folder was deleted, or the phone no longer lets the app into it. */
+class FolderGone : Exception("the folder cannot be reached")
 
 /** The scheduled backup, off the main thread. A failure is kept for Settings to show. */
 class BackupJob : JobService() {

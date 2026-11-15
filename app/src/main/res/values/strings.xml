@@ -240,6 +240,9 @@
     </plurals>
     <string name="backup_never">Not saved yet.</string>
     <string name="backup_problem">The last one failed: %1$s</string>
+    <string name="backup_folder_gone">Cannot be found. Choose the folder again.</string>
+    <string name="backup_folder_gone_notice">The backup folder cannot be found. Choose the folder again.</string>
+    <string name="backup_failed_gone">The last one failed: the folder cannot be found.</string>
 
     <!-- ============================================================ -->
     <!-- Choosing several -->

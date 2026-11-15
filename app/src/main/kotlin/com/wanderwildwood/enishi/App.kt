@@ -54,6 +54,8 @@ import com.wanderwildwood.enishi.ui.DetailScreen
 import com.wanderwildwood.enishi.ui.EditScreen
 import com.wanderwildwood.enishi.ui.GroupScreen
 import com.wanderwildwood.enishi.ui.HomeScreen
+import com.wanderwildwood.enishi.ui.TAB_ALL
+import com.wanderwildwood.enishi.ui.backGoesToAll
 import com.wanderwildwood.enishi.ui.MergeScreen
 import com.wanderwildwood.enishi.ui.shareMany
 import com.wanderwildwood.enishi.ui.start
@@ -166,7 +168,7 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
             backupsSeen++
             settingsNotice = saved.fold(
                 { context.resources.getQuantityString(R.plurals.export_done, it, it) },
-                { context.getString(R.string.export_failed) },
+                { context.getString(if (backups.failedOnFolder) R.string.backup_folder_gone_notice else R.string.export_failed) },
             )
         }
     }
@@ -184,6 +186,12 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
     fun back() {
         when {
             stack.lastOrNull() == Route.Home && chosen.isNotEmpty() -> chosen = emptySet()
+            // Back from Favorites or Groups goes to All; only Back from All leaves the app.
+            stack.size <= 1 && stack.lastOrNull() == Route.Home && backGoesToAll(tab, model.groups.isNotEmpty()) -> {
+                tab = TAB_ALL
+                model.prefs.homeTab = TAB_ALL
+                removed = emptyList()
+            }
             stack.size <= 1 -> finish()
             else -> stack.removeAt(stack.lastIndex)
         }

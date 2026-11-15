@@ -40,7 +40,6 @@ import com.mudita.mmd.components.buttons.OutlinedButtonMMD
 import com.mudita.mmd.components.divider.HorizontalDividerMMD
 import com.mudita.mmd.components.text.TextMMD
 import com.mudita.mmd.components.text_field.TextFieldMMD
-import kotlinx.coroutines.delay
 
 /** A glyph in the top bar: 28dp in a 48dp box, as the phone's own contacts app sets its. */
 @Composable
@@ -164,11 +163,11 @@ internal fun FootButton(label: String, modifier: Modifier, enabled: Boolean = tr
 internal fun helperStyle(): androidx.compose.ui.text.TextStyle =
     MaterialTheme.typography.labelSmall
 
-/** A short thing to say, along the foot, gone after a few seconds. */
+/** A short thing to say, along the foot, until the next press. */
 @Composable
 internal fun NoticeStrip(text: String, onSeen: () -> Unit) {
     LaunchedEffect(text) {
-        delay(5000)
+        NextPress.await()
         onSeen()
     }
     HorizontalDividerMMD()

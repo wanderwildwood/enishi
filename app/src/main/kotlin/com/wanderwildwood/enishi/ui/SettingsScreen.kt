@@ -130,16 +130,20 @@ fun SettingsScreen(
             }
             item {
                 val name = remember(backupsSeen) { backups.folderName() }
+                // A folder deleted, or one the phone no longer lets the app into, says so; a
+                // press here chooses it again. Until then it is kept, and the schedule with it.
+                val gone = remember(backupsSeen) { backups.folder != null && !backups.folderReachable() }
                 PlainRow(
                     ruled = false,
                     title = stringResource(R.string.backup_folder),
-                    note = name ?: stringResource(R.string.backup_folder_none),
+                    note = if (gone) stringResource(R.string.backup_folder_gone) else name ?: stringResource(R.string.backup_folder_none),
                     onPress = onBackupFolder,
                 )
             }
             item {
                 val note = remember(backupsSeen) {
-                    backups.problem?.let { context.getString(R.string.backup_problem, it) }
+                    (if (backups.failedOnFolder) context.getString(R.string.backup_failed_gone) else null)
+                        ?: backups.problem?.let { context.getString(R.string.backup_problem, it) }
                         ?: backups.last.takeIf { it > 0 }?.let {
                             val day = java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT).format(java.util.Date(it))
                             context.resources.getQuantityString(R.plurals.backup_note, Backups.KEEP, day, Backups.KEEP)

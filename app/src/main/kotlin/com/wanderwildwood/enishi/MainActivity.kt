@@ -15,6 +15,17 @@ import com.wanderwildwood.enishi.ui.ArmedScope
 
 /** The address book, from the launcher. One of it at a time. */
 class MainActivity : ComponentActivity() {
+    // A notice stays until the next press; see NextPress.
+    override fun dispatchTouchEvent(ev: android.view.MotionEvent): Boolean {
+        com.wanderwildwood.enishi.ui.NextPress.seen(ev)
+        return super.dispatchTouchEvent(ev)
+    }
+
+    override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
+        com.wanderwildwood.enishi.ui.NextPress.seen(event)
+        return super.dispatchKeyEvent(event)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -34,6 +45,17 @@ class MainActivity : ComponentActivity() {
  * showed lands in the conversation, not in the address book.
  */
 class AskActivity : ComponentActivity() {
+    // A notice stays until the next press; see NextPress.
+    override fun dispatchTouchEvent(ev: android.view.MotionEvent): Boolean {
+        com.wanderwildwood.enishi.ui.NextPress.seen(ev)
+        return super.dispatchTouchEvent(ev)
+    }
+
+    override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
+        com.wanderwildwood.enishi.ui.NextPress.seen(event)
+        return super.dispatchKeyEvent(event)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (handedToStockPicker()) {

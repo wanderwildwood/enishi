@@ -37,12 +37,18 @@ import com.wanderwildwood.enishi.R
 import com.wanderwildwood.enishi.data.ContactsSync
 import com.wanderwildwood.enishi.data.Group
 import com.wanderwildwood.enishi.data.Person
-import kotlinx.coroutines.delay
 
 /** The list's tabs, in the order they stand. Groups is there only while there are groups. */
 const val TAB_ALL = 0
 const val TAB_FAVOURITES = 1
 const val TAB_GROUPS = 2
+
+/**
+ * Whether Back on the list goes to All rather than leaving the app: from any tab but All, as long
+ * as that tab is the one showing (a Groups tab with no groups left already shows All).
+ */
+internal fun backGoesToAll(tab: Int, hasGroups: Boolean): Boolean =
+    tab != TAB_ALL && !(tab == TAB_GROUPS && !hasGroups)
 
 /**
  * Where the app opens, in the house's look, as Phone and Messaging have it: the plain title, and
@@ -121,10 +127,10 @@ fun HomeScreen(
             }
             else -> Column(body) {
                 // A swipe down on the first page of any tab asks DAVx5 and its kind to sync; the
-                // line under the tabs says so in words for a few seconds, and the rows change
+                // line under the tabs says so in words until the next press, and the rows change
                 // when the contacts store does.
                 var asked by remember { mutableStateOf(0) }
-                LaunchedEffect(asked) { if (asked > 0) { delay(3000); asked = 0 } }
+                LaunchedEffect(asked) { if (asked > 0) { NextPress.await(); asked = 0 } }
                 val pull: () -> Unit = {
                     ContactsSync.requestNow()
                     asked++
