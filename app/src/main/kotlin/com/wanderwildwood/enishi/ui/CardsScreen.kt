@@ -158,7 +158,7 @@ private fun OneCard(card: Draft, here: Person?, modifier: Modifier, onAdd: () ->
     PagedColumn(modifier, showCutRow = true) {
         item {
             Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 12.dp)) {
-                TextMMD(text = card.spokenName.ifBlank { stringResource(R.string.no_name) }, style = MaterialTheme.typography.headlineSmall)
+                TextMMD(text = card.spokenName.ifBlank { stringResource(R.string.no_name) }, style = MaterialTheme.typography.titleLarge)
                 listOf(card.jobTitle, card.company).filter { it.isNotBlank() }.joinToString(", ").takeIf { it.isNotEmpty() }?.let {
                     TextMMD(text = it, style = MaterialTheme.typography.bodySmall)
                 }
