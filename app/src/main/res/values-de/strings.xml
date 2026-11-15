@@ -290,7 +290,7 @@
     <string name="about_privacy_head">Datenschutz</string>
     <string name="about_privacy">Deine Kontakte bleiben im Adressbuch des Telefons; die App behält keine eigene Kopie. Sie geht nur ins Internet, wenn du dich bei deinem eigenen Kontaktserver anmeldest, um mit ihm abzugleichen; nichts geht sonst wohin, und nichts über dich wird gesammelt. Sie fragt nach Kontakten und Konten, Telefonanrufen (um eine Nummer anzurufen, die du antippst), der Anrufliste (um die Anrufe mit einer Person zu zeigen) und dem Kalender (nur wenn du einen Geburtstag dort einträgst). Es gibt keine Werbung, keine Analyse und kein Tracking. Sicherungen und Exporte gehen nur dorthin, wo du sie speicherst. „Füttere die Lamas“ öffnet eine Spendenseite (square.link) in deinem Browser, nur wenn du darauf drückst. Die App sendet nichts dorthin; wenn du spendest, wickelt Square die Zahlung auf dieser Seite ab, nicht diese App.</string>
     <string name="about_terms_head">Bedingungen</string>
-    <string name="about_terms">Diese App ist freie Software unter der GNU General Public License v3. Sie kommt ohne Gewährleistung: Nutzung auf eigene Gefahr. Eine Spende über „Füttere die Lamas“ ist freiwillig und schaltet nichts frei: Die App ist mit oder ohne Spende dieselbe.</string>
+    <string name="about_terms">Diese App ist freie Software unter der GNU General Public License, ausschließlich Version 3. Sie kommt ohne Gewährleistung: Nutzung auf eigene Gefahr. Eine Spende über „Füttere die Lamas“ ist freiwillig und schaltet nichts frei: Die App ist mit oder ohne Spende dieselbe.</string>
     <string name="about_close">Schließen</string>
     <string name="deleted_one">%1$s wurde gelöscht.</string>
     <plurals name="deleted_many">
