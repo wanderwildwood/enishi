@@ -59,6 +59,9 @@ import com.wanderwildwood.davsync.sync.SyncNow
 import com.wanderwildwood.enishi.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
 
 /**
  * Settings > Contacts server: Connections' own sync with a CardDAV server, in place of DAVx5.
@@ -195,7 +198,7 @@ fun ServerScreen(onBack: () -> Unit) {
                             title = stringResource(DavR.string.davsync_wifi_only),
                             note = stringResource(DavR.string.davsync_wifi_only_note),
                             noteLines = 4,
-                            trailing = { SwitchMMD(checked = on, onCheckedChange = null) },
+                            trailing = { SwitchMMD(checked = on, onCheckedChange = null, modifier = Modifier.semantics { toggleableState = ToggleableState(on) }) },
                             onPress = {
                                 davSync.accounts.setWifiOnly(account, !on)
                                 version++

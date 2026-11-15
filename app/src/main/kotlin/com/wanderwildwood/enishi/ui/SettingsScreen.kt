@@ -21,6 +21,9 @@ import com.mudita.mmd.components.top_app_bar.TopAppBarMMD
 import com.wanderwildwood.enishi.R
 import com.wanderwildwood.enishi.data.Account
 import com.wanderwildwood.enishi.data.Backups
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
 
 /** How names are ordered and shown, where new people go, a whole book in or out, and backups. */
 @Composable
@@ -92,7 +95,7 @@ fun SettingsScreen(
                     title = stringResource(R.string.settings_dark),
                     note = stringResource(R.string.settings_dark_note),
                     noteLines = 3,
-                    trailing = { SwitchMMD(checked = DarkMode.on, onCheckedChange = null) },
+                    trailing = { SwitchMMD(checked = DarkMode.on, onCheckedChange = null, modifier = Modifier.semantics { toggleableState = ToggleableState(DarkMode.on) }) },
                     onPress = { DarkMode.set(context, !DarkMode.on) },
                 )
             }
