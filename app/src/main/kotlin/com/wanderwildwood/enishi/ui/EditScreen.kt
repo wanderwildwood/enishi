@@ -70,6 +70,11 @@ import com.wanderwildwood.enishi.data.Typed
 import com.wanderwildwood.enishi.data.validPhone
 import com.wanderwildwood.enishi.with
 import kotlinx.coroutines.launch
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.toggleableState
 
 /** A birthday as the editor holds it: three boxes, read back into a day only on Save. */
 private data class EventBox(val dataId: Long?, val type: Int, val label: String?, val year: String, val month: String, val day: String)
@@ -594,6 +599,7 @@ private fun SwitchLine(text: String, on: Boolean, onPress: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
+            .semantics { role = Role.Switch; toggleableState = ToggleableState(on) }
             .clickable(onClick = onPress)
             .padding(horizontal = 16.dp, vertical = 16.dp),
     ) {

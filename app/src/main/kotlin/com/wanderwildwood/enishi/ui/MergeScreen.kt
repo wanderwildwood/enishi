@@ -32,6 +32,10 @@ import com.mudita.mmd.components.text.TextMMD
 import com.wanderwildwood.enishi.R
 import com.wanderwildwood.enishi.data.Card
 import kotlinx.coroutines.launch
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 
 /**
  * Several people made into one, by hand. The reader chooses whose name stays; everything the
@@ -97,6 +101,7 @@ fun MergeScreen(model: BookModel, ids: List<Long>, onBack: () -> Unit, onMerged:
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
+                        .semantics { role = Role.RadioButton; selected = on }
                         .clickable(enabled = !c.readOnly) { keep = c.id }
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                 ) {
