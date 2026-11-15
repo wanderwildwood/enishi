@@ -293,9 +293,9 @@
     <string name="access_about">About</string>
     <string name="about_no_browser">Nothing here opens web pages — %1$s</string>
     <string name="about_privacy_head">Privacy</string>
-    <string name="about_privacy">Your contacts stay in this phone’s own address book; the app keeps no copy of its own. It reaches the internet only if you sign in to your own contacts server, to sync with it; nothing goes anywhere else, and nothing is collected about you. It asks for contacts and accounts, phone calls (to call a number you press), the call log (to list calls with one person) and the calendar (only if you switch a birthday into it). There are no ads, no analytics and no tracking. Backups and exports go only where you choose to save them.</string>
+    <string name="about_privacy">Your contacts stay in this phone’s own address book; the app keeps no copy of its own. It reaches the internet only if you sign in to your own contacts server, to sync with it; nothing goes anywhere else, and nothing is collected about you. It asks for contacts and accounts, phone calls (to call a number you press), the call log (to list calls with one person) and the calendar (only if you switch a birthday into it). There are no ads, no analytics and no tracking. Backups and exports go only where you choose to save them. \"Feed the llamas\" in About opens a donation page (square.link) in your browser, only when you press it. The app sends nothing there; if you give, the payment is handled on that page by Square, not by this app.</string>
     <string name="about_terms_head">Terms</string>
-    <string name="about_terms">This app is free software under the GNU General Public License v3. It comes with no warranty: use it at your own risk.</string>
+    <string name="about_terms">This app is free software under the GNU General Public License v3. It comes with no warranty: use it at your own risk. A donation through \"Feed the llamas\" is voluntary and unlocks nothing: the app is the same with or without one.</string>
     <string name="about_close">Close</string>
     <string name="deleted_one">%1$s was deleted.</string>
     <plurals name="deleted_many">
