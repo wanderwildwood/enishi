@@ -93,7 +93,6 @@ fun SettingsScreen(
                 PlainRow(
                     ruled = false,
                     title = stringResource(R.string.settings_dark),
-                    note = stringResource(R.string.settings_dark_note),
                     noteLines = 3,
                     trailing = { SwitchMMD(checked = DarkMode.on, onCheckedChange = null, modifier = Modifier.semantics { toggleableState = ToggleableState(DarkMode.on) }) },
                     onPress = { DarkMode.set(context, !DarkMode.on) },
