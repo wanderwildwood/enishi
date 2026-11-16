@@ -1,5 +1,6 @@
 package com.wanderwildwood.enishi
 
+import com.wanderwildwood.enishi.ui.DarkSelection
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -30,9 +31,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             CompositionLocalProvider(LocalCursorBlinkEnabled provides false) {
-                ThemeMMD(colorScheme = monochrome, typography = houseTypography) {
+                ThemeMMD(colorScheme = monochrome, typography = houseTypography) { DarkSelection {
                     ArmedScope { App(this, Asked.Browse, fromElsewhere = false) }
-                }
+                } }
             }
         }
     }
@@ -65,9 +66,9 @@ class AskActivity : ComponentActivity() {
         val asked = Asked.of(intent)
         setContent {
             CompositionLocalProvider(LocalCursorBlinkEnabled provides false) {
-                ThemeMMD(colorScheme = monochrome, typography = houseTypography) {
+                ThemeMMD(colorScheme = monochrome, typography = houseTypography) { DarkSelection {
                     ArmedScope { App(this, asked, fromElsewhere = true) }
-                }
+                } }
             }
         }
     }
