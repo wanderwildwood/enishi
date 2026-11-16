@@ -486,6 +486,7 @@ private fun KindMenu(current: String, choices: List<Pair<Int, String>>, onPick: 
             }
         }
         DropdownMenuMMD(expanded = open, onDismissRequest = { open = false }) {
+            DarkWindow()
             choices.forEach { (type, word) ->
                 DropdownMenuItemMMD(text = { TextMMD(text = word, style = MaterialTheme.typography.bodyLarge) }, onClick = {
                     open = false
