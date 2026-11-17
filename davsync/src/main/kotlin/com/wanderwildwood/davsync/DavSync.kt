@@ -1,9 +1,11 @@
 package com.wanderwildwood.davsync
 
 import android.content.Context
+import android.content.pm.ApplicationInfo
 import com.wanderwildwood.davsync.accounts.AccountStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Semaphore
+import java.util.logging.Level
 import java.util.logging.Logger
 
 /**
@@ -14,6 +16,15 @@ class DavSync(context: Context) {
 
     val context: Context = context.applicationContext
     val logger: Logger = Logger.getLogger("davsync")
+
+    init {
+        // A released build writes nothing of the sync to the system log: the lines name the
+        // account, its address books and whole cards. Every logger here (davsync, dav4jvm,
+        // synctools) has no level of its own, so they all take the root's.
+        if (this.context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE == 0) {
+            Logger.getLogger("").level = Level.OFF
+        }
+    }
     val accounts = AccountStore(this.context)
     val ioDispatcher = Dispatchers.IO
 
