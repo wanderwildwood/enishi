@@ -278,7 +278,13 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
             onDeleteChosen = {
                 scope.launch {
                     val going = model.people.filter { it.id in chosen }
-                    val kept = going.mapNotNull { p -> model.io { it.snapshot(p.id, p.lookup, p.name, null) }.getOrNull() }
+                    // Each back into the store it was written in, as a single delete does.
+                    val kept = going.mapNotNull { p ->
+                        model.io { book ->
+                            val home = book.card(p.id, false)?.let { book.target(it, null)?.account }
+                            book.snapshot(p.id, p.lookup, p.name, home)
+                        }.getOrNull()
+                    }
                     val failed = going.count { p -> model.io { it.delete(p.id, p.lookup) }.isFailure }
                     chosen = emptySet()
                     removed = if (failed == 0) kept else emptyList()

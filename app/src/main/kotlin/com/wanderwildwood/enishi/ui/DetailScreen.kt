@@ -285,7 +285,8 @@ fun DetailScreen(
                 val (armed, press) = rememberArmed(c.id) {
                     scope.launch {
                         // Gone only if it went: a store that refused says so here.
-                        val kept = model.io { it.snapshot(c.id, c.lookup, c.name, c.parts.firstOrNull()?.account) }.getOrNull()
+                        // Undo puts it back where it can be written and kept: not into a messenger's list.
+                        val kept = model.io { it.snapshot(c.id, c.lookup, c.name, it.target(c, null)?.account) }.getOrNull()
                         if (model.io { it.delete(c.id, c.lookup) }.isSuccess) onGone(kept)
                         else notice = context.getString(R.string.delete_failed)
                     }
@@ -448,7 +449,10 @@ internal fun rememberDialer(onNothing: () -> Unit): (String) -> Unit {
 /** Calls straight away, or hands the number to the dialer when calling was not allowed. */
 private fun place(context: Context, number: String, direct: Boolean): Boolean {
     val uri = Uri.fromParts("tel", number, null)
-    if (direct && start(context, Intent(Intent.ACTION_CALL, uri))) return true
+    // A "number" with * or # in it is a code for the carrier or the phone: it goes to the
+    // dialer to be seen first, never run on one press.
+    val code = '*' in number || '#' in number
+    if (direct && !code && start(context, Intent(Intent.ACTION_CALL, uri))) return true
     return start(context, Intent(Intent.ACTION_DIAL, uri))
 }
 
