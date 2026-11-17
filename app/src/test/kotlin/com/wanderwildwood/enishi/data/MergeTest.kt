@@ -37,6 +37,15 @@ class MergeTest {
         assertEquals("vnd.android.cursor.item/relation", (ops[1] as Op.Insert).mime)
     }
 
+    @Test fun aBirthdayIsNotTakenForAnAnniversaryOnTheSameDate() {
+        val event = android.provider.ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE
+        val withBirthday = kept + row(4, event, "data1" to "1990-05-04", "data2" to 3L)
+        val other = listOf(row(10, event, "data1" to "1990-05-04", "data2" to 1L))
+        assertEquals(1, planMerge(withBirthday, other, emptySet()).size)
+        val same = listOf(row(11, event, "data1" to "1990-05-04", "data2" to 3L))
+        assertEquals(emptyList<Op>(), planMerge(withBirthday, same, emptySet()))
+    }
+
     @Test fun theKeptNameStays() {
         val other = listOf(row(10, StructuredName.CONTENT_ITEM_TYPE, "data1" to "A. Whitlock"))
         assertEquals(emptyList<Op>(), planMerge(kept, other, emptySet()))

@@ -84,6 +84,9 @@ internal fun key(row: StoreRow): String? {
         Website.CONTENT_ITEM_TYPE -> v.lowercase().removeSuffix("/")
         Organization.CONTENT_ITEM_TYPE -> listOf(v, (row.values["data4"] as? String).orEmpty().trim()).joinToString("|").lowercase()
         GroupMembership.CONTENT_ITEM_TYPE -> (row.values["data1"] ?: v).toString()
+        // A date is the same event only as the same kind: a birthday is not an anniversary.
+        android.provider.ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE ->
+            listOf(v, row.values["data2"]?.toString().orEmpty(), row.values["data3"]?.toString().orEmpty()).joinToString("|")
         else -> v.lowercase()
     }
     return if (norm.isBlank() || norm == "|") null else "${row.mime}:$norm"

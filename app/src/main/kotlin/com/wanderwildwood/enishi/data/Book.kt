@@ -180,9 +180,11 @@ class Book(context: Context) {
             return first to all.drop(1).filter { key(it) == key(first) }.map { it.id }
         }
         /** One field per distinct value, carrying every row that holds it. */
-        fun fields(mime: String, norm: (String) -> String): List<Field> =
+        fun fields(mime: String, kind: Boolean = false, norm: (String) -> String): List<Field> =
             of(mime).filter { it.d[0].isNotBlank() }
-                .groupBy { norm(it.d[0]) }.values
+                // With [kind], the same value of two kinds (a birthday and an anniversary on one
+                // date) is two fields, not one whose edit would change both.
+                .groupBy { if (kind) "${it.type}|${it.label.orEmpty()}|${norm(it.d[0])}" else norm(it.d[0]) }.values
                 .map { same -> same.first().let { f -> Field(f.d[0], f.type, f.label, f.id, same.drop(1).map { it.id }) } }
 
         var d = Draft(starred = starred)
@@ -207,7 +209,7 @@ class Book(context: Context) {
             phones = fields(Phone.CONTENT_ITEM_TYPE) { v -> v.filter(Char::isDigit).takeLast(10).ifEmpty { v.trim() } },
             emails = fields(Email.CONTENT_ITEM_TYPE) { it.trim().lowercase() },
             addresses = fields(StructuredPostal.CONTENT_ITEM_TYPE) { it.trim().lowercase().replace(Regex("\\s+"), " ") },
-            events = fields(Event.CONTENT_ITEM_TYPE) { it.trim() },
+            events = fields(Event.CONTENT_ITEM_TYPE, kind = true) { it.trim() },
             websites = fields(Website.CONTENT_ITEM_TYPE) { it.trim().lowercase().removeSuffix("/") },
             groups = of(GroupMembership.CONTENT_ITEM_TYPE)
                 .filter { it.d[0].isNotBlank() }
@@ -284,8 +286,21 @@ class Book(context: Context) {
         val type = account.type.orEmpty()
         val sync = type in syncing
         val local = account.isPhone || listOf("local", "phone", "device", "sim").any { type.lowercase().contains(it) }
-        return Kept(writable = sync || local, syncing = sync)
+        return Kept(writable = (sync || local) && !readOnlyBook(account), syncing = sync)
     }
+
+    /**
+     * An address book of this app's own sync that the server lets be read and not written: an
+     * edit there would be thrown away by the next sync, so it is not offered. Another app's
+     * accounts cannot be asked, and stay as they were.
+     */
+    private fun readOnlyBook(account: Account): Boolean = runCatching {
+        val name = account.name ?: return@runCatching false
+        val type = account.type ?: return@runCatching false
+        android.accounts.AccountManager.get(app)
+            // synctools AndroidAddressBook.USER_DATA_READ_ONLY
+            .getUserData(android.accounts.Account(name, type), "read_only") != null
+    }.getOrDefault(false)
 
     /** How many people each store holds. */
     private fun counts(): Map<Account, Int> {
@@ -386,10 +401,15 @@ class Book(context: Context) {
                     .withValue(Data.MIMETYPE, op.mime)
                     .also { b -> op.values.forEach { (k, v) -> b.withValue(k, v) } }
                     .build()
+                // Each row must still be there: a sync that rewrote the card since it was opened
+                // makes the whole save fail, and say so, rather than do nothing and call it saved.
                 is Op.Update -> ContentProviderOperation.newUpdate(ContentUris.withAppendedId(Data.CONTENT_URI, op.dataId))
                     .also { b -> op.values.forEach { (k, v) -> b.withValue(k, v) } }
+                    .withExpectedCount(1)
                     .build()
-                is Op.Delete -> ContentProviderOperation.newDelete(ContentUris.withAppendedId(Data.CONTENT_URI, op.dataId)).build()
+                is Op.Delete -> ContentProviderOperation.newDelete(ContentUris.withAppendedId(Data.CONTENT_URI, op.dataId))
+                    .withExpectedCount(1)
+                    .build()
             }
         }
         if (after.starred != card.draft.starred) {
