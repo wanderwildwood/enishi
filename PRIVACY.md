@@ -54,7 +54,10 @@ for this phone is best, where the server has them. Nothing is kept until the ser
 answered. The password is then sealed with a key in the phone's keystore, which cannot be
 exported, and kept only in the phone's own account store, which no other app can read; it is
 sent only to that server's domain, and over `https://` unless the address is on your home
-network or a VPN (a private or Tailscale address). Each address book you sync becomes an account
+network or a VPN (a private or Tailscale address). Over plain `http://` the password is not
+encrypted, and it goes, once asked for, to whatever machine answers at that address on the
+network the phone is on: away from home, that may not be your server. Use `https://` where you
+can. Each address book you sync becomes an account
 of its own on the phone, as with DAVx5, so its people sit in Android's contacts store like any
 others. Remove account takes the account and its people off the phone; the server keeps them.
 
