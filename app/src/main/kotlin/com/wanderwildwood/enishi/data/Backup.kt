@@ -120,7 +120,18 @@ class Backups(context: Context) {
         val made = DocumentsContract.createDocument(resolver, parent, "application/octet-stream", "$name.part")
             ?: error("the folder would not take a new file")
         try {
-            resolver.openOutputStream(made, "wt")?.use { book.exportTo(lookups, it) } ?: error("the new file could not be opened")
+            var written = 0L
+            resolver.openOutputStream(made, "wt")?.use { out ->
+                // Counted on the way through: a file that took nothing is no backup, and the
+                // older ones are not cleared for it.
+                val counting = object : java.io.FilterOutputStream(out) {
+                    override fun write(b: Int) { out.write(b); written++ }
+                    override fun write(b: ByteArray, off: Int, len: Int) { out.write(b, off, len); written += len }
+                }
+                book.exportTo(lookups, counting)
+                counting.flush()
+            } ?: error("the new file could not be opened")
+            if (lookups.isNotEmpty() && written == 0L) error("nothing was written")
         } catch (e: Exception) {
             runCatching { DocumentsContract.deleteDocument(resolver, made) }
             throw e

@@ -29,6 +29,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // The scheduled backup set again if the system let it go (an update can); nothing
+        // happens when it is still there, or when no backup is set up.
+        runCatching { com.wanderwildwood.enishi.data.Backups(this).schedule() }
         setContent {
             CompositionLocalProvider(LocalCursorBlinkEnabled provides false) {
                 ThemeMMD(colorScheme = monochrome, typography = houseTypography) { DarkSelection {
