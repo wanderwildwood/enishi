@@ -82,7 +82,7 @@ unless you sign in to your own contacts server, and then only the sync with that
 
 ## Where this is up to
 
-Version 0.2.18. What it writes is worked out by plain code that is unit tested on its own: which
+What it writes is worked out by plain code that is unit tested on its own: which
 rows a save adds, changes and deletes; how vCards from 2.1 to 4.0 read, including old phones'
 quoted-printable in other character sets; dates without a year; search; who in a file is
 already here; what a merge adds and what it leaves.
@@ -135,3 +135,7 @@ An address book is a list of everyone a person knows. Copyleft means nobody can 
 with something added that they will not show you.
 
 Icons are from Material Symbols, Apache 2.0.
+
+The sync engine is adapted from [DAVx5](https://github.com/bitfireAT/davx5-ose) by bitfire web
+engineering, GPL-3.0, and carries their dav4jvm (MPL-2.0, in `dav4jvm/`) and synctools (GPL-3.0,
+in `synctools/`) libraries, each with its own license file.

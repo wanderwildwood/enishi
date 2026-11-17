@@ -16,7 +16,7 @@ class CallsTest {
 
     @Test
     fun theSameNumberWrittenTwoWays() {
-        assertEquals(numberKey("+1 (828) 555-0143"), numberKey("8285550143"))
+        assertEquals(numberKey("+1 (555) 010-0143"), numberKey("5550100143"))
         assertEquals("", numberKey("Unknown"))
     }
 

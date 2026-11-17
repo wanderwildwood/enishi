@@ -36,7 +36,21 @@
     <!-- Which accounts sync contacts up to a server (DAVx5, Google…): since Android 11 another
          app's sync service is hidden unless asked for, and without it every server-kept
          person looked like a messenger's and could not be edited. -->
+    <!-- The sync library (synctools) asks for calendars' and task apps' permissions too; this
+         app syncs contacts only, so those it never uses are taken out of the built app. -->
+    <uses-permission android:name="android.permission.MANAGE_CONTACTS" tools:node="remove" />
+    <uses-permission android:name="org.dmfs.permission.READ_TASKS" tools:node="remove" />
+    <uses-permission android:name="org.dmfs.permission.WRITE_TASKS" tools:node="remove" />
+    <uses-permission android:name="org.tasks.permission.READ_TASKS" tools:node="remove" />
+    <uses-permission android:name="org.tasks.permission.WRITE_TASKS" tools:node="remove" />
+    <uses-permission android:name="at.techbee.jtx.permission.READ" tools:node="remove" />
+    <uses-permission android:name="at.techbee.jtx.permission.WRITE" tools:node="remove" />
+
     <queries>
+        <!-- The task apps the sync library looks for: not asked for here. -->
+        <package android:name="at.techbee.jtx" tools:node="remove" />
+        <package android:name="org.dmfs.tasks" tools:node="remove" />
+        <package android:name="org.tasks" tools:node="remove" />
         <!-- Home, whose dark mode switch this app follows when Home is installed. -->
         <package android:name="com.wanderwildwood.iori" />
         <intent>

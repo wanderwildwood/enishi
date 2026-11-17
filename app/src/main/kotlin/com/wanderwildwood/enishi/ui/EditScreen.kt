@@ -235,7 +235,6 @@ fun EditScreen(
         PagedColumn(
             Modifier.fillMaxSize().padding(padding).imePadding().background(MaterialTheme.colorScheme.surface),
             state = listState,
-            isScrollbarVisible = false,
             showCutRow = true,
         ) {
             problem?.let {
