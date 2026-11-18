@@ -349,6 +349,9 @@
     <string name="server_other">Something went wrong while asking the server.</string>
     <string name="server_on">Syncs to this phone</string>
     <string name="server_off">Not on this phone</string>
+    <!-- An address book row, armed: a second press sends what is waiting, then takes the book off the phone -->
+    <string name="server_off_armed">Tap again: sends changes made here, then takes it off this phone</string>
+    <string name="server_off_not_sent">Not taken off: the changes made here could not be sent. Try again when the server can be reached.</string>
     <string name="server_read_only">read only</string>
     <string name="server_sync_now">Sync now</string>
     <string name="server_sync_now_note">Also on its own, as set above, and after each change</string>

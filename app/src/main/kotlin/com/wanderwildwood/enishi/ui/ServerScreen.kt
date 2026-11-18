@@ -47,6 +47,7 @@ import com.wanderwildwood.davsync.DavSync
 import com.wanderwildwood.davsync.R as DavR
 import com.wanderwildwood.davsync.accounts.Elsewhere
 import com.wanderwildwood.davsync.accounts.StatusText
+import com.wanderwildwood.davsync.accounts.AccountStore
 import com.wanderwildwood.davsync.signin.Provider
 import com.wanderwildwood.davsync.model.Collection
 import com.wanderwildwood.davsync.servicedetection.DavResourceFinder
@@ -80,6 +81,8 @@ fun ServerScreen(onBack: () -> Unit) {
     val accounts = remember(version) { davSync.accounts.accounts() }
     var adding by remember { mutableStateOf(false) }
     var syncing by remember { mutableStateOf(false) }
+    // The address book whose last changes could not be sent, so it was left on.
+    var notTurnedOff by remember { mutableStateOf<Long?>(null) }
     var changing by remember { mutableStateOf<String?>(null) }
     // Held here, not in the row: a row scrolled off the page is thrown away, and with it a
     // check still asking the server.
@@ -145,16 +148,46 @@ fun ServerScreen(onBack: () -> Unit) {
                     for (c in books) {
                         item {
                             val twice = Elsewhere.match(c, davx5Books) != Elsewhere.Match.NONE
+                            // Turning a book off takes it off the phone, with any change not yet
+                            // sent: so it asks first, and sends what is waiting before it goes.
+                            // A send that fails leaves the book on and says so.
+                            val (armed, turnOff) = rememberArmed(account.name to c.id) {
+                                notTurnedOff = null
+                                syncing = true
+                                SyncNow.contacts(context, account) { result ->
+                                    Handler(Looper.getMainLooper()).post {
+                                        syncing = false
+                                        if (AccountStore.Status.problemOf(result) == null) {
+                                            davSync.accounts.setSync(account, c.id, false)
+                                            syncNow(account)
+                                        } else {
+                                            notTurnedOff = c.id
+                                        }
+                                        version++
+                                    }
+                                }
+                            }
                             PlainRow(
                                 ruled = false,
                                 title = c.title(),
-                                note = stringResource(if (c.sync) R.string.server_on else R.string.server_off) +
+                                note = stringResource(
+                                    when {
+                                        armed -> R.string.server_off_armed
+                                        c.sync -> R.string.server_on
+                                        else -> R.string.server_off
+                                    },
+                                ) +
                                     (if (c.readOnly()) " · " + stringResource(R.string.server_read_only) else "") +
+                                    (if (notTurnedOff == c.id && c.sync) "\n" + stringResource(R.string.server_off_not_sent) else "") +
                                     (if (twice) "\n" + stringResource(com.wanderwildwood.davsync.R.string.davsync_elsewhere_book) else ""),
                                 onPress = {
-                                    davSync.accounts.setSync(account, c.id, !c.sync)
-                                    version++
-                                    syncNow(account)
+                                    if (!c.sync) {
+                                        davSync.accounts.setSync(account, c.id, true)
+                                        version++
+                                        syncNow(account)
+                                    } else if (!syncing) {
+                                        turnOff()
+                                    }
                                 },
                             )
                         }

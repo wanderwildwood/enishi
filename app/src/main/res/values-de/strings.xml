@@ -343,6 +343,8 @@
     <string name="server_other">Beim Fragen des Servers ist etwas schiefgegangen.</string>
     <string name="server_on">Wird auf dieses Telefon abgeglichen</string>
     <string name="server_off">Nicht auf diesem Telefon</string>
+    <string name="server_off_armed">Noch einmal tippen: sendet Änderungen von hier und nimmt es dann von diesem Telefon</string>
+    <string name="server_off_not_sent">Nicht entfernt: Die Änderungen von hier konnten nicht gesendet werden. Versuche es wieder, wenn der Server erreichbar ist.</string>
     <string name="server_read_only">nur lesen</string>
     <string name="server_sync_now">Jetzt abgleichen</string>
     <string name="server_sync_now_note">Außerdem von selbst, wie oben eingestellt, und nach jeder Änderung</string>
