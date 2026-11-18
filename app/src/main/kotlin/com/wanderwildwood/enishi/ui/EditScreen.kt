@@ -67,6 +67,7 @@ import com.wanderwildwood.enishi.data.Day
 import com.wanderwildwood.enishi.data.Draft
 import com.wanderwildwood.enishi.data.Field
 import com.wanderwildwood.enishi.data.Typed
+import com.wanderwildwood.enishi.data.typedOrChanged
 import com.wanderwildwood.enishi.data.validPhone
 import com.wanderwildwood.enishi.with
 import kotlinx.coroutines.launch
@@ -189,11 +190,13 @@ fun EditScreen(
                 is Typed.Ok -> days += Field(t.day.stored(), e.type, e.label, e.dataId, e.copies)
             }
         }
-        if (draft.emails.any { it.value.isNotBlank() && !android.util.Patterns.EMAIL_ADDRESS.matcher(it.value.trim()).matches() }) {
+        // Only what was typed is checked: a stored value left as it was is saved as it was.
+        val stored = card?.draft
+        if (typedOrChanged(stored?.emails.orEmpty(), draft.emails).any { it.value.isNotBlank() && !android.util.Patterns.EMAIL_ADDRESS.matcher(it.value.trim()).matches() }) {
             problem = context.getString(R.string.edit_bad_email)
             return
         }
-        if (!draft.phones.all { validPhone(it.value) }) {
+        if (!typedOrChanged(stored?.phones.orEmpty(), draft.phones).all { validPhone(it.value) }) {
             problem = context.getString(R.string.edit_bad_phone)
             return
         }

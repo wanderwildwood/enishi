@@ -11,3 +11,14 @@ fun validPhone(text: String): Boolean {
     if (t.any { !(it.isDigit() && it.code < 128) && it !in "+-.() *#,;/" }) return false
     return t.count { it.isDigit() } >= 3
 }
+
+/**
+ * The values in [after] typed or changed in the editor: new ones, and stored ones whose text is
+ * not what [before] held. Only these are checked on Save, so a value kept as it came from
+ * another app, a sync or a card (a number with "ext", an accented address) never stops an
+ * edit of something else.
+ */
+fun typedOrChanged(before: List<Field>, after: List<Field>): List<Field> {
+    val stored = before.filter { it.dataId != null }.associate { it.dataId to it.value.trim() }
+    return after.filter { f -> f.dataId == null || stored[f.dataId] != f.value.trim() }
+}
