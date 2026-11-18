@@ -279,15 +279,17 @@ fun App(activity: ComponentActivity, asked: Asked, fromElsewhere: Boolean) {
                 scope.launch {
                     val going = model.people.filter { it.id in chosen }
                     // Each back into the store it was written in, as a single delete does.
-                    val kept = going.mapNotNull { p ->
+                    val snapshots = going.map { p ->
                         model.io { book ->
                             val home = book.card(p.id, false)?.let { book.target(it, null)?.account }
                             book.snapshot(p.id, p.lookup, p.name, home)
                         }.getOrNull()
                     }
-                    val failed = going.count { p -> model.io { it.delete(p.id, p.lookup) }.isFailure }
+                    val deleted = going.map { p -> model.io { it.delete(p.id, p.lookup) }.isSuccess }
+                    val failed = deleted.count { !it }
                     chosen = emptySet()
-                    removed = if (failed == 0) kept else emptyList()
+                    // Undo still puts back everyone who did go, when some could not be deleted.
+                    removed = snapshots.filterIndexed { i, _ -> deleted[i] }.filterNotNull()
                     if (failed > 0) homeNotice = context.resources.getQuantityString(R.plurals.chosen_deleted_some, failed, failed)
                 }
             },
