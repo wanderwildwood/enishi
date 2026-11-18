@@ -21,7 +21,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.mudita.mmd.components.divider.HorizontalDividerMMD
 import com.mudita.mmd.components.text.TextMMD
 import com.mudita.mmd.components.top_app_bar.TopAppBarMMD
 import com.wanderwildwood.enishi.R
@@ -133,7 +132,7 @@ fun CardsScreen(
                                 }
                             }
                         }
-                        HorizontalDividerMMD()
+                        DottedRule()
                     }
                     itemsIndexed(cards) { i, card ->
                         PlainRow(
@@ -163,7 +162,7 @@ private fun OneCard(card: Draft, here: Person?, modifier: Modifier, onAdd: () ->
                     TextMMD(text = it, style = MaterialTheme.typography.bodySmall)
                 }
             }
-            HorizontalDividerMMD()
+            DottedRule()
         }
         card.phones.forEach { item { PlainRow(it.value, Labels.phone(context, it.type, it.label), onPress = null) } }
         card.emails.forEach { item { PlainRow(it.value, stringResource(R.string.kind_email, Labels.email(context, it.type, it.label)), onPress = null) } }

@@ -93,7 +93,7 @@ fun MergeScreen(model: BookModel, ids: List<Long>, onBack: () -> Unit, onMerged:
                     style = helperStyle(),
                     modifier = Modifier.padding(16.dp),
                 )
-                HorizontalDividerMMD()
+                DottedRule()
             }
             items(cards, key = { it.id }) { c ->
                 val on = c.id == keep
