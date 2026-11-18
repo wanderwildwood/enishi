@@ -450,11 +450,7 @@ class Book(context: Context) {
     /** Writes a deleted person again, as a new contact in the account they were kept in. */
     fun restore(removed: Removed, fallback: Account): Long? {
         val draft = removed.draft() ?: return null
-        // The card the store composed usually carries the picture already; the one read
-        // separately is for when it did not.
-        val photo = removed.photo
-        val id = create(if (draft.photo == null && photo != null) draft.copy(photo = CardPhoto(photo)) else draft, removed.account ?: fallback)
-        return id
+        return create(draft, removed.account ?: fallback)
     }
 
     /** Puts a picture on a raw contact; a failure leaves the person without one. */

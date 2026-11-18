@@ -11,6 +11,10 @@ class Removed(
     val photo: ByteArray?,
     val account: Account?,
 ) {
-    /** The person as a draft, or null when the card reads as nobody (then there is nothing to undo). */
-    fun draft(): Draft? = VCard.read(vcard).firstOrNull()
+    /**
+     * The person as a draft, or null when the card reads as nobody (then there is nothing to
+     * undo). The picture read on its own is the full one; the card carries only the small
+     * thumbnail, so that is used only when there was no other.
+     */
+    fun draft(): Draft? = VCard.read(vcard).firstOrNull()?.let { d -> if (photo != null) d.copy(photo = CardPhoto(photo)) else d }
 }

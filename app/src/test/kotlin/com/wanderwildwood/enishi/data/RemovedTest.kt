@@ -35,4 +35,11 @@ class RemovedTest {
         assertEquals(Account("a", "t"), r.account)
         assertTrue(r.photo!!.contentEquals(byteArrayOf(1, 2, 3)))
     }
+
+    @Test fun `the full picture read on its own wins over the thumbnail in the card`() {
+        val thumb = java.util.Base64.getEncoder().encodeToString(byteArrayOf(9, 9, 9))
+        val withThumb = String(card).replace("END:VCARD", "PHOTO;ENCODING=b;TYPE=JPEG:$thumb\r\nEND:VCARD").toByteArray()
+        assertEquals(CardPhoto(byteArrayOf(1, 2, 3)), Removed("Ada", withThumb, byteArrayOf(1, 2, 3), null).draft()!!.photo)
+        assertEquals(CardPhoto(byteArrayOf(9, 9, 9)), Removed("Ada", withThumb, null, null).draft()!!.photo)
+    }
 }
