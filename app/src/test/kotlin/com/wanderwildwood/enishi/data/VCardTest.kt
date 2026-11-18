@@ -2,7 +2,9 @@ package com.wanderwildwood.enishi.data
 
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Event
+import android.provider.ContactsContract.CommonDataKinds.Im
 import android.provider.ContactsContract.CommonDataKinds.Phone
+import android.provider.ContactsContract.CommonDataKinds.SipAddress
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -117,6 +119,27 @@ class VCardTest {
         val extra = c.extras.single()
         assertEquals("vnd.android.cursor.item/relation", extra.mime)
         assertEquals(listOf("Ada Whitlock", "14"), extra.values.take(2))
+    }
+
+    @Test fun messengerHandlesAndSipAddressesAsAndroidWritesThemAreKept() {
+        // The lines Android's own composer writes for an IM and a SIP address.
+        val c = read(
+            "BEGIN:VCARD\r\nVERSION:2.1\r\nN:Whitlock;Ada;;;\r\n" +
+                "X-JABBER;HOME:ada@example.org\r\n" +
+                "X-SKYPE-USERNAME:ada.whitlock\r\n" +
+                "X-SIP:sip:ada@sip.example.org\r\n" +
+                "END:VCARD\r\n",
+        ).single()
+        assertEquals(
+            listOf(
+                Extra(Im.CONTENT_ITEM_TYPE, listOf("ada@example.org", Im.TYPE_HOME.toString(), "", "", Im.PROTOCOL_JABBER.toString())),
+                Extra(Im.CONTENT_ITEM_TYPE, listOf("ada.whitlock", Im.TYPE_OTHER.toString(), "", "", Im.PROTOCOL_SKYPE.toString())),
+                Extra(SipAddress.CONTENT_ITEM_TYPE, listOf("ada@sip.example.org", SipAddress.TYPE_OTHER.toString(), "")),
+            ),
+            c.extras,
+        )
+        val four = read("BEGIN:VCARD\nVERSION:4.0\nFN:Tomas Reyes\nIMPP;TYPE=work:sip:tomas@sip.example.org\nEND:VCARD\n").single()
+        assertEquals(listOf(Extra(SipAddress.CONTENT_ITEM_TYPE, listOf("tomas@sip.example.org", SipAddress.TYPE_WORK.toString(), ""))), four.extras)
     }
 
     @Test fun aVersionFourPictureIsADataAddress() {

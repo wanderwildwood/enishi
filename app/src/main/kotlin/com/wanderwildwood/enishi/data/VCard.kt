@@ -3,7 +3,9 @@ package com.wanderwildwood.enishi.data
 import android.provider.ContactsContract.CommonDataKinds.BaseTypes
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Event
+import android.provider.ContactsContract.CommonDataKinds.Im
 import android.provider.ContactsContract.CommonDataKinds.Phone
+import android.provider.ContactsContract.CommonDataKinds.SipAddress
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
 import android.provider.ContactsContract.CommonDataKinds.Website
 import java.nio.charset.Charset
@@ -271,7 +273,35 @@ object VCard {
                     }
                 }
                 "PHOTO" -> if (draft.photo == null) photo(prop)?.let { draft = draft.copy(photo = CardPhoto(it)) }
+                // Android's own export writes a messenger handle under its service's own name,
+                // and a SIP address as X-SIP (IMPP:sip: in 4.0).
+                in IM_PROTOCOLS.keys -> {
+                    val handle = unescape(prop.text()).trim()
+                    if (handle.isNotEmpty()) keep(Im.CONTENT_ITEM_TYPE, typed(handle, types, Im.TYPE_HOME, Im.TYPE_WORK, Im.TYPE_OTHER) + listOf("", IM_PROTOCOLS.getValue(prop.name).toString()))
+                }
+                "X-SIP" -> sip(unescape(prop.text()).trim().let { if (it.startsWith("sip:", ignoreCase = true)) it.substring(4) else it }, types)
+                "IMPP" -> {
+                    val value = unescape(prop.text()).trim()
+                    if (value.startsWith("sip:", ignoreCase = true)) sip(value.substring(4), types)
+                }
             }
+        }
+
+        private fun sip(address: String, types: Set<String>) {
+            if (address.isNotBlank()) keep(SipAddress.CONTENT_ITEM_TYPE, typed(address.trim(), types, SipAddress.TYPE_HOME, SipAddress.TYPE_WORK, SipAddress.TYPE_OTHER))
+        }
+
+        /** data1, data2 (the kind) and data3 (its own label) of a row the app keeps as it came. */
+        private fun typed(value: String, types: Set<String>, home: Int, work: Int, other: Int): List<String> {
+            val label = custom(types)
+            val type = if (label != null && "HOME" !in types && "WORK" !in types) BaseTypes.TYPE_CUSTOM else homeWorkOther(types, home, work, other)
+            return listOf(value, type.toString(), if (type == BaseTypes.TYPE_CUSTOM) label.orEmpty() else "")
+        }
+
+        private fun keep(mime: String, values: List<String>) {
+            if (draft.extras.size >= MAX_EXTRAS) return
+            val extra = Extra(mime, values)
+            if (extra !in draft.extras) draft = draft.copy(extras = draft.extras + extra)
         }
 
         /**
@@ -313,6 +343,19 @@ object VCard {
         "vnd.android.cursor.item/sip_address",
     )
     private const val MAX_EXTRAS = 50
+
+    /** The property Android's export names each messenger by, and the protocol it stands for. */
+    private val IM_PROTOCOLS = mapOf(
+        "X-AIM" to Im.PROTOCOL_AIM,
+        "X-MSN" to Im.PROTOCOL_MSN,
+        "X-YAHOO" to Im.PROTOCOL_YAHOO,
+        "X-SKYPE-USERNAME" to Im.PROTOCOL_SKYPE,
+        "X-QQ" to Im.PROTOCOL_QQ,
+        "X-GOOGLE-TALK" to Im.PROTOCOL_GOOGLE_TALK,
+        "X-ICQ" to Im.PROTOCOL_ICQ,
+        "X-JABBER" to Im.PROTOCOL_JABBER,
+        "X-NETMEETING" to Im.PROTOCOL_NETMEETING,
+    )
 
     /** About 3 MB of picture: anything larger is not a contact's picture. */
     private const val MAX_PHOTO_CHARS = 4_000_000
