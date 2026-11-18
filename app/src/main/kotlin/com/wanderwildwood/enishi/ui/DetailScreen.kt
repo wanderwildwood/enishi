@@ -145,6 +145,12 @@ fun DetailScreen(
         }
     }
 
+    // Checked again at the press: the app holding the name may have changed since the page opened.
+    fun handTo(app: Elsewhere, c: Card, number: String) {
+        if (app.isReal(context)) hand(app.intent(c.id, c.lookup, c.name, number))
+        else notice = context.getString(R.string.nothing_opens)
+    }
+
     // The calls with them, read once the call log may be: one more than are shown, which is how
     // the page knows whether All calls has anything to add.
     fun mayReadCalls() = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALL_LOG) == PackageManager.PERMISSION_GRANTED
@@ -275,7 +281,7 @@ fun DetailScreen(
                 elsewhere.forEach { app ->
                     item(key = "elsewhere-${app.name}") {
                         PlainRow(stringResource(app.label), onPress = {
-                            if (numbers.size == 1) hand(app.intent(c.id, c.lookup, c.name, numbers[0].value))
+                            if (numbers.size == 1) handTo(app, c, numbers[0].value)
                             else handing = app
                         })
                     }
@@ -332,7 +338,7 @@ fun DetailScreen(
                     note = Labels.phone(context, p.type, p.label),
                     onPress = {
                         handing = null
-                        hand(app.intent(c.id, c.lookup, c.name, p.value))
+                        handTo(app, c, p.value)
                     },
                 )
             }
