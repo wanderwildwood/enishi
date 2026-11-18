@@ -290,7 +290,7 @@
     <string name="about_title">Connections %1$s</string>
     <string name="about_what">Everyone you know, under tabs for all, favorites and groups. A person’s page lists each number to call or text, then your recent calls with them.</string>
     <string name="about_licence">GNU General Public License v3</string>
-    <string name="about_bundled">Icons from Material Symbols (Apache-2.0).</string>
+    <string name="about_bundled">The server sync is adapted from DAVx5 by bitfire web engineering (GPL-3.0), with their dav4jvm (MPL-2.0) and synctools (GPL-3.0) libraries. Icons from Material Symbols (Apache-2.0).</string>
     <string name="about_feed_the_llamas">Feed the llamas</string>
     <string name="about_no_browser_address">No browser is installed. The address is %1$s.</string>
     <string name="access_about">About</string>
