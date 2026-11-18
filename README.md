@@ -34,7 +34,10 @@ at a time.
 - **Its own sync, without DAVx5.** Under Settings, Contacts server, pick Nextcloud, iCloud, Zoho
   or another CardDAV server, sign in with an app password, and choose which address books to keep
   here, or make a new one there. Changes go both ways, every 15 minutes, hour or 4 hours as you
-  choose (on Wi-Fi only, if you like), and when a person was changed on both sides, both copies are kept.
+  choose (on Wi-Fi only, if you like), and when a person was changed on both sides, both copies
+  are kept. The password goes only over https, or over plain http to an address at home or on a
+  VPN; away from home, plain http is refused before anything is sent. A contact's photo given as
+  a link is fetched only from your own server.
 - **A swipe down at the top of a tab syncs** the contacts now, through the app's own sync or DAVx5.
 - **Favorites as the phone keeps them**: a star on a person's page puts them under Favorites
   here and in the Handset app's Favorites.
@@ -71,6 +74,7 @@ at a time.
 - **Messaging's New message works without the phone's own Contacts app**: a box to type a
   number, Create Group to tick several people and write to all of them, or one tap for one
   person. Where the phone's own Contacts app is still on, Messaging is sent to its screen.
+- **Dark mode**, a switch in Settings; the app also follows the phone's own dark setting.
 - **Accounts.** Where a phone syncs contacts to an account, new people go where most already
   are, or wherever you choose.
 
