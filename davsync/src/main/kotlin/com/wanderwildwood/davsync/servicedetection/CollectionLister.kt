@@ -47,7 +47,10 @@ class CollectionLister(
     }
 
     /** The calendars or address books in [homeSet]. A home set the server refuses (403/404/410) gives none. */
-    suspend fun collections(homeSet: Url, service: Service): List<Collection> {
+    suspend fun collections(homeSet: Url, service: Service): List<Collection> = collectionsOrNull(homeSet, service).orEmpty()
+
+    /** As [collections], but null for a home set the server refused, so a listing can tell it is partial. */
+    private suspend fun collectionsOrNull(homeSet: Url, service: Service): List<Collection>? {
         val type = if (service == Service.CARDDAV) Collection.TYPE_ADDRESSBOOK else Collection.TYPE_CALENDAR
         val found = mutableListOf<Collection>()
         try {
@@ -63,6 +66,7 @@ class CollectionLister(
             if (e is UnauthorizedException) throw e
             if (e.statusCode !in arrayOf(403, 404, 410)) throw e
             logger.log(Level.INFO, "Home set $homeSet not accessible", e)
+            return null
         }
         return found
     }
@@ -71,17 +75,30 @@ class CollectionLister(
      * Everything for [service] from a finished discovery: the collections in each home set, plus
      * any collection the typed address pointed at directly.
      */
-    suspend fun all(info: DavResourceFinder.Configuration.ServiceInfo, service: Service): List<Collection> {
+    suspend fun all(info: DavResourceFinder.Configuration.ServiceInfo, service: Service): List<Collection> =
+        listing(info, service).collections
+
+    /**
+     * As [all], and whether every home set answered. A listing with a home set refused is only
+     * part of the list: a collection missing from it may still be on the server.
+     */
+    suspend fun listing(info: DavResourceFinder.Configuration.ServiceInfo, service: Service): Listing {
         val homeSets = info.homeSets.toMutableSet()
         info.principal?.let { homeSets += homeSets(it, service) }
         val byUrl = LinkedHashMap<Url, Collection>()
-        for (homeSet in homeSets)
-            for (c in collections(homeSet, service))
+        var complete = true
+        for (homeSet in homeSets) {
+            val found = collectionsOrNull(homeSet, service)
+            if (found == null) complete = false
+            for (c in found.orEmpty())
                 byUrl[c.url] = c
+        }
         for ((url, c) in info.collections)
             byUrl.putIfAbsent(url, c)
-        return byUrl.values.toList()
+        return Listing(byUrl.values.toList(), complete)
     }
+
+    class Listing(val collections: List<Collection>, val complete: Boolean)
 
     companion object {
         fun collectionQueryProperties(service: Service): Array<Property.Name> =
