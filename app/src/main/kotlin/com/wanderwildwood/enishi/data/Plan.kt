@@ -151,8 +151,11 @@ private fun many(ops: MutableList<Op>, mime: String, column: String, before: Lis
             if (value.isNotEmpty()) ops += Op.Insert(mime, mapOf(column to value, "data2" to field.type, "data3" to label))
             continue
         }
+        // The copies are the ones the store holds, read with the person: an editor that hands
+        // back a value rebuilt from its own boxes (a date) need not carry them along.
+        val copies = (was[row]?.copies.orEmpty() + field.copies).distinct()
         if (value.isEmpty()) {
-            (listOf(row) + field.copies).forEach { ops += Op.Delete(it) }
+            (listOf(row) + copies).forEach { ops += Op.Delete(it) }
             continue
         }
         val old = was[row] ?: continue
@@ -162,6 +165,6 @@ private fun many(ops: MutableList<Op>, mime: String, column: String, before: Lis
             values["data2"] = field.type // TYPE, the same column for every kind
             values["data3"] = label // LABEL, likewise
         }
-        if (values.isNotEmpty()) (listOf(row) + field.copies).forEach { ops += Op.Update(it, values) }
+        if (values.isNotEmpty()) (listOf(row) + copies).forEach { ops += Op.Update(it, values) }
     }
 }

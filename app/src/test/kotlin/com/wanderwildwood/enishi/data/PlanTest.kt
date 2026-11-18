@@ -1,5 +1,6 @@
 package com.wanderwildwood.enishi.data
 
+import android.provider.ContactsContract.CommonDataKinds.Event
 import android.provider.ContactsContract.CommonDataKinds.GroupMembership
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.CommonDataKinds.StructuredName
@@ -76,6 +77,18 @@ class PlanTest {
         assertEquals(setOf(10L, 110L, 1L, 101L), ops.filterIsInstance<Op.Update>().map { it.dataId }.toSet())
         val gone = plan(joined, joined.copy(phones = emptyList()))
         assertEquals(setOf(10L, 110L), gone.filterIsInstance<Op.Delete>().map { it.dataId }.toSet())
+    }
+
+    @Test fun aChangedDateReachesEveryCopyEvenWhenTheEditorHandsBackNoCopies() {
+        val birthday = Field("1990-03-14", Event.TYPE_BIRTHDAY, null, 60, copies = listOf(160))
+        val before = ada.copy(events = listOf(birthday))
+        // The editor rebuilds a date from its three boxes, as a field of its own.
+        val after = before.copy(events = listOf(Field("1990-03-15", Event.TYPE_BIRTHDAY, null, 60)))
+        val ops = plan(before, after).filterIsInstance<Op.Update>()
+        assertEquals(setOf(60L, 160L), ops.map { it.dataId }.toSet())
+        assertTrue(ops.all { it.values[Event.START_DATE] == "1990-03-15" })
+        val cleared = plan(before, before.copy(events = listOf(birthday.copy(value = "", copies = emptyList()))))
+        assertEquals(setOf(60L, 160L), cleared.filterIsInstance<Op.Delete>().map { it.dataId }.toSet())
     }
 
     @Test fun aRowThatShowsNothingHereIsLeftAlone() {

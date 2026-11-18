@@ -77,7 +77,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.toggleableState
 
 /** A birthday as the editor holds it: three boxes, read back into a day only on Save. */
-private data class EventBox(val dataId: Long?, val type: Int, val label: String?, val year: String, val month: String, val day: String)
+private data class EventBox(val dataId: Long?, val type: Int, val label: String?, val year: String, val month: String, val day: String, val copies: List<Long> = emptyList())
 
 /**
  * A new person, or a change to one, laid out as the phone's own contacts app lays its editor
@@ -105,7 +105,7 @@ fun EditScreen(
     val startBoxes = remember {
         readable.map { f ->
             val d = Day.parse(f.value)!!
-            EventBox(f.dataId, f.type, f.label, d.year?.toString().orEmpty(), d.month.toString(), d.day.toString())
+            EventBox(f.dataId, f.type, f.label, d.year?.toString().orEmpty(), d.month.toString(), d.day.toString(), f.copies)
         }
     }
     var events by remember { mutableStateOf(startBoxes) }
@@ -186,7 +186,7 @@ fun EditScreen(
                     problem = context.getString(R.string.edit_bad_date)
                     return
                 }
-                is Typed.Ok -> days += Field(t.day.stored(), e.type, e.label, e.dataId)
+                is Typed.Ok -> days += Field(t.day.stored(), e.type, e.label, e.dataId, e.copies)
             }
         }
         if (draft.emails.any { it.value.isNotBlank() && !android.util.Patterns.EMAIL_ADDRESS.matcher(it.value.trim()).matches() }) {
