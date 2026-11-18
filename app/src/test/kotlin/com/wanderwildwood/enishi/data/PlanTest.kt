@@ -115,4 +115,10 @@ class PlanTest {
         // name, note, two phones, one group
         assertEquals(5, ops.size)
     }
+
+    @Test fun aNewContactWritesTheKindsReadFromACard() {
+        val ops = planNew(ada.copy(extras = listOf(Extra("vnd.android.cursor.item/relation", listOf("Tomas Reyes", "14", "")))))
+        val extra = ops.filterIsInstance<Op.Insert>().single { it.mime == "vnd.android.cursor.item/relation" }
+        assertEquals(mapOf("data1" to "Tomas Reyes", "data2" to "14"), extra.values)
+    }
 }

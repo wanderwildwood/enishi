@@ -102,4 +102,28 @@ class VCardTest {
         val bytes = byteArrayOf(0xEF.toByte(), 0xBB.toByte(), 0xBF.toByte()) + "BEGIN:VCARD\nFN:Mum\nEND:VCARD\n".toByteArray()
         assertEquals("Mum", VCard.read(bytes).single().spokenName)
     }
+
+    @Test fun aPictureAndAndroidsOwnKindsAreKept() {
+        val jpeg = byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte(), 0xE0.toByte(), 1, 2, 3)
+        val b64 = java.util.Base64.getEncoder().encodeToString(jpeg)
+        val c = read(
+            "BEGIN:VCARD\r\nVERSION:3.0\r\nFN:Tomas Reyes\r\n" +
+                "PHOTO;ENCODING=b;TYPE=JPEG:${b64.take(4)}\r\n ${b64.drop(4)}\r\n" +
+                "X-ANDROID-CUSTOM:vnd.android.cursor.item/relation;Ada Whitlock;14;;;;;;;;;;;;;\r\n" +
+                "X-ANDROID-CUSTOM:vnd.com.example.app/profile;tap me;;;;;;;;;;;;;;\r\n" +
+                "END:VCARD\r\n",
+        ).single()
+        assertEquals(CardPhoto(jpeg), c.photo)
+        val extra = c.extras.single()
+        assertEquals("vnd.android.cursor.item/relation", extra.mime)
+        assertEquals(listOf("Ada Whitlock", "14"), extra.values.take(2))
+    }
+
+    @Test fun aVersionFourPictureIsADataAddress() {
+        val png = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
+        val c = read("BEGIN:VCARD\nVERSION:4.0\nFN:Ada\nPHOTO:data:image/png;base64,${java.util.Base64.getEncoder().encodeToString(png)}\nEND:VCARD\n").single()
+        assertEquals(CardPhoto(png), c.photo)
+        val linked = read("BEGIN:VCARD\nVERSION:4.0\nFN:Ada\nPHOTO:https://example.org/a.jpg\nEND:VCARD\n").single()
+        assertEquals(null, linked.photo)
+    }
 }

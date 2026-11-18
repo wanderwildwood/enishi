@@ -68,7 +68,12 @@ fun plan(before: Draft, after: Draft): List<Op> {
 }
 
 /** Everything a brand-new contact needs written, which is a plan from nothing. */
-fun planNew(draft: Draft): List<Op> = plan(Draft(), draft.copy(
+fun planNew(draft: Draft): List<Op> = planFresh(draft) + draft.extras.mapNotNull { extra ->
+    val values = extra.values.take(15).mapIndexedNotNull { i, v -> v.takeIf { it.isNotEmpty() }?.let { "data${i + 1}" to it } }.toMap()
+    if (values.isEmpty()) null else Op.Insert(extra.mime, values)
+}
+
+private fun planFresh(draft: Draft): List<Op> = plan(Draft(), draft.copy(
     nameDataId = null, nicknameDataId = null, organisationDataId = null, noteDataId = null,
     nameCopies = emptyList(), nicknameCopies = emptyList(), organisationCopies = emptyList(), noteCopies = emptyList(),
     phones = draft.phones.map { it.copy(dataId = null, copies = emptyList()) },

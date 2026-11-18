@@ -259,9 +259,36 @@ object VCard {
                         "vnd.android.cursor.item/nickname" -> if (draft.nickname.isEmpty()) {
                             draft = draft.copy(nickname = f.getOrNull(1).orEmpty().trim())
                         }
+                        // Kinds the app shows no field for, kept as they came so a backup read
+                        // back is the person it saved. Only Android's own kinds: a file names
+                        // no other app's rows into the address book.
+                        else -> if (f.isNotEmpty() && f[0] in KEPT_KINDS) {
+                            val values = f.drop(1)
+                            if (values.any { it.isNotBlank() } && draft.extras.size < MAX_EXTRAS) {
+                                draft = draft.copy(extras = draft.extras + Extra(f[0], values))
+                            }
+                        }
                     }
                 }
+                "PHOTO" -> if (draft.photo == null) photo(prop)?.let { draft = draft.copy(photo = CardPhoto(it)) }
             }
+        }
+
+        /**
+         * A picture written into the card: 2.1's ENCODING=BASE64, 3.0's ENCODING=b, or 4.0's
+         * data: address. A picture only named by a web address is left out, as is one too
+         * large to be a contact's picture.
+         */
+        private fun photo(prop: Prop): ByteArray? {
+            val raw = prop.raw.trim()
+            val encoded = when {
+                raw.startsWith("data:", ignoreCase = true) ->
+                    raw.substringAfter(',', "").takeIf { raw.substringBefore(',').contains(";base64", ignoreCase = true) }
+                prop.params["ENCODING"]?.uppercase() in setOf("BASE64", "B") -> raw
+                else -> null
+            } ?: return null
+            if (encoded.length > MAX_PHOTO_CHARS) return null
+            return base64(encoded)?.takeIf { it.isNotEmpty() }
         }
 
         private fun event(text: String, type: Int, label: String?) {
@@ -277,6 +304,38 @@ object VCard {
             val hasParts = listOf(d.prefix, d.given, d.middle, d.family, d.suffix).any { it.isNotBlank() }
             return if (hasParts) d.copy(wholeName = "") else d
         }
+    }
+
+    /** Android's kinds (relation, IM, SIP address) that its export writes as X-ANDROID-CUSTOM. */
+    private val KEPT_KINDS = setOf(
+        "vnd.android.cursor.item/relation",
+        "vnd.android.cursor.item/im",
+        "vnd.android.cursor.item/sip_address",
+    )
+    private const val MAX_EXTRAS = 50
+
+    /** About 3 MB of picture: anything larger is not a contact's picture. */
+    private const val MAX_PHOTO_CHARS = 4_000_000
+
+    /** Standard base64, ignoring whitespace; null when it is not base64. */
+    internal fun base64(text: String): ByteArray? {
+        val alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+        val out = java.io.ByteArrayOutputStream(text.length * 3 / 4)
+        var buffer = 0
+        var bits = 0
+        for (c in text) {
+            if (c == '=') break
+            if (c.isWhitespace()) continue
+            val v = alphabet.indexOf(c)
+            if (v < 0) return null
+            buffer = (buffer shl 6) or v
+            bits += 6
+            if (bits >= 8) {
+                bits -= 8
+                out.write((buffer shr bits) and 0xFF)
+            }
+        }
+        return out.toByteArray()
     }
 
     private fun custom(types: Set<String>): String? =

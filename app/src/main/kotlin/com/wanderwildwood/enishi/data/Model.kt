@@ -86,6 +86,10 @@ data class Draft(
     /** Group id to the membership rows that put them there, one per copy (none for one added here). */
     val groups: Map<Long, List<Long>> = emptyMap(),
     val starred: Boolean = false,
+    /** A picture read from a vCard, written with a new contact. */
+    val photo: CardPhoto? = null,
+    /** Rows of kinds the app has no field for, read from a vCard and written as they came. */
+    val extras: List<Extra> = emptyList(),
 ) {
     /** A name, in the order it is spoken, for a vCard with parts and no FN. */
     val spokenName: String
@@ -133,3 +137,16 @@ fun storeName(name: String, type: String): String {
     val plain = name.replace(Regex("\\s+#\\d+$"), "")
     return if (type.startsWith("at.bitfire.davdroid")) "${plain.substringBefore(" (").ifBlank { plain }} (DAVx5)" else plain
 }
+
+/** A contact's picture as bytes (JPEG or PNG), compared by what is in it. */
+class CardPhoto(val bytes: ByteArray) {
+    override fun equals(other: Any?): Boolean = other is CardPhoto && other.bytes.contentEquals(bytes)
+    override fun hashCode(): Int = bytes.contentHashCode()
+}
+
+/**
+ * A row of a kind the app shows no field for (a relation, an IM or SIP address), kept as
+ * Android keeps it: its MIME type and the values of data1, data2 and on.
+ */
+data class Extra(val mime: String, val values: List<String>)
+

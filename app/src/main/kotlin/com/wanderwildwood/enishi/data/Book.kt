@@ -380,6 +380,8 @@ class Book(context: Context) {
         }
         val results = resolver.applyBatch(ContactsContract.AUTHORITY, ops)
         val rawId = results.firstOrNull()?.uri?.let(ContentUris::parseId) ?: return null
+        // Apart from the rest: a picture too large for the store does not lose the person.
+        draft.photo?.let { putPhoto(rawId, it.bytes) }
         return resolver.query(
             ContentUris.withAppendedId(RawContacts.CONTENT_URI, rawId),
             arrayOf(RawContacts.CONTACT_ID), null, null, null,
@@ -448,25 +450,25 @@ class Book(context: Context) {
     /** Writes a deleted person again, as a new contact in the account they were kept in. */
     fun restore(removed: Removed, fallback: Account): Long? {
         val draft = removed.draft() ?: return null
-        val id = create(draft, removed.account ?: fallback) ?: return null
+        // The card the store composed usually carries the picture already; the one read
+        // separately is for when it did not.
         val photo = removed.photo
-        if (photo != null) runCatching {
-            val raw = resolver.query(
-                RawContacts.CONTENT_URI, arrayOf(RawContacts._ID),
-                "${RawContacts.CONTACT_ID}=?", arrayOf(id.toString()), null,
-            )?.use { if (it.moveToFirst()) it.getLong(0) else null }
-            if (raw != null) {
-                resolver.insert(
-                    Data.CONTENT_URI,
-                    android.content.ContentValues().apply {
-                        put(Data.RAW_CONTACT_ID, raw)
-                        put(Data.MIMETYPE, ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE)
-                        put(ContactsContract.CommonDataKinds.Photo.PHOTO, photo)
-                    },
-                )
-            }
-        }
+        val id = create(if (draft.photo == null && photo != null) draft.copy(photo = CardPhoto(photo)) else draft, removed.account ?: fallback)
         return id
+    }
+
+    /** Puts a picture on a raw contact; a failure leaves the person without one. */
+    private fun putPhoto(rawId: Long, bytes: ByteArray) {
+        runCatching {
+            resolver.insert(
+                Data.CONTENT_URI,
+                android.content.ContentValues().apply {
+                    put(Data.RAW_CONTACT_ID, rawId)
+                    put(Data.MIMETYPE, ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE)
+                    put(ContactsContract.CommonDataKinds.Photo.PHOTO, bytes)
+                },
+            )
+        }
     }
 
     /** Every row of these raw contacts, every column, as the store keeps them. */
