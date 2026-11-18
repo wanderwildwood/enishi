@@ -358,7 +358,7 @@
     <string name="server_syncing">Syncing…</string>
     <string name="server_remove">Remove account</string>
     <string name="server_remove_armed">Tap again: sends changes made here, then removes its people from this phone</string>
-    <string name="server_remove_not_sent">Not removed: the changes made here could not be sent. Try again when the server can be reached.</string>
+    <string name="server_remove_not_sent">Not removed: the changes made here could not be sent. To keep them, leave this page and try again when the server can be reached. Removing it from here loses them.</string>
     <string name="server_remove_unsent_armed">Tap again: removes it anyway, and the changes not sent are lost</string>
     <string name="server_add">Add another server</string>
     <string name="davsync_address_book_label">Connections address book</string>
