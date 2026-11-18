@@ -357,7 +357,9 @@
     <string name="server_sync_now_note">Also on its own, as set above, and after each change</string>
     <string name="server_syncing">Syncing…</string>
     <string name="server_remove">Remove account</string>
-    <string name="server_remove_armed">Tap again: removes its people from this phone (the server keeps them)</string>
+    <string name="server_remove_armed">Tap again: sends changes made here, then removes its people from this phone</string>
+    <string name="server_remove_not_sent">Not removed: the changes made here could not be sent. Try again when the server can be reached.</string>
+    <string name="server_remove_unsent_armed">Tap again: removes it anyway, and the changes not sent are lost</string>
     <string name="server_add">Add another server</string>
     <string name="davsync_address_book_label">Connections address book</string>
     <!-- shared-about: contact row + privacy section (edit in /opt/projects/shared-about) -->

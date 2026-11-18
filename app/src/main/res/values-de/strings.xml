@@ -350,7 +350,9 @@
     <string name="server_sync_now_note">Außerdem von selbst, wie oben eingestellt, und nach jeder Änderung</string>
     <string name="server_syncing">Wird abgeglichen…</string>
     <string name="server_remove">Konto entfernen</string>
-    <string name="server_remove_armed">Noch einmal tippen: entfernt seine Kontakte von diesem Telefon (der Server behält sie)</string>
+    <string name="server_remove_armed">Noch einmal tippen: sendet Änderungen von hier und entfernt dann seine Kontakte von diesem Telefon</string>
+    <string name="server_remove_not_sent">Nicht entfernt: Die Änderungen von hier konnten nicht gesendet werden. Versuche es wieder, wenn der Server erreichbar ist.</string>
+    <string name="server_remove_unsent_armed">Noch einmal tippen: entfernt es trotzdem, und die nicht gesendeten Änderungen gehen verloren</string>
     <string name="server_add">Weiteren Server hinzufügen</string>
     <string name="davsync_address_book_label">Adressbuch von Connections</string>
 

@@ -83,6 +83,8 @@ fun ServerScreen(onBack: () -> Unit) {
     var syncing by remember { mutableStateOf(false) }
     // The address book whose last changes could not be sent, so it was left on.
     var notTurnedOff by remember { mutableStateOf<Long?>(null) }
+    // The account whose removal was stopped because its waiting changes could not be sent.
+    var notRemoved by remember { mutableStateOf<String?>(null) }
     var changing by remember { mutableStateOf<String?>(null) }
     // Held here, not in the row: a row scrolled off the page is thrown away, and with it a
     // check still asking the server.
@@ -263,14 +265,42 @@ fun ServerScreen(onBack: () -> Unit) {
                             )
                     }
                     item {
-                        val (armed, press) = rememberArmed(account.name) {
-                            davSync.accounts.remove(account)
-                            version++
+                        // Removing the account takes its people off the phone, with any change
+                        // not yet sent: so what is waiting is sent first, as when one book is
+                        // turned off. A send that fails leaves the account in place and says so;
+                        // only a press armed after that, which says the changes will be lost,
+                        // removes it anyway (a server that is gone for good must not trap it).
+                        val unsent = notRemoved == account.name
+                        val (armed, press) = rememberArmed(account.name to unsent) {
+                            if (unsent) {
+                                notRemoved = null
+                                davSync.accounts.remove(account)
+                                version++
+                            } else {
+                                syncing = true
+                                SyncNow.contacts(context, account) { result ->
+                                    Handler(Looper.getMainLooper()).post {
+                                        syncing = false
+                                        if (AccountStore.Status.problemOf(result) == null) davSync.accounts.remove(account)
+                                        else notRemoved = account.name
+                                        version++
+                                    }
+                                }
+                            }
                         }
                         PlainRow(
                             ruled = false,
-                            title = stringResource(if (armed) R.string.server_remove_armed else R.string.server_remove),
-                            onPress = press,
+                            title = stringResource(
+                                when {
+                                    armed && unsent -> R.string.server_remove_unsent_armed
+                                    armed -> R.string.server_remove_armed
+                                    else -> R.string.server_remove
+                                },
+                            ),
+                            titleLines = 2,
+                            note = if (unsent && !armed) stringResource(R.string.server_remove_not_sent) else null,
+                            noteLines = 3,
+                            onPress = { if (!syncing) press() },
                         )
                     }
                 }
