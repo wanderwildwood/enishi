@@ -7,12 +7,13 @@ device.
 *Enishi* is 縁, the ties between people. The word means the thread that runs from one person to
 another, not a list of names.
 
-Not a fork. Written from scratch in Kotlin and Jetpack Compose, using Mudita's own
-[MMD](https://github.com/mudita/MMD) design system, and drawn in the same hand as Handset and
-Messaging: a plain list under All / Favorites / Groups tabs, a cog for settings, and a person's
-page of plain rows, a press on a number to call it. What it does is modeled on
-[Fossify Contacts](https://github.com/FossifyOrg/Contacts), which sets the bar for a contacts
-app that is free software.
+Not a fork of a contacts app: the address book is written in Kotlin and Jetpack Compose, and the
+server sync is adapted from [DAVx5](https://github.com/bitfireAT/davx5-ose) (see License below).
+It uses Mudita's own [MMD](https://github.com/mudita/MMD) design system, and is drawn in the same
+hand as Handset and Messaging: a plain list under All / Favorites / Groups tabs, a cog for
+settings, and a person's page of plain rows, a press on a number to call it. What it does is
+modeled on [Fossify Contacts](https://github.com/FossifyOrg/Contacts), which sets the bar for a
+contacts app that is free software.
 
 | | |
 |---|---|
