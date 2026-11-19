@@ -361,6 +361,14 @@
     <string name="server_remove_not_sent">Not removed: the changes made here could not be sent. To keep them, leave this page and try again when the server can be reached. Removing it from here loses them.</string>
     <string name="server_remove_unsent_armed">Tap again: removes it anyway, and the changes not sent are lost</string>
     <string name="server_add">Add another server</string>
+    <!-- The phone's Nextcloud account, the one Home holds (shared-homeaccount). -->
+    <string name="home_account_use">Use the phone\'s Nextcloud account</string>
+    <string name="home_account_in_use">%1$s on %2$s, from Home.</string>
+    <string name="home_account_stop">Stop using it</string>
+    <string name="home_account_signed_out">Home is signed out of Nextcloud, so this app is too. Your %1$s stay on the phone.</string>
+    <string name="home_account_what">contacts</string>
+    <string name="home_account_use_armed">Tap again: sends changes made here, then your own sign-in and its people leave this phone</string>
+    <string name="home_account_own_kept">Your own sign-in is still here: the changes made there could not be sent. Remove it when the server can be reached.</string>
     <string name="davsync_address_book_label">Connections address book</string>
     <!-- shared-about: contact row + privacy section (edit in /opt/projects/shared-about) -->
     <string name="about_write_to">Write to %1$s</string>

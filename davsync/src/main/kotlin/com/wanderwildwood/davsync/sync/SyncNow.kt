@@ -28,6 +28,12 @@ object SyncNow {
         scope.launch {
             val davSync = DavSync(app)
             val result = SyncResult()
+            if (!SyncGate.mayRun(app, account)) {
+                // No password just now (SyncGate): nothing was sent, and nothing is recorded.
+                result.softError = true
+                onDone(result)
+                return@launch
+            }
             contactsLock.withLock {
                 if (davSync.accounts.exists(account))
                     AddressBookSyncer(davSync, account, null, false, result).use { it() }

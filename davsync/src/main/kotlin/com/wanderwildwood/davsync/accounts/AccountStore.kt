@@ -86,6 +86,24 @@ class AccountStore(context: Context) {
         return true
     }
 
+    /** Forgets [account]'s password; its address books and people stay. */
+    fun forgetPassword(account: Account) {
+        manager.setUserData(account, KEY_PASSWORD, null)
+    }
+
+    /**
+     * Stops [account]'s address books syncing on their own (for an account that has no password
+     * just now). Its next sync turns them on again.
+     */
+    fun pauseSync(account: Account, authority: String) {
+        for (target in listOf(account) + addressBookAccounts(account)) {
+            ContentResolver.setSyncAutomatically(target, authority, false)
+            for (old in ContentResolver.getPeriodicSyncs(target, authority))
+                ContentResolver.removePeriodicSync(target, authority, old.extras)
+            ContentResolver.cancelSync(target, authority)
+        }
+    }
+
     fun collections(account: Account): List<Collection> =
         Collection.fromJson(manager.getUserData(account, KEY_COLLECTIONS))
 

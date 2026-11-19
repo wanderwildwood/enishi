@@ -34,7 +34,9 @@ at a time.
   The tab last chosen is the one the app opens on.
 - **Its own sync, without DAVx5.** Under Settings, Contacts server, pick Nextcloud, iCloud, Zoho
   or another CardDAV server, sign in with an app password, and choose which address books to keep
-  here, or make a new one there. Changes go both ways, every 15 minutes, hour or 4 hours as you
+  here, or make a new one there. Where Home is signed in to a Nextcloud, one row, **Use the
+  phone's Nextcloud account**, takes that account instead, with no password to type; when Home
+  signs out, so does this, and your contacts stay on the phone. Changes go both ways, every 15 minutes, hour or 4 hours as you
   choose (on Wi-Fi only, if you like), and when a person was changed on both sides, both copies
   are kept. The password goes only over https, or over plain http to an address at home or on a
   VPN; away from home, plain http is refused before anything is sent. A contact's photo given as

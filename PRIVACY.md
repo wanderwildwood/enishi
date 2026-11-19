@@ -61,6 +61,14 @@ can. Each address book you sync becomes an account
 of its own on the phone, as with DAVx5, so its people sit in Android's contacts store like any
 others. Remove account takes the account and its people off the phone; the server keeps them.
 
+If Home (the launcher, from the same developer) is signed in to a Nextcloud, the page offers
+"Use the phone's Nextcloud account" instead. The app then asks Home for that account's address,
+user name and app password, and only after checking that the app answering is the real Home,
+signed with its own key. It keeps only which account it chose; the password it syncs with is a
+copy of Home's, sealed as above, read again from Home each time the app opens and before each
+sync, and forgotten as soon as Home signs out or holds another account. The people stay on the
+phone. Stop using it takes the account and its people off the phone; the server keeps them.
+
 The sync code is DAVx5's (bitfire, GPL-3.0), copied into this app in `dav4jvm/`, `synctools/`
 and `davsync/`, not a separate app or service. If a person was changed on the phone and on the
 server at once, the server's version is kept and the phone's is saved beside it as "(phone's

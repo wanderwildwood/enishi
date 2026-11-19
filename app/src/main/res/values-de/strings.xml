@@ -354,6 +354,13 @@
     <string name="server_remove_not_sent">Nicht entfernt: Die Änderungen von hier konnten nicht gesendet werden. Um sie zu behalten, verlasse diese Seite und versuche es wieder, wenn der Server erreichbar ist. Hier entfernen verwirft sie.</string>
     <string name="server_remove_unsent_armed">Noch einmal tippen: entfernt es trotzdem, und die nicht gesendeten Änderungen gehen verloren</string>
     <string name="server_add">Weiteren Server hinzufügen</string>
+    <string name="home_account_use">Das Nextcloud-Konto des Telefons verwenden</string>
+    <string name="home_account_in_use">%1$s auf %2$s, aus Home.</string>
+    <string name="home_account_stop">Nicht mehr verwenden</string>
+    <string name="home_account_signed_out">Home ist von Nextcloud abgemeldet, also auch diese App. Deine %1$s bleiben auf dem Telefon.</string>
+    <string name="home_account_what">Kontakte</string>
+    <string name="home_account_use_armed">Noch einmal tippen: sendet Änderungen von hier, dann verlassen deine eigene Anmeldung und ihre Kontakte dieses Telefon</string>
+    <string name="home_account_own_kept">Deine eigene Anmeldung ist noch da: Die Änderungen von dort konnten nicht gesendet werden. Entferne sie, wenn der Server erreichbar ist.</string>
     <string name="davsync_address_book_label">Adressbuch von Connections</string>
 
     <!-- The shared davsync module's strings, worded as in Datebook -->

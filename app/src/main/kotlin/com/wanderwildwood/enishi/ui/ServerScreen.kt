@@ -58,8 +58,12 @@ import com.wanderwildwood.davsync.signin.SignIn
 import com.wanderwildwood.davsync.signin.SignInResult
 import com.wanderwildwood.davsync.sync.SyncNow
 import com.wanderwildwood.enishi.R
+import com.wanderwildwood.enishi.data.HomeAccount
+import com.wanderwildwood.enishi.data.HomeLink
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.toggleableState
 import androidx.compose.ui.state.ToggleableState
@@ -72,13 +76,36 @@ import androidx.compose.ui.state.ToggleableState
  * address book is a row that turns its sync on or off; each synced one becomes its own account
  * on the phone (as DAVx5 does), so new people can be saved straight into it. Remove takes the
  * account and its people off this phone; the server keeps them.
+ *
+ * When Home (the launcher) holds the phone's Nextcloud account and hands it to this app, a row
+ * offers to use it instead of an own sign-in (HomeLink). While it is in use the page says whose
+ * account it is, and Stop using it goes back to the own sign-in, empty.
  */
 @Composable
 fun ServerScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val davSync = remember { DavSync(context) }
     var version by remember { mutableIntStateOf(0) }
-    val accounts = remember(version) { davSync.accounts.accounts() }
+    val linkChanges = HomeLink.changes.intValue
+    val accounts = remember(version, linkChanges) { davSync.accounts.accounts() }
+    // Home's account, when this app uses it: the choice, and the sync account made for it.
+    val link = remember(version, linkChanges) { HomeLink.link(context) }
+    val homeAccount = link?.let { l -> accounts.firstOrNull { it.name == l.account } }
+    // Whether Home has an account for this app: asked off the main thread when the page opens,
+    // on each change notice from Home, and after each change here.
+    var homeAvailable by remember { mutableStateOf(false) }
+    var homeAsk by remember { mutableIntStateOf(0) }
+    LaunchedEffect(homeAsk, linkChanges) {
+        homeAvailable = withContext(Dispatchers.IO) { HomeAccount.available(context) }
+    }
+    DisposableEffect(Unit) {
+        val stop = HomeAccount.observe(context) { homeAsk++ }
+        onDispose { stop() }
+    }
+    var usingHome by remember { mutableStateOf(false) }
+    var useSaid by remember { mutableStateOf<String?>(null) }
+    // Stopping Home's account was held back because its waiting changes could not be sent.
+    var stopUnsent by remember { mutableStateOf(false) }
     var adding by remember { mutableStateOf(false) }
     var syncing by remember { mutableStateOf(false) }
     // The address book whose last changes could not be sent, so it was left on.
@@ -116,6 +143,26 @@ fun ServerScreen(onBack: () -> Unit) {
         SyncNow.contacts(context, account) { Handler(Looper.getMainLooper()).post { syncing = false; version++ } }
     }
 
+    fun useHome() {
+        if (usingHome) return
+        usingHome = true
+        useSaid = context.getString(R.string.server_checking)
+        screenScope.launch {
+            val used = withContext(Dispatchers.IO) { HomeLink.use(context) }
+            usingHome = false
+            useSaid = when (used) {
+                HomeLink.Used.Done -> null
+                HomeLink.Used.OwnKept -> context.getString(R.string.home_account_own_kept)
+                HomeLink.Used.NoAccount -> null
+                is HomeLink.Used.Bad -> context.getString(problemText(used.problem))
+            }
+            if (used !is HomeLink.Used.Bad) adding = false
+            stopUnsent = false
+            homeAsk++
+            version++
+        }
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
@@ -126,7 +173,12 @@ fun ServerScreen(onBack: () -> Unit) {
         },
     ) { padding ->
         if (accounts.isEmpty() || adding) {
-            SignInForm(davSync, Modifier.padding(padding)) { account ->
+            SignInForm(
+                davSync,
+                Modifier.padding(padding),
+                useHome = if (homeAvailable && accounts.isEmpty()) ({ useHome() }) else null,
+                useSaid = useSaid,
+            ) { account ->
                 adding = false
                 version++
                 syncNow(account)
@@ -134,7 +186,46 @@ fun ServerScreen(onBack: () -> Unit) {
         } else {
             PagedColumn(Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.surface), showCutRow = true) {
                 for (account in accounts) {
-                    item { Heading(account.name, ruled = false) }
+                    val fromHome = account == homeAccount
+                    item {
+                        Heading(
+                            if (fromHome) stringResource(
+                                R.string.home_account_in_use,
+                                davSync.accounts.user(account).orEmpty(),
+                                HomeLink.shown(davSync.accounts.server(account)?.toString().orEmpty()),
+                            ) else account.name,
+                            ruled = false,
+                        )
+                    }
+                    if (fromHome && link?.holding != true) {
+                        // Home signed out (or holds another account now): signed out here too,
+                        // no syncing, and the people stay. Back on its own when Home has it again.
+                        item {
+                            TextMMD(
+                                text = stringResource(R.string.home_account_signed_out, stringResource(R.string.home_account_what)),
+                                style = helperStyle(),
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                            )
+                        }
+                        if (homeAvailable && link?.who.isNullOrEmpty()) item {
+                            UseHomeRow(useSaid, onPress = { useHome() })
+                        }
+                        item {
+                            // Without a password nothing can be sent: it goes, with what was not sent.
+                            val (armed, press) = rememberArmed(account.name to "stop") {
+                                HomeLink.stop(context)
+                                version++
+                            }
+                            PlainRow(
+                                ruled = false,
+                                title = stringResource(R.string.home_account_stop),
+                                note = if (armed) stringResource(R.string.server_remove_unsent_armed) else null,
+                                noteLines = 3,
+                                onPress = { press() },
+                            )
+                        }
+                        continue
+                    }
                     val books = davSync.accounts.collections(account, Collection.TYPE_ADDRESSBOOK)
                     item {
                         val active = syncing || davSync.accounts.addressBookAccounts(account).any { ContentResolver.isSyncActive(it, ContactsContract.AUTHORITY) }
@@ -248,6 +339,42 @@ fun ServerScreen(onBack: () -> Unit) {
                             onPress = { if (!syncing) syncNow(account) },
                         )
                     }
+                    if (fromHome) {
+                        item {
+                            // As Remove: what is waiting is sent first; a send that fails keeps
+                            // it, and only a press armed after that lets the changes go.
+                            val (armed, press) = rememberArmed(account.name to stopUnsent) {
+                                if (stopUnsent) {
+                                    stopUnsent = false
+                                    HomeLink.stop(context)
+                                    version++
+                                } else {
+                                    syncing = true
+                                    SyncNow.contacts(context, account) { result ->
+                                        Handler(Looper.getMainLooper()).post {
+                                            syncing = false
+                                            if (AccountStore.Status.problemOf(result) == null) HomeLink.stop(context)
+                                            else stopUnsent = true
+                                            version++
+                                        }
+                                    }
+                                }
+                            }
+                            PlainRow(
+                                ruled = false,
+                                title = stringResource(R.string.home_account_stop),
+                                note = when {
+                                    armed && stopUnsent -> stringResource(R.string.server_remove_unsent_armed)
+                                    armed -> stringResource(R.string.server_remove_armed)
+                                    stopUnsent -> stringResource(R.string.server_remove_not_sent)
+                                    else -> null
+                                },
+                                noteLines = 4,
+                                onPress = { if (!syncing) press() },
+                            )
+                        }
+                        continue
+                    }
                     item {
                         if (changing == account.name)
                             ChangePassword(davSync, account, passwordForm, screenScope) { saved ->
@@ -304,16 +431,60 @@ fun ServerScreen(onBack: () -> Unit) {
                         )
                     }
                 }
-                item {
-                    PlainRow(ruled = false, title = stringResource(R.string.server_add), onPress = { adding = true })
+                if (homeAccount == null) {
+                    if (homeAvailable) item {
+                        // Own sign-ins go when Home's account is taken: so it asks first.
+                        val (armed, press) = rememberArmed("use-home") { useHome() }
+                        UseHomeRow(
+                            if (armed) stringResource(R.string.home_account_use_armed) else useSaid,
+                            onPress = { if (!syncing) press() },
+                        )
+                    }
+                    item {
+                        PlainRow(ruled = false, title = stringResource(R.string.server_add), onPress = { adding = true })
+                    }
                 }
             }
         }
     }
 }
 
+/** "Use the phone's Nextcloud account", with what it last came to under it. */
 @Composable
-private fun SignInForm(davSync: DavSync, modifier: Modifier, onSignedIn: (Account) -> Unit) {
+private fun UseHomeRow(said: String?, onPress: () -> Unit) {
+    PlainRow(
+        ruled = false,
+        title = stringResource(R.string.home_account_use),
+        titleLines = 2,
+        note = said,
+        noteLines = 4,
+        onPress = onPress,
+    )
+}
+
+/** What a sign-in that did not work says. */
+private fun problemText(problem: Problem): Int = when (problem) {
+    Problem.BAD_ADDRESS -> R.string.server_bad_address
+    Problem.PLAIN_HTTP -> R.string.server_plain_http
+    Problem.PLAIN_HTTP_LINK -> R.string.server_plain_http_link
+    Problem.NOT_FOUND -> R.string.server_not_found
+    Problem.UNREACHABLE -> R.string.server_unreachable
+    Problem.CERTIFICATE -> R.string.server_certificate
+    Problem.WRONG_PASSWORD -> R.string.server_wrong_password
+    Problem.NO_SERVICE -> R.string.server_no_carddav
+    Problem.NOTHING_FOUND -> R.string.server_no_books
+    Problem.KEYSTORE -> R.string.server_not_kept
+    Problem.OTHER -> R.string.server_other
+}
+
+@Composable
+private fun SignInForm(
+    davSync: DavSync,
+    modifier: Modifier,
+    useHome: (() -> Unit)? = null,
+    useSaid: String? = null,
+    onSignedIn: (Account) -> Unit,
+) {
     val scope = rememberCoroutineScope()
     var address by remember { mutableStateOf("") }
     var user by remember { mutableStateOf("") }
@@ -349,19 +520,7 @@ private fun SignInForm(davSync: DavSync, modifier: Modifier, onSignedIn: (Accoun
                         null
                     } else R.string.server_not_kept
                 } else R.string.server_good
-                is SignInResult.Bad -> when (result.problem) {
-                    Problem.BAD_ADDRESS -> R.string.server_bad_address
-                    Problem.PLAIN_HTTP -> R.string.server_plain_http
-                    Problem.PLAIN_HTTP_LINK -> R.string.server_plain_http_link
-                    Problem.NOT_FOUND -> R.string.server_not_found
-                    Problem.UNREACHABLE -> R.string.server_unreachable
-                    Problem.CERTIFICATE -> R.string.server_certificate
-                    Problem.WRONG_PASSWORD -> R.string.server_wrong_password
-                    Problem.NO_SERVICE -> R.string.server_no_carddav
-                    Problem.NOTHING_FOUND -> R.string.server_no_books
-                    Problem.KEYSTORE -> R.string.server_not_kept
-                    Problem.OTHER -> R.string.server_other
-                }
+                is SignInResult.Bad -> problemText(result.problem)
             }
         }
     }
@@ -376,6 +535,7 @@ private fun SignInForm(davSync: DavSync, modifier: Modifier, onSignedIn: (Accoun
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
             )
         }
+        if (useHome != null) item { UseHomeRow(useSaid, onPress = useHome) }
         item {
             ChoiceRow(
                 label = stringResource(com.wanderwildwood.davsync.R.string.davsync_kind),

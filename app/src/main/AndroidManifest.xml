@@ -51,7 +51,8 @@
         <package android:name="at.techbee.jtx" tools:node="remove" />
         <package android:name="org.dmfs.tasks" tools:node="remove" />
         <package android:name="org.tasks" tools:node="remove" />
-        <!-- Home, whose dark mode switch this app follows when Home is installed. -->
+        <!-- Home, whose dark mode switch this app follows when Home is installed, and whose
+             Nextcloud account it may use for contacts sync (data/HomeLink.kt). -->
         <package android:name="com.wanderwildwood.iori" />
         <intent>
             <action android:name="android.content.SyncAdapter" />
@@ -86,6 +87,7 @@
     </queries>
 
     <application
+        android:name=".EnishiApp"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/no_backup"
         android:fullBackupContent="false"
