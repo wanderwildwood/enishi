@@ -17,22 +17,44 @@ class HomeLinkTest {
     }
 
     @Test
-    fun anOwnSignInToTheSameUserOnTheSameServerIsHomes() {
-        assertTrue(HomeLink.sameAccount("cloud.example.org", "ada", held))
-        assertTrue(HomeLink.sameAccount("CLOUD.example.org", "ada ", held))
+    fun anOwnSignInToTheSameUserAtTheSameAddressIsHomes() {
+        assertTrue(HomeLink.sameAccount("https://cloud.example.org/nextcloud", "ada", held))
+        assertTrue(HomeLink.sameAccount("https://CLOUD.example.org/nextcloud/", "ada ", held))
+        assertTrue(HomeLink.sameAccount("cloud.example.org/nextcloud", "ada", held))
+        assertTrue(HomeLink.sameAccount("https://cloud.example.org:443/nextcloud", "ada", held))
     }
 
     @Test
     fun anyOtherSignInIsNot() {
-        assertFalse(HomeLink.sameAccount("cloud.example.org", "bob", held))
-        assertFalse(HomeLink.sameAccount("other.example.org", "ada", held))
+        assertFalse(HomeLink.sameAccount("https://cloud.example.org/nextcloud", "bob", held))
+        assertFalse(HomeLink.sameAccount("https://other.example.org/nextcloud", "ada", held))
         assertFalse(HomeLink.sameAccount(null, "ada", held))
-        assertFalse(HomeLink.sameAccount("cloud.example.org", null, held))
+        assertFalse(HomeLink.sameAccount("https://cloud.example.org/nextcloud", null, held))
     }
 
     @Test
-    fun aPortIsNotPartOfTheHost() {
+    fun anotherServiceOnTheSameHostIsNot() {
+        assertFalse(HomeLink.sameAccount("https://cloud.example.org", "ada", held))
+        assertFalse(HomeLink.sameAccount("https://cloud.example.org/radicale", "ada", held))
+        assertFalse(HomeLink.sameAccount("https://cloud.example.org:8443/nextcloud", "ada", held))
+        assertFalse(HomeLink.sameAccount("http://cloud.example.org/nextcloud", "ada", held))
+        assertFalse(HomeLink.sameAccount("https://cloud.example.org/Nextcloud", "ada", held))
+    }
+
+    @Test
+    fun aPortCounts() {
         val onPort = HomeAccount.Held("http://nas.local:8080", "ada", "secret", "s1")
-        assertTrue(HomeLink.sameAccount("nas.local", "ada", onPort))
+        assertTrue(HomeLink.sameAccount("http://nas.local:8080/", "ada", onPort))
+        assertFalse(HomeLink.sameAccount("http://nas.local", "ada", onPort))
+    }
+
+    @Test
+    fun aNewSignInGetsANameNotTaken() {
+        assertEquals("ada@cloud.example.org", HomeLink.freeName("ada@cloud.example.org", listOf("bob@cloud.example.org")))
+        assertEquals("ada@cloud.example.org (2)", HomeLink.freeName("ada@cloud.example.org", listOf("ada@cloud.example.org")))
+        assertEquals(
+            "ada@cloud.example.org (3)",
+            HomeLink.freeName("ada@cloud.example.org", listOf("ada@cloud.example.org", "ada@cloud.example.org (2)")),
+        )
     }
 }

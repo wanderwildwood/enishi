@@ -198,23 +198,30 @@ fun ServerScreen(onBack: () -> Unit) {
                         )
                     }
                     if (fromHome && link?.holding != true) {
-                        // Home signed out (or holds another account now): signed out here too,
-                        // no syncing, and the people stay. Back on its own when Home has it again.
+                        // Home signed out, or holds another account now: signed out here too, no
+                        // syncing, and the people stay. Back on its own when Home has this one again.
+                        val other = link?.who.isNullOrEmpty()
                         item {
                             TextMMD(
-                                text = stringResource(R.string.home_account_signed_out, stringResource(R.string.home_account_what)),
+                                text = if (other) stringResource(R.string.home_account_other, stringResource(R.string.home_account_what))
+                                else stringResource(R.string.home_account_signed_out, stringResource(R.string.home_account_what)),
                                 style = helperStyle(),
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                             )
                         }
-                        if (homeAvailable && link?.who.isNullOrEmpty()) item {
-                            UseHomeRow(useSaid, onPress = { useHome() })
+                        if (homeAvailable && other) item {
+                            // Own sign-ins that can send go once they have; this one, with no
+                            // password, stays (HomeLink.use). Still it asks first, as below.
+                            val (armed, press) = rememberArmed("use-home-other") { useHome() }
+                            UseHomeRow(
+                                if (armed) stringResource(R.string.home_account_use_armed) else useSaid,
+                                onPress = { if (!syncing) press() },
+                            )
                         }
                         item {
                             // Without a password nothing can be sent: it goes, with what was not sent.
                             val (armed, press) = rememberArmed(account.name to "stop") {
-                                HomeLink.stop(context)
-                                version++
+                                HomeLink.stop(context) { version++ }
                             }
                             PlainRow(
                                 ruled = false,
@@ -346,14 +353,13 @@ fun ServerScreen(onBack: () -> Unit) {
                             val (armed, press) = rememberArmed(account.name to stopUnsent) {
                                 if (stopUnsent) {
                                     stopUnsent = false
-                                    HomeLink.stop(context)
-                                    version++
+                                    HomeLink.stop(context) { version++ }
                                 } else {
                                     syncing = true
                                     SyncNow.contacts(context, account) { result ->
                                         Handler(Looper.getMainLooper()).post {
                                             syncing = false
-                                            if (AccountStore.Status.problemOf(result) == null) HomeLink.stop(context)
+                                            if (AccountStore.Status.problemOf(result) == null) HomeLink.stop(context) { version++ }
                                             else stopUnsent = true
                                             version++
                                         }

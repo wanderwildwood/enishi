@@ -138,43 +138,69 @@ object HomeLink {
 
     /**
      * Switches contacts sync to Home's account. An own sign-in to the same user on the same server
-     * is kept and takes Home's password; any other own sign-in sends its waiting changes and then
-     * leaves the phone with its people (the server keeps them), unless they could not be sent.
+     * (the same address, path and all) is kept and takes Home's password; any other own sign-in
+     * sends its waiting changes and then leaves the phone with its people (the server keeps them).
+     * One whose changes could not be sent stays, and so does one with no password to send them
+     * with (a link left over from an earlier Home account, or a password the phone can no longer
+     * open): the user removes those, and Remove says what is lost.
      */
     suspend fun use(context: Context): Used {
         val app = context.applicationContext
         val davSync = DavSync(app)
         val held = HomeAccount.read(app) ?: return Used.NoAccount
         val before = davSync.accounts.accounts()
-        val same = before.firstOrNull { sameAccount(davSync.accounts.server(it)?.host, davSync.accounts.user(it), held) }
+        val same = before.firstOrNull { sameAccount(davSync.accounts.server(it)?.toString(), davSync.accounts.user(it), held) }
         val target = if (same != null) {
             if (!davSync.accounts.updatePassword(same, held.password)) return Used.Bad(Problem.KEYSTORE)
             same
         } else {
             when (val result = SignIn.check(davSync, held.server, held.user, held.password, DavResourceFinder.Service.CARDDAV)) {
                 is SignInResult.Bad -> return Used.Bad(result.problem, result.detail)
-                is SignInResult.Good -> SignIn.keep(davSync, result) ?: return Used.Bad(Problem.KEYSTORE)
+                is SignInResult.Good -> keep(davSync, result, before.map { it.name }) ?: return Used.Bad(Problem.KEYSTORE)
             }
         }
         synchronized(lock) { save(app, Link(held.who, held.stamp, target.name)) }
         var kept = false
         for (other in before) {
             if (other == target) continue
-            // A link left over from an earlier account has no password to send with: it just goes.
-            val sent = davSync.accounts.credentials(other) == null || sendWaiting(app, other)
+            // No password: nothing can be sent, so it stays rather than lose what was not sent.
+            val sent = davSync.accounts.credentials(other) != null && sendWaiting(app, other)
             if (sent) davSync.accounts.remove(other) else kept = true
         }
         SyncNow.contacts(app, target)
         return if (kept) Used.OwnKept else Used.Done
     }
 
-    /** Stops using Home's account: the choice, the stamp and the sync account (with its people) go. */
-    fun stop(context: Context) {
+    /**
+     * [SignIn.keep], under a name no account has yet: an own sign-in to the same user on the same
+     * host, but another address (a port or a path), already has "user@host".
+     */
+    private fun keep(davSync: DavSync, good: SignInResult.Good, taken: List<String>): Account? {
+        val name = freeName("${good.credentials.username}@${good.server.host}", taken)
+        val collections = good.collections.map { it.copy(sync = false) }
+        return davSync.accounts.create(name, good.server, good.credentials, collections)
+    }
+
+    /** [name], or "name (2)", "name (3)" and so on, whichever is not [taken]. */
+    fun freeName(name: String, taken: List<String>): String =
+        generateSequence(1) { it + 1 }.map { if (it == 1) name else "$name ($it)" }.first { it !in taken }
+
+    /**
+     * Stops using Home's account: the choice, the stamp and the sync account (with its people) go.
+     * Done on the worker, since a refresh may hold the lock while it waits for Home; [done] runs on
+     * the main thread after.
+     */
+    fun stop(context: Context, done: () -> Unit = {}) {
         val app = context.applicationContext
-        synchronized(lock) {
-            val davSync = DavSync(app)
-            account(app, davSync)?.let { davSync.accounts.remove(it) }
-            save(app, null)
+        worker.execute {
+            runCatching {
+                synchronized(lock) {
+                    val davSync = DavSync(app)
+                    account(app, davSync)?.let { davSync.accounts.remove(it) }
+                    save(app, null)
+                }
+            }
+            main.post(done)
         }
     }
 
@@ -220,11 +246,29 @@ object HomeLink {
     fun shown(server: String): String =
         server.trim().removePrefix("https://").removePrefix("http://").trimEnd('/')
 
-    /** Whether an own sign-in ([host], [user]) is the same account as Home's [held]. */
-    fun sameAccount(host: String?, user: String?, held: HomeAccount.Held): Boolean {
-        if (host.isNullOrEmpty() || user.isNullOrEmpty()) return false
-        val heldHost = shown(held.server).substringBefore('/').substringBefore(':').lowercase()
-        return host.lowercase() == heldHost && user.trim() == held.user.trim()
+    /**
+     * Whether an own sign-in ([server], [user]) is the same account as Home's [held]: the same
+     * user at the same address (scheme, host, port and path; a slash at the end, the case of the
+     * host and a port that is the scheme's own do not count).
+     */
+    fun sameAccount(server: String?, user: String?, held: HomeAccount.Held): Boolean {
+        if (server.isNullOrEmpty() || user.isNullOrEmpty()) return false
+        val mine = address(server) ?: return false
+        return mine == address(held.server) && user.trim() == held.user.trim()
+    }
+
+    /** [server] as one string to compare: "https://host:443/path" for any way of writing it. */
+    fun address(server: String): String? {
+        val uri = runCatching { java.net.URI(SignIn.normalise(server)) }.getOrNull() ?: return null
+        val scheme = uri.scheme?.lowercase() ?: return null
+        val host = uri.host?.lowercase() ?: return null
+        val port = when {
+            uri.port != -1 -> uri.port
+            scheme == "https" -> 443
+            scheme == "http" -> 80
+            else -> return null
+        }
+        return "$scheme://$host:$port" + uri.rawPath.orEmpty().trimEnd('/')
     }
 
     private const val KEY_WHO = "home_account_who"
