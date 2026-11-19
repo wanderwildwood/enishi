@@ -131,9 +131,12 @@ fun HomeScreen(
                 // when the contacts store does.
                 var asked by remember { mutableStateOf(0) }
                 LaunchedEffect(asked) { if (asked > 0) { NextPress.await(); asked = 0 } }
+                // While the line is up, a second pull is the same pull and asks nothing more.
                 val pull: () -> Unit = {
-                    ContactsSync.requestNow()
-                    asked++
+                    if (asked == 0) {
+                        ContactsSync.requestNow()
+                        asked++
+                    }
                 }
                 val labels = listOfNotNull(
                     stringResource(R.string.tab_all),
