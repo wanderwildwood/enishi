@@ -17,6 +17,7 @@ import com.wanderwildwood.davsync.signin.SignInResult
 import com.wanderwildwood.davsync.sync.SyncGate
 import com.wanderwildwood.davsync.sync.SyncNow
 import com.wanderwildwood.davsync.sync.SyncResult
+import io.ktor.http.Url
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.concurrent.Executors
 import kotlin.coroutines.resume
@@ -172,13 +173,25 @@ object HomeLink {
     }
 
     /**
-     * [SignIn.keep], under a name no account has yet: an own sign-in to the same user on the same
-     * host, but another address (a port or a path), already has "user@host".
+     * [SignIn.keep], under a name no account has yet ([accountName]): an own sign-in to the same
+     * user on the same host, but another address (a port or a path), may already have it.
      */
     private fun keep(davSync: DavSync, good: SignInResult.Good, taken: List<String>): Account? {
-        val name = freeName("${good.credentials.username}@${good.server.host}", taken)
+        val name = freeName(accountName(good.credentials.username, good.server), taken)
         val collections = good.collections.map { it.copy(sync = false) }
         return davSync.accounts.create(name, good.server, good.credentials, collections)
+    }
+
+    /**
+     * The name of the sync account made from Home's: "user@host" as an own sign-in's
+     * ([SignIn.keep]), with the port when it is not the usual one, and "user on host" when the
+     * user is an email address, so the name never has two @. Only an account made from now on
+     * gets it; one made before keeps its name, since its calendars, address books and choice
+     * are kept under that name.
+     */
+    fun accountName(user: String, server: Url): String {
+        val host = if (server.port != server.protocol.defaultPort) "${server.host}:${server.port}" else server.host
+        return if ('@' in user) "$user on $host" else "$user@$host"
     }
 
     /** [name], or "name (2)", "name (3)" and so on, whichever is not [taken]. */
