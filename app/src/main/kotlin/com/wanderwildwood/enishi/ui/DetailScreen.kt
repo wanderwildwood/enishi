@@ -202,7 +202,11 @@ fun DetailScreen(
         }
         val d = c.draft
         val organisation = listOf(d.jobTitle, d.company).filter { it.isNotBlank() }.joinToString(", ")
-        CompositionLocalProvider(LocalCopy provides ::copy) { PagedColumn(body, showCutRow = true) {
+        // A long note in rows of whole lines, so a turn never opens on half a line.
+        val fit = rememberWholeLineFit()
+        val noteKind = stringResource(R.string.kind_note)
+        val noteStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = rowText)
+        CompositionLocalProvider(LocalCopy provides ::copy) { PagedColumn(body.wholeLinePage(fit), showCutRow = true) {
             // Who they are, under the bar: the name again only when the bar had to cut it.
             if (nameCut || organisation.isNotEmpty()) {
                 item(key = "who") {
@@ -258,7 +262,11 @@ fun DetailScreen(
                     }
                 }
             }
-            if (d.note.isNotBlank()) item { ValueRow(d.note, stringResource(R.string.kind_note), lines = 30) }
+            if (d.note.isNotBlank()) {
+                wholeLineItems("note", d.note, noteStyle, fit, gap = 40.dp) { run, part, textModifier ->
+                    ValueRow(run, if (part == 0) noteKind else null, lines = Int.MAX_VALUE, textModifier = textModifier, copyValue = d.note)
+                }
+            }
             val inGroups = model.groups.filter { it.id in d.groups.keys }.map { it.title }
             if (inGroups.isNotEmpty()) item { ValueRow(inGroups.joinToString(", "), stringResource(R.string.kind_groups)) }
 
@@ -355,8 +363,10 @@ fun DetailScreen(
 @Composable
 private fun ValueRow(
     value: String,
-    kind: String,
+    kind: String?,
     lines: Int = 2,
+    textModifier: Modifier = Modifier,
+    copyValue: String = value,
     trailing: (@Composable () -> Unit)? = null,
     onPress: (() -> Unit)? = null,
 ) {
@@ -366,12 +376,12 @@ private fun ValueRow(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 65.dp)
-            .combinedClickable(onClick = onPress ?: {}, onLongClick = copy?.let { c -> { c(value) } })
+            .combinedClickable(onClick = onPress ?: {}, onLongClick = copy?.let { c -> { c(copyValue) } })
             .padding(start = 16.dp, end = if (trailing != null) 4.dp else 16.dp, top = 10.dp, bottom = 10.dp),
     ) {
         Column(Modifier.weight(1f)) {
-            TextMMD(text = value, style = MaterialTheme.typography.bodyLarge.copy(fontSize = rowText), maxLines = lines, overflow = TextOverflow.Ellipsis)
-            TextMMD(text = kind, style = helperStyle(), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            TextMMD(text = value, style = MaterialTheme.typography.bodyLarge.copy(fontSize = rowText), maxLines = lines, overflow = TextOverflow.Ellipsis, modifier = textModifier)
+            if (kind != null) TextMMD(text = kind, style = helperStyle(), maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         trailing?.invoke()
     }
