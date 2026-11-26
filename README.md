@@ -17,8 +17,8 @@ contacts app that is free software.
 
 | | |
 |---|---|
-| ![A search by number: the matches, a page at a time](screenshots/1-list.png) | ![A person: every number a row that calls, the bubble at its end to write](screenshots/2-person.png) |
-| ![Editing: each number on one line, its kind a short menu in front](screenshots/3-edit.png) | ![A file of cards: anyone already here is left alone](screenshots/4-cards.png) |
+| ![Connections, A to Z](screenshots/1-list.png) | ![A person: every number a row that calls, the bubble at its end to write](screenshots/2-person.png) |
+| ![Further down a person: sharing, and their recent calls](screenshots/3-calls.png) | ![Settings: sorting, names, a contacts server, files](screenshots/4-settings.png) |
 
 ## Why it exists
 
